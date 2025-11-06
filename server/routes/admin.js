@@ -9,10 +9,11 @@ const faqController = require('../controller/admincontroller/faqController');
 const tutorialController = require('../controller/admincontroller/tutorialController');
 const bookingController = require('../controller/admincontroller/bookingController');
 const ratingController = require('../controller/admincontroller/ratingController');
+const reportController = require('../controller/admincontroller/reportController');
+const bannerController = require('../controller/admincontroller/bannerController');
+const transactionController = require('../controller/admincontroller/transactionController');
 
 
-
-router.post('/registration',auth.register);
 router.post('/login',auth.login);
 router.use(authtoken.verifyToken);  
 router.get('/profile',auth.profile);
@@ -21,7 +22,6 @@ router.post('/updatepassword',auth.reset_password);
 router.post('/logout',auth.logout);
 router.get('/dashboard',auth.dashboard);
 router.post('/chartdata',auth.chartData);
-router.post('/teamchart',auth.teamChart);
 
 
 // router for users
@@ -64,13 +64,6 @@ router.post('/createtutorial',tutorialController.tutorialCreate);
 router.post('/tutorialupdate/:id',tutorialController.tutorialUpdate);
 router.post('/imagedelete/:id',tutorialController.imageDelete);
 
-
-
-
-
-
-
-
 //booking
 router.get('/bookinglist',bookingController.bookingList);
 router.post('/bookingdelete/:id',bookingController.bookingDelete);
@@ -79,7 +72,19 @@ router.post('/bookingdelete/:id',bookingController.bookingDelete);
 //rating
 router.get('/ratinglist',ratingController.ratingList);
 router.post('/ratingdelete/:id',ratingController.ratingDelete);
+//report
+router.get('/reportlist',reportController.reportList);
+router.post('/reportdelete/:id',reportController.reportDelete);
 
+//banner routes 
+router.post('/addbanner', bannerController.addBanner);
+router.get('/bannerlist', bannerController.bannerList);
+router.post('/bannerdelete/:id', bannerController.bannerDelete);
+router.post('/bannerupdate/:id', bannerController.bannerUpdate);
+router.get('/bannerdetail/:id', bannerController.bannerDetail);
+//transaction routes
+router.get('/transactionlist', transactionController.transactionList);
+router.post('/transactiondelete/:id', transactionController.transactionDelete);
 
 
 module.exports = router;

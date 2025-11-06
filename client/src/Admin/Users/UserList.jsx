@@ -123,7 +123,7 @@ const UserList = () => {
           <div className="page-content">
             <div className="container-fluid">
               <div className="title-box mb-3 pb-1">
-                <h4 className="mb-0 page-title">Player List</h4>
+                <h4 className="mb-0 page-title">Users List</h4>
                 <nav aria-label="breadcrumb" className="mt-1">
                   <ol className="breadcrumb mb-0">
                     <li className="breadcrumb-item">

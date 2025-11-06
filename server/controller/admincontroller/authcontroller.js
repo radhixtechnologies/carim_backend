@@ -142,12 +142,7 @@ module.exports = {
         try {
             let player = await db.users.count({ where: { role: "1" } });
             let coach = await db.users.count({ where: { role: "2" } });
-            let sport = await db.sports.count();
-            let tutorial = await db.tutorials.count();
-            let level = await db.levels.count();
-            let position = await db.positions.count();
-            let team = await db.teams.count();
-            let match = await db.matchs.count();
+            
             let booking = await db.bookings.count();
             let rating = await db.reviewrating.count();
             let contact = await db.contactus.count();
@@ -156,12 +151,7 @@ module.exports = {
             return helper.success(res, "Dashboard data fetched successfully", {
                 player,
                 coach,
-                sport,
-                tutorial,
-                level,
-                position,
-                team,
-                match,
+               
                 booking,
                 rating,
                 contact,
@@ -213,81 +203,7 @@ module.exports = {
             return helper.error(res, "Error fetching chart data", error);
         }
     },
-    teamChart: async (req, res) => {
-        try {
-            const currentYear = new Date().getFullYear();
-            const categories = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-            const data = await Promise.all(
-                categories.map(async (_, index) => {
-                    const startOfMonth = new Date(currentYear, index, 1);
-                    const endOfMonth = new Date(currentYear, index + 1, 0, 23, 59, 59);
-
-                    const teamCount = await db.teams.count({
-                        where: {
-                            createdAt: {
-                                [Op.between]: [startOfMonth, endOfMonth],
-                            },
-                        },
-                    });
-
-                    return { teamCount };
-                })
-            );
-
-            const teamData = data.map(item => item.teamCount);
-            res.json({
-                data: teamData,
-                categories,
-            });
-        } catch (error) {
-            return helper.error(res, "Error fetching chart data", error);
-        }
-    },
-    register: async (req, res) => {
-        try {
-            let { name, email, countryCode, phoneNumber, password, confirmPassword, image, gender, state, city, country, bio } = req.body;
-
-            const existingUserEmail = await db.users.findOne({ where: { email } });
-            if (existingUserEmail) {
-                return helper.error(res, "Email is already registered.");
-            }
-
-            const existingUserPhone = await db.users.findOne({ where: { phoneNumber, countryCode } });
-            if (existingUserPhone) {
-                return helper.error(res, "Phone number is already registered.");
-            }
-
-            if (password !== confirmPassword) {
-                return helper.error(res, "Passwords do not match.");
-            }
-
-            const hashedPassword = await bcrypt.hash(password, 10);
-
-            let imagePath = image;
-            if (req.files && req.files.image) {
-                imagePath = await helper.fileUpload(req.files.image);
-            }
-
-            const employee = await db.users.create({
-                name,
-                email,
-                password: hashedPassword,
-                countryCode,
-                phoneNumber,
-                image: imagePath,
-                gender,
-                state,
-                city,
-                country,
-                bio,
-                role: '3',
-            });
-            return helper.success(res, "Registration successful", employee);
-        } catch (error) {
-            return helper.error(res, error.message);
-        }
-    }
+  
 
 
 }

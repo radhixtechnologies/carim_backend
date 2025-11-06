@@ -5,14 +5,14 @@ import { toast, ToastContainer } from "react-toastify";
 
 const ApexCharts = () => {
   const [series, setSeries] = useState([
-    { name: "Players", data: [] },  
-    { name: "Coaches", data: [] },  
+    { name: "Users", data: [] },
+    { name: "Drivers", data: [] },
   ]);
   const [options, setOptions] = useState({
     chart: {
       height: 350,
       type: "bar",
-      toolbar: { 
+      toolbar: {
         show: false,
       },
     },
@@ -80,14 +80,18 @@ const ApexCharts = () => {
         const response = await axiosInstance.post(`/chartdata`);
         const { data, categories } = response.data;
 
-        if (!Array.isArray(data.players) || !Array.isArray(data.coaches) || !Array.isArray(categories)) {
+        if (
+          !Array.isArray(data.players) ||
+          !Array.isArray(data.coaches) ||
+          !Array.isArray(categories)
+        ) {
           toast.error("Invalid data received.");
           return;
         }
 
         setSeries([
-          { name: "Players", data: data.players },  
-          { name: "Coaches", data: data.coaches }, 
+          { name: "Users", data: data.players },
+          { name: "Drivers", data: data.coaches },
         ]);
 
         setOptions((prevOptions) => ({
@@ -107,14 +111,23 @@ const ApexCharts = () => {
 
   return (
     <>
-      <ToastContainer position="top-right" autoClose={5000} hideProgressBar={false} />
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+      />
       <div className="col-12">
         <div className="card card-statistics">
           <div className="card-header">
-            <h4 className="card-title">Player & Coach Chart</h4>
+            <h4 className="card-title">Users & Drivers Chart</h4>
           </div>
           <div className="card-body">
-            <ReactApexChart options={options} series={series} type="bar" height={350} />
+            <ReactApexChart
+              options={options}
+              series={series}
+              type="bar"
+              height={350}
+            />
           </div>
         </div>
       </div>

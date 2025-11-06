@@ -4,26 +4,18 @@ import {
   Book,
   CheckSquare,
   File,
-  Flag,
+  Image,
   Info,
-  RefreshCw,
+  Repeat,
   Star,
-  Users,
-  Zap,
 } from "react-feather";
 
 function Sidebar({ isOpen }) {
   const [isHovered, setHovered] = useState(false);
   const [activeMenu, setActiveMenu] = useState(null);
-  const [userRole, setUserRole] = useState(null);
   const [showButton, setShowButton] = useState(true);
   const location = useLocation();
   const { pathname } = location;
-
-  useEffect(() => {
-    const userData = JSON.parse(localStorage.getItem("userData") || "{}");
-    setUserRole(userData.role);
-  }, []);
 
   const handleMouseEnter = () => {
     if (!isOpen) {
@@ -66,17 +58,12 @@ function Sidebar({ isOpen }) {
     ) {
       setActiveMenu("seekers");
     } else if (
-      pathname === "/sportlist" ||
-      pathname.startsWith("/addsport") ||
-      pathname.startsWith("/updatesport") ||
-      pathname.startsWith("/levellist") ||
-      pathname.startsWith("/updatelevel") ||
-      pathname.startsWith("/positionlist") ||
-      pathname.startsWith("/addposition") ||
-      pathname.startsWith("/addlevel") ||
-      pathname.startsWith("/updateposition")
+      pathname === "/bannerlist" ||
+      pathname.startsWith("/bannerlist") ||
+      pathname.startsWith("/addbanner") ||
+      pathname.startsWith("/updatebanner")
     ) {
-      setActiveMenu("users");
+      setActiveMenu("banner");
     } else if (pathname === "/teamlist") {
       setActiveMenu("teamManagement");
     } else if (pathname === "/bookinglist") {
@@ -85,10 +72,12 @@ function Sidebar({ isOpen }) {
       setActiveMenu("request");
     } else if (pathname === "/ratinglist") {
       setActiveMenu("rating");
-    } else if (pathname === "/matchlist") {
-      setActiveMenu("matchs");
+    } else if (pathname === "/reportlist") {
+      setActiveMenu("report");
     } else if (pathname === "/leaguelist") {
       setActiveMenu("league");
+    } else if (pathname === "/bannerlist") {
+      setActiveMenu("banner");
     } else if (
       pathname.includes("/contactlist") ||
       pathname.includes("/faqlist") ||
@@ -102,8 +91,6 @@ function Sidebar({ isOpen }) {
       setActiveMenu(null);
     }
   }, [pathname]);
-
-  const canAccessRequests = userRole !== "3";
 
   return (
     <div
@@ -155,8 +142,6 @@ function Sidebar({ isOpen }) {
                 <span>Dashboard</span>
               </Link>
             </li>
-
-            
 
             <li className={activeMenu === "providers" ? "mm-active" : ""}>
               <Link
@@ -212,13 +197,6 @@ function Sidebar({ isOpen }) {
                 </ul>
               )}
             </li>
-
-         
-
-           
-
-            
-            
             <li className={activeMenu === "booking" ? "mm-active" : ""}>
               <Link
                 className="has-arrow waves-effect"
@@ -236,6 +214,28 @@ function Sidebar({ isOpen }) {
                       onClick={handleLinkClick}
                     >
                       Booking list
+                    </Link>
+                  </li>
+                </ul>
+              )}
+            </li>
+            <li className={activeMenu === "transaction" ? "mm-active" : ""}>
+              <Link
+                className="has-arrow waves-effect"
+                onClick={() => toggleMenu("booking")}
+              >
+                <Book />
+                <span>Transactions</span>
+              </Link>
+              {isSidebarExpanded && activeMenu === "transaction" && (
+                <ul className="sub-menu mm-show">
+                  <li>
+                    <Link
+                      className={isActive("/transactionlist") ? "active" : ""}
+                      to="/transactionlist"
+                      onClick={handleLinkClick}
+                    >
+                      Transaction list
                     </Link>
                   </li>
                 </ul>
@@ -259,6 +259,50 @@ function Sidebar({ isOpen }) {
                       onClick={handleLinkClick}
                     >
                       Rating list
+                    </Link>
+                  </li>
+                </ul>
+              )}
+            </li>
+            <li className={activeMenu === "report" ? "mm-active" : ""}>
+              <Link
+                className="has-arrow waves-effect"
+                onClick={() => toggleMenu("report")}
+              >
+                <Repeat />
+                <span>Reports</span>
+              </Link>
+              {isSidebarExpanded && activeMenu === "report" && (
+                <ul className="sub-menu mm-show">
+                  <li>
+                    <Link
+                      className={isActive("/reportlist") ? "active" : ""}
+                      to="/reportlist"
+                      onClick={handleLinkClick}
+                    >
+                      Report list
+                    </Link>
+                  </li>
+                </ul>
+              )}
+            </li>
+            <li className={activeMenu === "banner" ? "mm-active" : ""}>
+              <Link
+                className="has-arrow waves-effect"
+                onClick={() => toggleMenu("banner")}
+              >
+                <Image />
+                <span>Banners</span>
+              </Link>
+              {isSidebarExpanded && activeMenu === "banner" && (
+                <ul className="sub-menu mm-show">
+                  <li>
+                    <Link
+                      className={isActive("/bannerlist") ? "active" : ""}
+                      to="/bannerlist"
+                      onClick={handleLinkClick}
+                    >
+                      Banner list
                     </Link>
                   </li>
                 </ul>

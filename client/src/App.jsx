@@ -18,6 +18,11 @@ import BookingList from './Admin/Bookings/BookingList';
 import RatingList from './Admin/Ratings/RatingList';
 import UserList from './Admin/Users/UserList';
 import DriverList from './Admin/Drivers/DriverList';
+import ReportList from './Admin/Reports/ReportList';
+import BannerList from './Admin/Banners/BannnerList';
+import BannerAdd from './Admin/Banners/BannerAdd';
+import BannerEdit from './Admin/Banners/BannerEdit';
+import TransactionList from './Admin/Transactions/TransactionList';
 
 
 const App = () => {
@@ -61,6 +66,12 @@ const App = () => {
             <Route path="/updatefaq/:id" element={<PrivateRoute element={<FaqEdit />} />} />
             <Route path="/bookinglist" element={<PrivateRoute element={<BookingList />} />} />
             <Route path="/ratinglist" element={<PrivateRoute element={<RatingList />} />} />
+            <Route path="/reportlist" element={<PrivateRoute element={<ReportList />} />} />
+            <Route path="/bannerlist" element={<PrivateRoute element={<BannerList />} />} />
+            <Route path="/addbanner" element={<PrivateRoute element={<BannerAdd />} />} />
+            <Route path="/updatebanner/:id" element={<PrivateRoute element={<BannerEdit />} />} />
+            <Route path="/transactionlist" element={<PrivateRoute element={<TransactionList />} />} />
+
           </Route>
         </Routes>
 

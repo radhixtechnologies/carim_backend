@@ -99,7 +99,6 @@ module.exports = {
                 if (!isNaN(daysAgo)) {
                     const startDate = new Date();
                     startDate.setDate(startDate.getDate() - daysAgo);
-
                     whereCondition.createdAt = {
                         [Op.gte]: startDate,
                     };
@@ -109,7 +108,7 @@ module.exports = {
             const include = [
                 {
                     model: db.reviewrating,
-                    as: 'ratedcoach',
+                    as: 'receivedRatings',
                     required: false,
                     attributes: []
                 }
@@ -127,7 +126,7 @@ module.exports = {
                                 'COALESCE',
                                 db.Sequelize.fn(
                                     'ROUND',
-                                    db.Sequelize.fn('AVG', db.Sequelize.col('ratedcoach.rating')),
+                                    db.Sequelize.fn('AVG', db.Sequelize.col('receivedRatings.rating')),
                                     2
                                 ),
                                 0
@@ -135,12 +134,12 @@ module.exports = {
                             'averageRating'
                         ],
                         [
-                            db.Sequelize.fn('COUNT', db.Sequelize.col('ratedcoach.id')),
+                            db.Sequelize.fn('COUNT', db.Sequelize.col('receivedRatings.id')),
                             'totalReviews'
                         ]
                     ]
                 },
-                group: ['users.id',],
+                group: ['users.id'],
                 subQuery: false,
                 order: [["id", "DESC"]],
                 distinct: true,
@@ -155,7 +154,8 @@ module.exports = {
                 };
             });
 
-            return helper.success(res, "All coaches Detail", {
+
+            return helper.success(res, "All drivers Detail", {
                 data: formattedRows,
                 currentPage: page,
                 totalPages: Math.ceil(count.length / limit),
@@ -165,7 +165,4 @@ module.exports = {
             return helper.error(res, error.message);
         }
     },
-   
-  
-
 }

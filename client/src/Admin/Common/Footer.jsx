@@ -20,10 +20,10 @@ const Footer = () => {
         <Link
           to="/dashboard"
           rel="nofollow noopener noreferrer"
-          title="Crewed"
+          title="Carim"
           style={{ textDecoration: "none", color: "#007bff" }}
         >
-          Crewed
+          Carim
         </Link>
         . All rights reserved.
       </span>

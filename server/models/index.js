@@ -60,8 +60,18 @@ db.bookings.belongsTo(db.users, { foreignKey: 'driverId', as: 'driverbook' });
 
 
 
-//ratings
+// In your associations file where you define relationships
+db.users.hasMany(db.reviewrating, { foreignKey: 'ratedTo', as: 'receivedRatings' });
 db.reviewrating.belongsTo(db.users, { foreignKey: 'ratedBy', as: 'ratedby' });
 db.reviewrating.belongsTo(db.users, { foreignKey: 'ratedTo', as: 'ratedto' });
 db.reviewrating.belongsTo(db.bookings, { foreignKey: 'bookingId', as: 'ratedbooking' });
 
+//report associations 
+db.reports.belongsTo(db.users, { foreignKey: 'reportBy', as: 'reportedby' });
+db.reports.belongsTo(db.users, { foreignKey: 'reportTo', as: 'reportedto' });
+db.reports.belongsTo(db.bookings, { foreignKey: 'bookingId', as: 'reportedbooking' });
+
+//transaction associations
+db.transactions.belongsTo(db.users, { foreignKey: 'userId', as: 'usertransaction' });
+db.transactions.belongsTo(db.users, { foreignKey: 'driverId', as: 'drivertransaction' });
+db.transactions.belongsTo(db.bookings, { foreignKey: 'BookingId', as: 'bookingtransaction' });

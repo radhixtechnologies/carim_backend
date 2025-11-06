@@ -161,10 +161,7 @@ const Login = () => {
               LOG IN
             </button>
 
-            <div className="text-center mt-3 ">
-              <span className="text-white ">Don't have an account? </span>
-              <Link to="/registration"> Register here </Link>
-            </div>
+            
           </div>
         </div>
       </div>
