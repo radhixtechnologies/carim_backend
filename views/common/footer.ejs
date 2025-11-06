@@ -1,0 +1,99 @@
+<script src="assets/libs/jquery/jquery.min.js"></script>
+<script src="assets/libs/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="assets/libs/metismenu/metisMenu.min.js"></script>
+<script src="assets/libs/simplebar/simplebar.min.js"></script>
+<script src="assets/libs/apexcharts/apexcharts.min.js"></script>
+<script src="assets/libs/magnific-popup/magnific-popup.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.touchswipe/1.6.19/jquery.touchSwipe.min.js"></script>
+<script src="assets/libs/select2/select2.min.js"></script>
+
+<!-- App js -->
+<script src="assets/js/app.js"></script>
+
+<script>
+  const scrollRoom = document.getElementById('scrollRoom');
+  let isDown = false;
+  let startX;
+  let scrollLeft;
+
+  scrollRoom.addEventListener('mousedown', (e) => {
+    isDown = true;
+    scrollRoom.style.cursor = 'grabbing';
+    startX = e.pageX - scrollRoom.offsetLeft;
+    scrollLeft = scrollRoom.scrollLeft;
+  });
+
+  scrollRoom.addEventListener('mouseleave', () => {
+    isDown = false;
+    scrollRoom.style.cursor = 'grab';
+  });
+
+  scrollRoom.addEventListener('mouseup', () => {
+    isDown = false;
+    scrollRoom.style.cursor = 'grab';
+  });
+
+  scrollRoom.addEventListener('mousemove', (e) => {
+    if (!isDown) return;
+    e.preventDefault();
+    const x = e.pageX - scrollRoom.offsetLeft;
+    const walk = (x - startX) * 2; // Adjust multiplier for faster/slower scrolling
+    scrollRoom.scrollLeft = scrollLeft - walk;
+  });
+</script>
+<script>
+  $(document).ready(function () {
+    var magnificPopupGalleryConfig = {
+      type: 'image',
+      gallery: {
+        enabled: true
+      },
+      zoom: {
+        enabled: true,
+        duration: 300,
+        easing: 'ease-in-out',
+        opener: function (openerElement) {
+          return openerElement.is('img') ? openerElement : openerElement.find('img');
+        }
+      },
+      callbacks: {
+        open: function () {
+          // Enable swipe on the popup content
+          $(this.content).swipe({
+            swipeLeft: function () {
+              $.magnificPopup.instance.next();
+            },
+            swipeRight: function () {
+              $.magnificPopup.instance.prev();
+            },
+            threshold: 50 // Minimum swipe distance
+          });
+        },
+        close: function () {
+          // Destroy swipe events when popup closes
+          if (this.content) {
+            $(this.content).swipe("destroy");
+          }
+        }
+      }
+    };
+    $('.image-popup-gallery-item').magnificPopup(magnificPopupGalleryConfig);
+  });
+</script>
+
+
+
+<!-- App js -->
+<script src="assets/js/app.js"></script>
+<script>
+  $(document).ready(function () {
+    $('.toggle-password').on('click', function () {
+      var input = $(this).siblings('input');
+      var type = input.attr('type') === 'password' ? 'text' : 'password';
+      input.attr('type', type);
+
+      // Toggle eye icon if desired (optional)
+      $(this).toggleClass('ri-eye-off-fill ri-eye-fill');
+    });
+  });
+</script>

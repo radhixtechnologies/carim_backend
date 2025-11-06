@@ -1,0 +1,199 @@
+<%- include("../common/header.ejs") %>
+    <%- include("../common/sidebar.ejs") %>
+
+        <div class="main-content">
+            <div class="page-content">
+                <div class="container-fluid">
+                    <div class="title-box mb-3 pb-1">
+                        <h4 class="mb-0 page-title">Users Listing</h4>
+                        <nav aria-label="breadcrumb" class="mt-1">
+                            <ol class="breadcrumb mb-0">
+                                <li class="breadcrumb-item">
+                                    <a href="/dashboard"><i class="ri-home-4-fill me-1"></i> Dashboard</a>
+                                </li>
+                                <li class="breadcrumb-item active" aria-current="page">Users Listing</li>
+                            </ol>
+                        </nav>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-body cusbar">
+                            <div class="table-responsive table-card bdgeroom border-top">
+                                <div data-simplebar style="height: 532px" class="cus-scroll scmob">
+                                    <table class="table table-centered cus-nowrap align-middle mb-0 hltr">
+                                        <thead>
+                                            <tr>
+                                                <th>Sr No</th>
+                                                <th>Name</th>
+                                                <th>Image</th>
+                                                <th>Email</th>
+                                                <th>Phone</th>
+                                                <th>Status</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% if (userData && userData.length> 0) { %>
+                                                <% userData.forEach((user,index)=> { %>
+                                                    <tr data-id="<%= user.id %>">
+                                                        <td>
+                                                             <%= index + 1 %>
+                                                        </td>
+                                                        <td>
+                                                            <%= user.name %>
+                                                        </td>
+                                                        <td>
+                                                            <img src="<%= user.image %>" class="rounded-circle"
+                                                                height="35" width="35" />
+                                                        </td>
+                                                        <td>
+                                                            <%= user.email %>
+                                                        </td>
+                                                        <td>+<%= user.countryCode %>
+                                                                <%= user.phone %>
+                                                        </td>
+                                                        <td>
+                                                            <%= user.status==1 ? "Active" : "Inactive" %>
+                                                        </td>
+                                                        <td class="text-center">
+                                                            <div class="d-flex justify-content-center">
+                                                                <!-- View Button -->
+                                                                <button type="button"
+                                                                    class="btn btn-soft-primary px-2 btn-sm me-1 viewBtn"
+                                                                    data-bs-toggle="offcanvas"
+                                                                    data-bs-target="#view-details"
+                                                                    data-image="<%= user.image ? user.image : '/assets/images/users/avatar-1.jpg' %>"
+                                                                    data-name="<%= user.name %>"
+                                                                    data-email="<%= user.email %>"
+                                                                    data-phone="+<%= user.countryCode %> <%= user.phone %>"
+                                                                    data-status="<%= user.status === 1 ? 'Active' : 'Inactive' %>"
+                                                                    data-description="<%= user.description ? user.description : 'No bio available.' %>">
+                                                                    <i class="ri-eye-fill font-size-16"></i>
+                                                                </button>
+
+                                                                <!-- Delete Button -->
+                                                                <button type="button"
+                                                                    class="btn btn-soft-danger px-2 btn-sm deleteBtn"
+                                                                    data-bs-toggle="modal" data-bs-target="#removeModal"
+                                                                    data-id="<%= user.id %>">
+                                                                    <i class="ri-delete-bin-line font-size-16"></i>
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    <% }) %>
+                                                        <% } else { %>
+                                                            <tr>
+                                                                <td colspan="6" class="text-center text-muted">No users
+                                                                    found.</td>
+                                                            </tr>
+                                                            <% } %>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Offcanvas for User Details -->
+                    <div class="offcanvas offcanvas-end rdetails" tabindex="-1" id="view-details">
+                        <div class="offcanvas-header d-block">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <h5 class="offcanvas-title fw-semibold">User Details</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+                            </div>
+                        </div>
+                        <div class="offcanvas-body">
+                            <div class="text-center">
+                                <img id="vImage" src="" class="rounded-circle mb-3" width="80">
+                            </div>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td>Name:</td>
+                                    <td id="vName" class="text-end fw-medium"></td>
+                                </tr>
+                                <tr>
+                                    <td>Email:</td>
+                                    <td id="vEmail" class="text-end fw-medium"></td>
+                                </tr>
+                                <tr>
+                                    <td>Phone:</td>
+                                    <td id="vPhone" class="text-end fw-medium"></td>
+                                </tr>
+                                <tr>
+                                    <td>Status:</td>
+                                    <td id="vStatus" class="text-end fw-medium"></td>
+                                </tr>
+                            </table>
+                            <hr>
+                            <div class="fw-bold">Bio</div>
+                            <p id="vdescription"></p>
+                        </div>
+                    </div>
+
+                    <!-- Delete Confirmation Modal -->
+                    <div class="modal fade" id="removeModal" tabindex="-1" aria-labelledby="removeModalLabel"
+                        aria-hidden="true">
+                        <div class="modal-dialog modal-sm modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-body text-center dlnotr">
+                                  
+                                    <h5 class="mt-3">Delete User?</h5>
+                                    <p class="text-muted">Are you sure you want to delete this user ?</p>
+                                    <div class="d-flex justify-content-center">
+                                        <button type="button" class="btn btn-primary py-2 me-2"
+                                            data-bs-dismiss="modal">Cancel</button>
+                                        <button type="button" class="btn btn-danger py-2"
+                                            id="confirmDelete">Yes</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <%- include("../common/footer.ejs") %>
+
+            <script>
+                let deleteId = null;
+
+                // ✅ Show details in offcanvas
+                $(".viewBtn").click(function () {
+                    const image = $(this).data("image");
+                    const name = $(this).data("name");
+                    const email = $(this).data("email");
+                    const phone = $(this).data("phone");
+                    const status = $(this).data("status");
+                    const description = $(this).data("description");
+
+                    $("#vImage").attr("src", image);
+                    $("#vName").text(name);
+                    $("#vEmail").text(email);
+                    $("#vPhone").text(phone);
+                    $("#vStatus").text(status);
+                    $("#vdescription").text(description);
+                });
+
+                // ✅ Delete confirmation setup
+                $(".deleteBtn").click(function () {
+                    deleteId = $(this).data("id");
+                });
+
+                $("#confirmDelete").click(function () {
+                    if (!deleteId) return;
+                    $.ajax({
+                        url: `/deleteUser/${deleteId}`,
+                        method: "POST",
+                        success: function (res) {
+                            if (res.success) {
+                                $("#removeModal").modal("hide");
+                                location.reload();
+                            }
+                        },
+
+                    });
+                });
+            </script>

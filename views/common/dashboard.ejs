@@ -1,0 +1,228 @@
+<%- include("../common/header.ejs") %>
+    <%- include("../common/sidebar.ejs") %>
+
+        <div class="main-content">
+
+            <div class="page-content">
+                <div class="container-fluid">
+                    <div class="title-box mb-3 pb-1">
+                        <h4 class="mb-0 page-title">Dashboard</h4>
+                        <nav aria-label="breadcrumb" class="mt-1">
+                            <ol class="breadcrumb mb-0">
+
+                                <li class="breadcrumb-item active" aria-current="page"><i
+                                        class="ri-pie-chart-2-fill me-1"></i> Dashboard</li>
+                            </ol>
+                        </nav>
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-9">
+                            <div class="card key-matrix">
+                                <div class="card-body pb-0">
+
+                                    <div class="row gx-3">
+                                        <div class="col">
+                                            <div class="card bg-soft-blue">
+                                                <div class="card-body" style="padding-bottom: 13px;">
+                                                    <div class="icon-font">
+                                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                                            xmlns="http://www.w3.org/2000/svg">
+                                                            <path
+                                                                d="M16 17V19H2V17C2 17 2 13 9 13C16 13 16 17 16 17ZM12.5 7.50004C12.5 6.8078 12.2947 6.13111 11.9101 5.55554C11.5256 4.97997 10.9789 4.53137 10.3394 4.26646C9.69985 4.00155 8.99612 3.93224 8.31718 4.06729C7.63825 4.20234 7.01461 4.53568 6.52513 5.02516C6.03564 5.51465 5.7023 6.13829 5.56725 6.81722C5.4322 7.49615 5.50152 8.19989 5.76642 8.83943C6.03133 9.47897 6.47993 10.0256 7.0555 10.4102C7.63108 10.7948 8.30777 11 9 11C9.92826 11 10.8185 10.6313 11.4749 9.97491C12.1313 9.31853 12.5 8.42829 12.5 7.50004ZM15.94 13C16.5547 13.4758 17.0578 14.0805 17.4137 14.7715C17.7696 15.4626 17.9697 16.2233 18 17V19H22V17C22 17 22 13.37 15.94 13ZM15 4.00004C14.3118 3.99684 13.6388 4.20257 13.07 4.59004C13.6774 5.43877 14.0041 6.45632 14.0041 7.50004C14.0041 8.54375 13.6774 9.5613 13.07 10.41C13.6388 10.7975 14.3118 11.0032 15 11C15.9283 11 16.8185 10.6313 17.4749 9.97491C18.1313 9.31853 18.5 8.42829 18.5 7.50004C18.5 6.57178 18.1313 5.68154 17.4749 5.02516C16.8185 4.36879 15.9283 4.00004 15 4.00004Z"
+                                                                fill="white" />
+                                                        </svg>
+                                                    </div>
+                                                    <div>
+                                                        <h5 class="mb-1 mt-2 fw-semibold">
+                                                            <%= usercount %>
+                                                        </h5>
+                                                        <p class="text-muted mb-1 fw-medium font-size-15 one-ellips">
+                                                            Total Users</p>
+
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col">
+                                            <div class="card bg-soft-green">
+                                                <div class="card-body" style="padding-bottom: 13px;">
+                                                    <div class="icon-font">
+                                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                                            xmlns="http://www.w3.org/2000/svg">
+                                                            <g clip-path="url(#clip0_240_1748)">
+                                                                <path fill-rule="evenodd" clip-rule="evenodd"
+                                                                    d="M11 3.055C8.97114 3.28241 7.07978 4.19257 5.63618 5.63618C4.19257 7.07978 3.28241 8.97114 3.055 11H0V13H3.055C3.28241 15.0289 4.19257 16.9202 5.63618 18.3638C7.07978 19.8074 8.97114 20.7176 11 20.945V24H13V20.945C15.0289 20.7176 16.9202 19.8074 18.3638 18.3638C19.8074 16.9202 20.7176 15.0289 20.945 13H24V11H20.945C20.7176 8.97114 19.8074 7.07978 18.3638 5.63618C16.9202 4.19257 15.0289 3.28241 13 3.055V0H11V3.055ZM12 16C13.0609 16 14.0783 15.5786 14.8284 14.8284C15.5786 14.0783 16 13.0609 16 12C16 10.9391 15.5786 9.92172 14.8284 9.17157C14.0783 8.42143 13.0609 8 12 8C10.9391 8 9.92172 8.42143 9.17157 9.17157C8.42143 9.92172 8 10.9391 8 12C8 13.0609 8.42143 14.0783 9.17157 14.8284C9.92172 15.5786 10.9391 16 12 16ZM12 14C11.4696 14 10.9609 13.7893 10.5858 13.4142C10.2107 13.0391 10 12.5304 10 12C10 11.4696 10.2107 10.9609 10.5858 10.5858C10.9609 10.2107 11.4696 10 12 10C12.5304 10 13.0391 10.2107 13.4142 10.5858C13.7893 10.9609 14 11.4696 14 12C14 12.5304 13.7893 13.0391 13.4142 13.4142C13.0391 13.7893 12.5304 14 12 14Z"
+                                                                    fill="white" />
+                                                            </g>
+                                                            <defs>
+                                                                <clipPath id="clip0_240_1748">
+                                                                    <rect width="24" height="24" fill="white" />
+                                                                </clipPath>
+                                                            </defs>
+                                                        </svg>
+                                                    </div>
+                                                    <div>
+                                                        <h5 class="mb-1 mt-2 fw-semibold">
+                                                            <%= Activeusercount %><small
+                                                                    class="font-size-15 text-muted"></small>
+                                                        </h5>
+                                                        <p class="text-muted mb-1 fw-medium font-size-15 one-ellips">
+                                                            Active Users</p>
+
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col">
+                                            <div class="card bg-soft-yellow">
+                                                <div class="card-body" style="padding-bottom: 13px;">
+                                                    <div class="icon-font">
+                                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                                            xmlns="http://www.w3.org/2000/svg">
+                                                            <path
+                                                                d="M4 21.9996V16.0746C4 15.7413 4.07933 15.4246 4.238 15.1246C4.39667 14.8246 4.61733 14.5829 4.9 14.3996L6 13.6746C6.11667 15.0746 6.3 16.2663 6.55 17.2496C6.8 18.2329 7.19167 19.3246 7.725 20.5246L4 21.9996ZM9.225 19.9996C8.64167 18.8996 8.20833 17.7329 7.925 16.4996C7.64167 15.2663 7.5 13.9913 7.5 12.6746C7.5 10.5913 7.91267 8.62894 8.738 6.78761C9.56333 4.94628 10.6507 3.55028 12 2.59961C13.35 3.54961 14.4377 4.94561 15.263 6.78761C16.0883 8.62961 16.5007 10.5919 16.5 12.6746C16.5 13.9746 16.3583 15.2373 16.075 16.4626C15.7917 17.6879 15.3583 18.8669 14.775 19.9996H9.225ZM12 12.9996C12.55 12.9996 13.021 12.8039 13.413 12.4126C13.805 12.0213 14.0007 11.5503 14 10.9996C13.9993 10.4489 13.8037 9.97828 13.413 9.58761C13.0223 9.19694 12.5513 9.00094 12 8.99961C11.4487 8.99828 10.978 9.19428 10.588 9.58761C10.198 9.98094 10.002 10.4516 10 10.9996C9.998 11.5476 10.194 12.0186 10.588 12.4126C10.982 12.8066 11.4527 13.0023 12 12.9996ZM20 21.9996L16.275 20.5246C16.8083 19.3246 17.2 18.2329 17.45 17.2496C17.7 16.2663 17.8833 15.0746 18 13.6746L19.1 14.3996C19.3833 14.5829 19.6043 14.8246 19.763 15.1246C19.9217 15.4246 20.0007 15.7413 20 16.0746V21.9996Z"
+                                                                fill="white" />
+                                                        </svg>
+                                                    </div>
+                                                    <div>
+                                                        <h5 class="mb-1 mt-2 fw-semibold">
+                                                            <%= drivercount %>
+                                                        </h5>
+                                                        <p class="text-muted mb-1 fw-medium font-size-15 one-ellips">
+                                                            Total Driver</p>
+
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col">
+                                            <div class="card bg-soft-green">
+                                                <div class="card-body" style="padding-bottom: 13px;">
+                                                    <div class="icon-font">
+                                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                                            xmlns="http://www.w3.org/2000/svg">
+                                                            <g clip-path="url(#clip0_240_1748)">
+                                                                <path fill-rule="evenodd" clip-rule="evenodd"
+                                                                    d="M11 3.055C8.97114 3.28241 7.07978 4.19257 5.63618 5.63618C4.19257 7.07978 3.28241 8.97114 3.055 11H0V13H3.055C3.28241 15.0289 4.19257 16.9202 5.63618 18.3638C7.07978 19.8074 8.97114 20.7176 11 20.945V24H13V20.945C15.0289 20.7176 16.9202 19.8074 18.3638 18.3638C19.8074 16.9202 20.7176 15.0289 20.945 13H24V11H20.945C20.7176 8.97114 19.8074 7.07978 18.3638 5.63618C16.9202 4.19257 15.0289 3.28241 13 3.055V0H11V3.055ZM12 16C13.0609 16 14.0783 15.5786 14.8284 14.8284C15.5786 14.0783 16 13.0609 16 12C16 10.9391 15.5786 9.92172 14.8284 9.17157C14.0783 8.42143 13.0609 8 12 8C10.9391 8 9.92172 8.42143 9.17157 9.17157C8.42143 9.92172 8 10.9391 8 12C8 13.0609 8.42143 14.0783 9.17157 14.8284C9.92172 15.5786 10.9391 16 12 16ZM12 14C11.4696 14 10.9609 13.7893 10.5858 13.4142C10.2107 13.0391 10 12.5304 10 12C10 11.4696 10.2107 10.9609 10.5858 10.5858C10.9609 10.2107 11.4696 10 12 10C12.5304 10 13.0391 10.2107 13.4142 10.5858C13.7893 10.9609 14 11.4696 14 12C14 12.5304 13.7893 13.0391 13.4142 13.4142C13.0391 13.7893 12.5304 14 12 14Z"
+                                                                    fill="white" />
+                                                            </g>
+                                                            <defs>
+                                                                <clipPath id="clip0_240_1748">
+                                                                    <rect width="24" height="24" fill="white" />
+                                                                </clipPath>
+                                                            </defs>
+                                                        </svg>
+                                                    </div>
+                                                    <div>
+                                                        <h5 class="mb-1 mt-2 fw-semibold">
+                                                            <%= ActiveDrivercount %><small
+                                                                    class="font-size-15 text-muted"></small>
+                                                        </h5>
+                                                        <p class="text-muted mb-1 fw-medium font-size-15 one-ellips">
+                                                            Active Driver</p>
+
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col">
+                                            <div class="card bg-soft-pink">
+                                                <div class="card-body" style="padding-bottom: 13px;">
+                                                    <div class="icon-font">
+                                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                                            xmlns="http://www.w3.org/2000/svg">
+                                                            <path
+                                                                d="M6.00008 2H8.09208L5.99408 8H2.38208L5.10608 2.552C5.18921 2.38611 5.31686 2.24662 5.47474 2.14913C5.63263 2.05164 5.81452 2.00001 6.00008 2ZM2.45408 10L8.48208 19.374L5.94008 10H2.45408ZM8.01208 10L11.0721 21.29C11.1263 21.4947 11.2467 21.6758 11.4146 21.805C11.5824 21.9342 11.7883 22.0042 12.0001 22.0042C12.2119 22.0042 12.4177 21.9342 12.5856 21.805C12.7534 21.6758 12.8739 21.4947 12.9281 21.29L15.9961 10H8.01208ZM18.0681 10L15.5201 19.37L21.5461 10H18.0681ZM21.6181 8H18.0121L15.9121 2H18.0001C18.186 1.99964 18.3683 2.0511 18.5266 2.1486C18.6848 2.24611 18.8128 2.3858 18.8961 2.552L21.6181 8ZM15.8941 8H8.11408L10.2101 2H13.7901L15.8941 8Z"
+                                                                fill="white" />
+                                                        </svg>
+                                                    </div>
+                                                    <div>
+                                                        <h5 class="mb-1 mt-2 fw-semibold text-dark">
+                                                            <%= contactCount %>
+                                                        </h5>
+                                                        <p class="text-muted mb-1 fw-medium font-size-15 one-ellips">
+                                                            Contact Us </p>
+
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col">
+                                            <div class="card bg-soft-red">
+                                                <div class="card-body" style="padding-bottom: 13px;">
+                                                    <div class="icon-font">
+                                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                                            xmlns="http://www.w3.org/2000/svg">
+                                                            <path
+                                                                d="M14 11V17M10 11V17M6 7V19C6 19.5304 6.21071 20.0391 6.58579 20.4142C6.96086 20.7893 7.46957 21 8 21H16C16.5304 21 17.0391 20.7893 17.4142 20.4142C17.7893 20.0391 18 19.5304 18 19V7M4 7H20M7 7L9 3H15L17 7"
+                                                                stroke="white" stroke-width="2.5" stroke-linecap="round"
+                                                                stroke-linejoin="round" />
+                                                        </svg>
+                                                    </div>
+                                                    <div>
+                                                        <h5 class="mb-1 mt-2 fw-semibold">
+                                                            <%=reportCount %>
+                                                        </h5>
+                                                        <p class="text-muted mb-1 fw-medium font-size-15 one-ellips">
+                                                            Reports</p>
+
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col">
+                                            <div class="card bg-soft-red">
+                                                <div class="card-body" style="padding-bottom: 13px;">
+                                                    <div class="icon-font">
+                                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                                            xmlns="http://www.w3.org/2000/svg">
+                                                            <path
+                                                                d="M14 11V17M10 11V17M6 7V19C6 19.5304 6.21071 20.0391 6.58579 20.4142C6.96086 20.7893 7.46957 21 8 21H16C16.5304 21 17.0391 20.7893 17.4142 20.4142C17.7893 20.0391 18 19.5304 18 19V7M4 7H20M7 7L9 3H15L17 7"
+                                                                stroke="white" stroke-width="2.5" stroke-linecap="round"
+                                                                stroke-linejoin="round" />
+                                                        </svg>
+                                                    </div>
+                                                    <div>
+                                                        <h5 class="mb-1 mt-2 fw-semibold">
+                                                            <%=faqCount %>
+                                                        </h5>
+                                                        <p class="text-muted mb-1 fw-medium font-size-15 one-ellips">
+                                                            Faqs</p>
+
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div> <!-- end col-->
+                    </div> <!-- end row-->
+
+
+
+                </div>
+            </div>
+        </div>
+
+        <!-- JAVASCRIPT -->
+        <script src="assets/libs/jquery/jquery.min.js"></script>
+        <script src="assets/libs/bootstrap/js/bootstrap.bundle.min.js"></script>
+        <script src="assets/libs/metismenu/metisMenu.min.js"></script>
+        <script src="assets/libs/simplebar/simplebar.min.js"></script>
+        <script src="assets/libs/apexcharts/apexcharts.min.js"></script>
+        <script src="assets/libs/jsvectormap/jsvectormap.min.js"></script>
+        <script src="assets/libs/jsvectormap/us-merc-en.js"></script>
+        <script src="assets/libs/select2/select2.min.js"></script>
+
+        <!-- Dashboard Init JS -->
+        <script src="assets/js/pages/dashboard.init.js"></script>
+
+        <!-- App js -->
+        <script src="assets/js/app.js"></script>
+
+        </body>
+
+        </html>

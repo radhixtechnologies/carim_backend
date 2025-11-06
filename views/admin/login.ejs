@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Carim</title>
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+    <meta content="Login | carim" name="description" />
+    <!-- App favicon -->
+    <link rel="shortcut icon" href="assets/images/logo.png">
+
+    <!-- Bootstrap Css -->
+    <link href="assets/libs/bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
+    <!-- Icons Css -->
+    <link href="assets/css/icons.css" rel="stylesheet" type="text/css" />
+    <!-- App Css-->
+    <link href="assets/css/app.css" id="app-style" rel="stylesheet" type="text/css" />
+</head>
+
+<body style="background: #fff">
+    
+    <!-- Begin page -->
+    <div id="auth-wrapper">
+
+        <div class="left-auth">
+            <div class="bottom-soci mb-3">
+            </div>
+        </div>
+        <div class="right-auth">
+            <div class="flex-grow-1">
+                <div class="authtitle mb-2"><img src="assets/images/logo.png" width="55"></div>
+                <div class="text-center mb-5 fw-medium font-size-17 text-black" style="margin-top: -4px;">Admin Panel
+                </div>
+                <div class="font-size-18 fw-medium text-black">Login</div>
+                <form id="loginForm" action="/loginPost" method="post">
+                    <div class="mb-3 pt-2">
+                        <input type="email" name="email" class="form-control logform" placeholder="Email address"
+                            required>
+                    </div>
+                    <div class="mb-3">
+                        <div class="position-relative">
+                            <input type="password" name="password" class="form-control logform" placeholder="Password"
+                                id="password" required>
+                            <i class="ri-eye-off-line position-absolute" id="togglePassword"
+                                style="top: 50%; font-size: 18px; right: 14px; transform: translateY(-50%); cursor: pointer;"></i>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Sign In</button>
+                </form>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT -->
+    <script src="assets/libs/jquery/jquery.min.js"></script>
+    <script src="assets/libs/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            $('#togglePassword').on('click', function () {
+                const passwordInput = $('#password');
+                const icon = $(this);
+                const type = passwordInput.attr('type') === 'password' ? 'text' : 'password';
+                passwordInput.attr('type', type);
+
+                // Toggle icon classes
+                if (type === 'text') {
+                    icon.removeClass('ri-eye-off-line').addClass('ri-eye-line');
+                } else {
+                    icon.removeClass('ri-eye-line').addClass('ri-eye-off-line');
+                }
+            });
+        });
+    </script>
+    <script>
+        setTimeout(function () {
+            $("div.msg").fadeOut();
+        }, 1000);
+    </script>
+</body>
+
+</html>
