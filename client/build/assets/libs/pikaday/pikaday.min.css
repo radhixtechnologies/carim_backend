@@ -139,7 +139,7 @@
 .is-selected .pika-button {
     color: #fff;
     font-weight: 700;
-    background: #007bff;
+    background: #1e3308;
     border-radius: 10px;
 }
 .has-event .pika-button {
@@ -178,7 +178,7 @@
 .pika-button:hover,
 .pika-row.pick-whole-week:hover .pika-button {
     color: #fff;
-    background: #007bff;
+    background: #1e3308;
     box-shadow: none;
     border-radius: 10px;
 }

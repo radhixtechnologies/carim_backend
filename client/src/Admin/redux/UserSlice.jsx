@@ -35,7 +35,35 @@ export const toggleUserStatus = createAsyncThunk(
   }
 );
 
-const PlayerSlice = createSlice({
+export const toggleUserBlock = createAsyncThunk(
+  "users/toggleUserBlock",
+  async ({ id, currentStatus }) => {
+    const newStatus = currentStatus === "0" ? "1" : "0";
+    const response = await axiosInstance.post("/blockstatus", {
+      id,
+      block: newStatus, 
+    });
+    return response.data.success
+      ? { id, newStatus }
+      : { id, newStatus: currentStatus };
+  }
+);
+
+export const toggleUserSuspend = createAsyncThunk(
+  "users/toggleUserSuspend",
+  async ({ id, currentStatus }) => {
+    const newStatus = currentStatus === "0" ? "1" : "0";
+    const response = await axiosInstance.post("/suspendstatus", {
+      id,
+      suspend: newStatus, 
+    });
+    return response.data.success
+      ? { id, newStatus }
+      : { id, newStatus: currentStatus };
+  }
+);
+
+const UserSlice = createSlice({
   name: "users",
   initialState: {
     users: [],
@@ -72,8 +100,22 @@ const PlayerSlice = createSlice({
         if (user) {
           user.status = newStatus;
         }
+      })
+      .addCase(toggleUserBlock.fulfilled, (state, action) => {
+        const { id, newStatus } = action.payload;
+        const user = state.users.find((user) => user.id === id);
+        if (user) {
+          user.block = newStatus; 
+        }
+      })
+      .addCase(toggleUserSuspend.fulfilled, (state, action) => {
+        const { id, newStatus } = action.payload;
+        const user = state.users.find((user) => user.id === id);
+        if (user) {
+          user.suspend = newStatus; 
+        }
       });
   },
 });
 
-export default PlayerSlice.reducer;
+export default UserSlice.reducer;

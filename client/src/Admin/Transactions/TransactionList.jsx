@@ -25,25 +25,6 @@ const TransactionList = () => {
     { value: "365", label: "Last Year" },
   ];
 
-  const getRideTypeLabel = (rideType) => {
-    if (rideType === "0") return "Single Ride";
-    if (rideType === "1") return "Pool Ride";
-    return "Unknown";
-  };
-
-  const getStatusBadge = (status) => {
-    const statusMap = {
-      "0": { label: "Driver on the way", className: "bg-info" },
-      "1": { label: "Arrived", className: "bg-primary" },
-      "2": { label: "Ride Started", className: "bg-warning" },
-      "3": { label: "Completed", className: "bg-success" },
-      "4": { label: "Cancelled", className: "bg-danger" },
-      "5": { label: "Pending", className: "bg-secondary" }
-    };
-    
-    return statusMap[status] || { label: "Unknown", className: "bg-light" };
-  };
-
   useEffect(() => {
     fetchData(currentPage, searchTerm, dateFilter);
   }, [currentPage, searchTerm, dateFilter]);
@@ -51,24 +32,25 @@ const TransactionList = () => {
   const fetchData = async (page, search = "", filter = "all") => {
     try {
       const response = await axiosInstance.get(
-        `/bookinglist?page=${page}&limit=${limit}&search=${encodeURIComponent(
+        `/transactionlist?page=${page}&limit=${limit}&search=${encodeURIComponent(
           search
         )}&dateFilter=${filter}`
       );
+      console.log("Transaction List Response:", response);
       if (response.data.success) {
         setMatches(response.data.body.data);
         setTotalPages(response.data.body.totalPages);
       } else {
         Swal.fire(
           "Error",
-          response.data.message || "Failed to load bookings",
+          response.data.message || "Failed to load transactionlist",
           "error"
         );
       }
     } catch (error) {
       Swal.fire(
         "Error",
-        "An error occurred while fetching the bookings list",
+        "An error occurred while fetching the transaction list",
         "error"
       );
     }
@@ -99,17 +81,17 @@ const TransactionList = () => {
       text: "You won't be able to revert this!",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#007bff",
+      confirmButtonColor: "#1e3308",
       cancelButtonColor: "#d33",
       confirmButtonText: "Yes, delete it!",
     });
 
     if (result.isConfirmed) {
       try {
-        await axiosInstance.post(`/bookingdelete/${id}`);
+        await axiosInstance.post(`/transactiondelete/${id}`);
 
         const response = await axiosInstance.get(
-          `/bookinglist?page=${currentPage}&limit=${limit}&search=${encodeURIComponent(
+          `/transactionlist?page=${currentPage}&limit=${limit}&search=${encodeURIComponent(
             searchTerm
           )}&dateFilter=${dateFilter}`
         );
@@ -124,17 +106,17 @@ const TransactionList = () => {
             setTotalPages(newTotalPages);
           }
 
-          Swal.fire("Deleted!", "Booking has been deleted.", "success");
+          Swal.fire("Deleted!", "Transaction has been deleted.", "success");
         }
       } catch (error) {
         Swal.fire(
           "Error!",
-          error.response?.data?.message || "Error deleting booking",
+          error.response?.data?.message || "Error deleting Transaction",
           "error"
         );
       }
     } else {
-      Swal.fire("Cancelled", "Booking deletion has been cancelled", "info");
+      Swal.fire("Cancelled", "Transaction deletion has been cancelled", "info");
     }
   };
 
@@ -149,7 +131,7 @@ const TransactionList = () => {
           <div className="page-content">
             <div className="container-fluid">
               <div className="title-box mb-3 pb-1">
-                <h4 className="mb-0 page-title">Booking List</h4>
+                <h4 className="mb-0 page-title">Transaction List</h4>
                 <nav aria-label="breadcrumb" className="mt-1">
                   <ol className="breadcrumb mb-0">
                     <li className="breadcrumb-item">
@@ -159,11 +141,11 @@ const TransactionList = () => {
                     </li>
                     <li className="breadcrumb-item">
                       <Link to="/" className="new">
-                        <i className="ri-group-2-line me-1" /> Bookings
+                        <i className="ri-group-2-line me-1" /> Transactions
                       </Link>
                     </li>
                     <li className="breadcrumb-item active" aria-current="page">
-                      Booking Listings
+                      Transaction Listings
                     </li>
                   </ol>
                 </nav>
@@ -217,7 +199,7 @@ const TransactionList = () => {
                             <th>Sr no.</th>
                             <th>User Name</th>
                             <th>Driver Name</th>
-                            <th>Price($)</th>
+                            <th>Total Amount($)</th>
                             <th>Status</th>
                             <th className="text-end">Action</th>
                           </tr>
@@ -225,20 +207,24 @@ const TransactionList = () => {
                         <tbody>
                           {matches.length > 0 ? (
                             matches.map((match, index) => {
-                              const { label, className } = getStatusBadge(match.status);
-                              
+                   
+
                               return (
                                 <tr key={match.id}>
                                   <td>
                                     {(currentPage - 1) * limit + index + 1}
                                   </td>
-                                  <td>{match.userbook?.name || "N/A"}</td>
-                                  <td>{match.driverbook?.name || "N/A"}</td>
-                                  <td>{match.bookingPrice || "0"}</td>
+                                  <td>{match.usertransaction?.name || "N/A"}</td>
+                                  <td>{match.drivertransaction?.name || "N/A"}</td>
+                                  <td>${match.totalAmount || "0"}</td>
                                   <td>
-                                    <span className={`badge ${className}`}>
-                                      {label}
-                                    </span>
+                                    {match.paymentStatus === "0"
+                                      ? "Pending"
+                                      : match.paymentStatus === "1"
+                                      ? "Success"
+                                      : match.paymentStatus === "2"
+                                      ? "Failed"
+                                      : ""}
                                   </td>
                                   <td>
                                     <div className="d-flex justify-content-end">
@@ -276,7 +262,7 @@ const TransactionList = () => {
                                 colSpan="7"
                                 style={{ textAlign: "center", padding: "20px" }}
                               >
-                                No bookings found
+                                No transactions found
                               </td>
                             </tr>
                           )}
@@ -318,7 +304,7 @@ const TransactionList = () => {
                 className="offcanvas-title mb-0 me-3 fw-semibold"
                 id="offcanvasRightLabel"
               >
-                Booking Details
+                Transaction Details
               </h5>
             </div>
             <button
@@ -338,7 +324,7 @@ const TransactionList = () => {
               >
                 <tbody>
                   <tr>
-                    <td>Booking ID :</td>
+                    <td>Transaction ID :</td>
                     <td className="text-end text-black fw-medium">
                       {selectedMatch.id}
                     </td>
@@ -346,41 +332,61 @@ const TransactionList = () => {
                   <tr>
                     <td>User Name :</td>
                     <td className="text-end text-black fw-medium">
-                      {selectedMatch.userbook?.name || "N/A"}
+                      {selectedMatch.usertransaction?.name || "N/A"}
                     </td>
                   </tr>
                   <tr>
                     <td>Driver Name:</td>
                     <td className="text-end text-black fw-medium">
-                      {selectedMatch.driverbook?.name || "N/A"}
+                      {selectedMatch.drivertransaction?.name || "N/A"}
                     </td>
                   </tr>
-                  
+
                   <tr>
-                    <td>Price:</td>
+                    <td>Total Price:</td>
                     <td className="text-end text-black fw-medium">
-                      ${selectedMatch.bookingPrice || "0"}
+                      ${selectedMatch.totalAmount || "0"}
                     </td>
                   </tr>
                   <tr>
-                    <td>Booking Date:</td>
+                    <td>Transaction ID:</td>
                     <td className="text-end text-black fw-medium">
-                      {selectedMatch.bookingDate || "N/A"}
+                      {selectedMatch.trasactionid || "N/A"}
                     </td>
                   </tr>
-                
+                  <tr>
+                    <td>Booking ID:</td>
+                    <td className="text-end text-black fw-medium">
+                      {selectedMatch.transactionbooking?.id || ""}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Stripe Charge</td>
+                    <td className="text-end text-black fw-medium">
+                      ${selectedMatch.stripeCharge || "0"}
+                    </td>
+                  </tr>
+
                   <tr>
                     <td>Payment Method:</td>
                     <td className="text-end text-black fw-medium">
-                      {selectedMatch.paymentMethod === "0" ? "Cash" : selectedMatch.paymentMethod === "1" ? "Online" : "N/A"}
+                      {selectedMatch.paymentMethod === "0"
+                        ? "Cash"
+                        : selectedMatch.paymentMethod === "1"
+                        ? "Online"
+                        : "N/A"}
                     </td>
                   </tr>
                   <tr>
-                    <td>Status :</td>
+                    <td>Payment Status :</td>
                     <td className="text-end text-black fw-medium">
-                      <span className={`badge ${getStatusBadge(selectedMatch.status).className}`}>
-                        {getStatusBadge(selectedMatch.status).label}
-                      </span>
+                      {selectedMatch.paymentStatus === "0"
+                        ? "Pending"
+                        : selectedMatch.paymentStatus === "1"
+                        ? "Success"
+                        : selectedMatch.paymentStatus === "2"
+                        ? "Failed"
+                        : ""}
                     </td>
                   </tr>
                 </tbody>
@@ -389,7 +395,7 @@ const TransactionList = () => {
           ) : (
             <div className="text-center py-5">
               <i className="ri-user-line font-size-48 text-muted"></i>
-              <p className="mt-3 text-muted">No booking selected</p>
+              <p className="mt-3 text-muted">No transaction selected</p>
             </div>
           )}
         </div>

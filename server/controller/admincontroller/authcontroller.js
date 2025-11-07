@@ -40,7 +40,7 @@ module.exports = {
                     id: userData.id,
                     name: userData.name,
                     email: userData.email,
-                    role: userData.role 
+                    role: userData.role
                 },
                 secret,
             );
@@ -142,7 +142,7 @@ module.exports = {
         try {
             let player = await db.users.count({ where: { role: "1" } });
             let coach = await db.users.count({ where: { role: "2" } });
-            
+
             let booking = await db.bookings.count();
             let rating = await db.reviewrating.count();
             let contact = await db.contactus.count();
@@ -151,7 +151,7 @@ module.exports = {
             return helper.success(res, "Dashboard data fetched successfully", {
                 player,
                 coach,
-               
+
                 booking,
                 rating,
                 contact,
@@ -203,7 +203,65 @@ module.exports = {
             return helper.error(res, "Error fetching chart data", error);
         }
     },
-  
+    AdminBank: async (req, res) => {
+        try {
+            const userId = req.admin.id;
 
+            const find_user = await db.users.findOne({
+                where: { id: userId },
+                include: [
+                    {
+                        model: db.userBanks,
+                        as: 'banks',
+                        required: false,
+                    },
+                ],
+            });
 
+            if (!find_user) {
+                return helper.error(res, "User not found");
+            }
+
+            const bankData = find_user.banks && find_user.banks.length > 0 ? find_user.banks[0] : {};
+
+            return helper.success(res, "Bank Detail fetched successfully", { bankuser: bankData });
+        } catch (error) {
+            return helper.error(res, error.message);
+        }
+    },
+    updateBankDetails: async (req, res) => {
+        try {
+            const userId = req.admin.id;
+            const {
+                accountType, bankName, accountCountry, currency, currencyCountry, sortCode,
+                accountName, accountNumber, accountOwnerInfo, holderName, city, address, postalCode, isDefault
+            } = req.body;
+
+            if (!bankName || !accountNumber || !holderName) {
+                return helper.error(res, "Bank name, account number, and holder name are required");
+            }
+
+            let bankDetails = await db.userBanks.findOne({ where: { userId } });
+
+            if (bankDetails) {
+                await db.userBanks.update(
+                    {
+                        accountType, bankName, accountCountry, currency, currencyCountry, sortCode,
+                        accountName, accountNumber, accountOwnerInfo, holderName, city, address, postalCode, isDefault
+                    },
+                    { where: { userId } }
+                );
+            } else {
+                await db.userBanks.create({
+                    userId, accountType, bankName, accountCountry, currency, currencyCountry, sortCode,
+                    accountName, accountNumber, accountOwnerInfo, holderName, city, address, postalCode, isDefault
+                });
+            }
+
+            const updatedBankDetails = await db.userBanks.findOne({ where: { userId } });
+            return helper.success(res, "Bank details updated successfully", updatedBankDetails);
+        } catch (error) {
+            return helper.error(res, error.message);
+        }
+    }
 }

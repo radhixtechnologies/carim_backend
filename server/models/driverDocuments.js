@@ -1,13 +1,13 @@
 const Sequelize = require('sequelize');
 module.exports = function (sequelize, DataTypes) {
-    return sequelize.define('tutorialImages', {
+    return sequelize.define('driverDocuments', {
         id: {
             autoIncrement: true,
             type: DataTypes.INTEGER,
             allowNull: false,
             primaryKey: true
         },
-        tutorialId: {
+        driverId: {
             type: DataTypes.INTEGER,
             allowNull: false,
             defaultValue: 0
@@ -19,17 +19,7 @@ module.exports = function (sequelize, DataTypes) {
         },
     }, {
         sequelize,
-        tableName: 'tutorialImages',
+        tableName: 'driverDocuments',
         timestamps: true,
-        indexes: [
-            {
-                name: "PRIMARY",
-                unique: true,
-                using: "BTREE",
-                fields: [
-                    { name: "id" },
-                ]
-            },
-        ]
     });
 };

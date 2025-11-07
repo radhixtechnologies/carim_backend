@@ -80,7 +80,7 @@ const ReportList = () => {
       text: "You won't be able to revert this!",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#007bff",
+      confirmButtonColor: "#1e3308",
       cancelButtonColor: "#d33",
       confirmButtonText: "Yes, delete it!",
     });

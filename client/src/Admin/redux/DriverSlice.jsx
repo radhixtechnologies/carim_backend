@@ -7,7 +7,7 @@ export const fetchUsers = createAsyncThunk(
     const response = await axiosInstance.get(
       `/driverlist?page=${page}&limit=${limit}&search=${encodeURIComponent(
         search
-      )}&dateFilter=${dateFilter}` 
+      )}&dateFilter=${dateFilter}`
     );
     return {
       users: response.data.body.data,
@@ -32,6 +32,43 @@ export const toggleUserStatus = createAsyncThunk(
     return response.data.success
       ? { id, newStatus }
       : { id, newStatus: currentStatus };
+  }
+);
+export const toggleUserBlock = createAsyncThunk(
+  "users/toggleUserBlock",
+  async ({ id, currentStatus }) => {
+    const newStatus = currentStatus === "0" ? "1" : "0";
+    const response = await axiosInstance.post("/blockstatus", {
+      id,
+      block: newStatus,
+    });
+    return response.data.success
+      ? { id, newStatus }
+      : { id, newStatus: currentStatus };
+  }
+);
+
+export const toggleUserSuspend = createAsyncThunk(
+  "users/toggleUserSuspend",
+  async ({ id, currentStatus }) => {
+    const newStatus = currentStatus === "0" ? "1" : "0";
+    const response = await axiosInstance.post("/suspendstatus", {
+      id,
+      suspend: newStatus,
+    });
+    return response.data.success
+      ? { id, newStatus }
+      : { id, newStatus: currentStatus };
+  }
+);
+export const approveDriver = createAsyncThunk(
+  "users/approveDriver",
+  async ({ id, approve }) => {
+    const response = await axiosInstance.post("/approveDriver", {
+      id,
+      approve,
+    });
+    return response.data;
   }
 );
 
@@ -71,6 +108,27 @@ const DriverSlice = createSlice({
         const user = state.users.find((user) => user.id === id);
         if (user) {
           user.status = newStatus;
+        }
+      })
+      .addCase(toggleUserBlock.fulfilled, (state, action) => {
+        const { id, newStatus } = action.payload;
+        const user = state.users.find((user) => user.id === id);
+        if (user) {
+          user.block = newStatus;
+        }
+      })
+      .addCase(toggleUserSuspend.fulfilled, (state, action) => {
+        const { id, newStatus } = action.payload;
+        const user = state.users.find((user) => user.id === id);
+        if (user) {
+          user.suspend = newStatus;
+        }
+      })
+      .addCase(approveDriver.fulfilled, (state, action) => {
+        const { id, approve } = action.payload;
+        const user = state.users.find((user) => user.id === id);
+        if (user) {
+          user.approve = approve;
         }
       });
   },

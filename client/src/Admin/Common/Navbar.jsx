@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import { axiosInstance, BASE_URL } from "../../Config";
 import Swal from "sweetalert2";
-import { Lock, LogOut } from "react-feather";
+import {  CreditCard, Lock, LogOut } from "react-feather";
 
 function Navbar({ toggleSidebar }) {
   const location = useLocation();
@@ -86,7 +86,7 @@ function Navbar({ toggleSidebar }) {
       text: "You will be logged out of your account.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#007bff",
+      confirmButtonColor: "#1e3308",
       cancelButtonColor: "#d33",
       confirmButtonText: "Yes, log out!",
     });
@@ -317,18 +317,18 @@ function Navbar({ toggleSidebar }) {
                     </div>
                   </div>
                   <div className="dropplink font-size-15 mt-2">
-                    {/* <Link
-                      to="/profile"
+                    <Link
+                      to="/bankdetail"
                       className="d-block text-lowdark pb-2 ps-3 pt-2"
                       style={{ borderTop: "1px solid #e9ecf0" }}
                       onClick={closeDropdown}
                     >
-                      <Edit
+                      <CreditCard
                         className="align-middle me-1"
                         style={{ fontSize: "10px" }}
                       />
-                      <span>Profile Settings</span>
-                    </Link> */}
+                      <span>Bank Settings</span>
+                    </Link>
                     <Link
                       to="/password"
                       className="d-block text-lowdark pb-2 ps-3 pt-2"

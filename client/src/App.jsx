@@ -23,6 +23,9 @@ import BannerList from './Admin/Banners/BannnerList';
 import BannerAdd from './Admin/Banners/BannerAdd';
 import BannerEdit from './Admin/Banners/BannerEdit';
 import TransactionList from './Admin/Transactions/TransactionList';
+import DriverDocuments from './Admin/Drivers/DriverDocuments';
+import AdminBank from './Admin/AdminBank';
+import ActiveBookingList from './Admin/Bookings/ActiveBookingList';
 
 
 const App = () => {
@@ -65,12 +68,15 @@ const App = () => {
             <Route path="/addfaq" element={<PrivateRoute element={<FaqAdd />} />} />
             <Route path="/updatefaq/:id" element={<PrivateRoute element={<FaqEdit />} />} />
             <Route path="/bookinglist" element={<PrivateRoute element={<BookingList />} />} />
+            <Route path="/activebookinglist" element={<PrivateRoute element={<ActiveBookingList />} />} />
             <Route path="/ratinglist" element={<PrivateRoute element={<RatingList />} />} />
             <Route path="/reportlist" element={<PrivateRoute element={<ReportList />} />} />
             <Route path="/bannerlist" element={<PrivateRoute element={<BannerList />} />} />
             <Route path="/addbanner" element={<PrivateRoute element={<BannerAdd />} />} />
             <Route path="/updatebanner/:id" element={<PrivateRoute element={<BannerEdit />} />} />
             <Route path="/transactionlist" element={<PrivateRoute element={<TransactionList />} />} />
+            <Route path="/documentlist" element={<PrivateRoute element={<DriverDocuments />} />} />
+            <Route path="/bankdetail" element={<PrivateRoute element={<AdminBank />} />} />
 
           </Route>
         </Routes>

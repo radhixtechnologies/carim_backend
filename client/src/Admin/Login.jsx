@@ -81,7 +81,7 @@ const Login = () => {
       <div id="auth-wrapper">
         <div className="left-auth">
           <img
-            src="assets/images/sports.jpg"
+            src="assets/images/carim3.png"
             alt="Logo"
             style={{ width: "100%", height: "100%" }}
           />
@@ -89,7 +89,7 @@ const Login = () => {
         <div className="right-auth">
           <div className="flex-grow-1">
             <div className="authtitle mb-2">
-              <img src="assets/images/Crewed.png" width={240} alt="Logo" />
+              <img src="assets/images/.png" width={240} alt="Logo" />
             </div>
             <div className="font-size-18 fw-medium text-white mt-5">Login</div>
 

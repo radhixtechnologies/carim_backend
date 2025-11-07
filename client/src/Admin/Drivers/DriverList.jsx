@@ -1,9 +1,16 @@
 import React, { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import { useSelector, useDispatch } from "react-redux";
-import { fetchUsers, deleteUser, toggleUserStatus } from "../redux/DriverSlice";
+import {
+  fetchUsers,
+  deleteUser,
+  toggleUserStatus,
+  toggleUserBlock,
+  toggleUserSuspend,
+  approveDriver,
+} from "../redux/DriverSlice";
 import { toast, ToastContainer } from "react-toastify";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import Pagination from "@mui/material/Pagination";
 import Stack from "@mui/material/Stack";
@@ -18,6 +25,8 @@ const DriverList = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const limit = 10;
   const [dateFilter, setDateFilter] = useState("all");
+
+  const navigate = useNavigate(); 
 
   const dateFilters = [
     { value: "all", label: "All Data" },
@@ -105,10 +114,76 @@ const DriverList = () => {
     }
   };
 
+  const toggleBlock = async (id, currentStatus) => {
+    try {
+      await dispatch(toggleUserBlock({ id, currentStatus })).unwrap();
+      toast.success("Block Status updated successfully");
+    } catch (error) {
+      toast.error("Failed to update block status");
+    }
+  };
+
+  const toggleSuspend = async (id, currentStatus) => {
+    try {
+      await dispatch(toggleUserSuspend({ id, currentStatus })).unwrap();
+      toast.success("Suspend Status updated successfully");
+    } catch (error) {
+      toast.error("Failed to update suspend status");
+    }
+  };
+
+  const handleApprovalChange = async (id, newApprovalStatus) => {
+    try {
+      await dispatch(
+        approveDriver({ id, approve: newApprovalStatus })
+      ).unwrap();
+      toast.success("Approval status updated successfully");
+      dispatch(
+        fetchUsers({
+          page: currentPage,
+          limit,
+          search: debouncedSearch,
+          dateFilter,
+        })
+      );
+    } catch (error) {
+      toast.error("Failed to update approval status");
+    }
+  };
+
+  const getApprovalLabel = (approve) => {
+    switch (approve) {
+      case "0":
+        return "Pending";
+      case "1":
+        return "Approved";
+      case "2":
+        return "Rejected";
+      default:
+        return "Pending";
+    }
+  };
+
+  const getApprovalClass = (approve) => {
+    switch (approve) {
+      case "0":
+        return "bg-warning text-dark";
+      case "1":
+        return "bg-success";
+      case "2":
+        return "bg-danger";
+      default:
+        return "bg-warning text-dark";
+    }
+  };
+
   const handleViewDetails = (user) => {
     setSelectedUser(user);
   };
 
+  const handleViewDocuments = (driverId) => {
+    navigate(`/documentlist?driverId=${driverId}`);
+  };
 
   const getCurrentFilterLabel = () => {
     const filter = dateFilters.find((f) => f.value === dateFilter);
@@ -132,7 +207,7 @@ const DriverList = () => {
                       </Link>
                     </li>
                     <li className="breadcrumb-item">
-                      <Link To="#" className="new">
+                      <Link to="#" className="new">
                         <i className="ri-group-2-line me-1" /> Drivers
                       </Link>
                     </li>
@@ -193,6 +268,9 @@ const DriverList = () => {
                             <th>Name</th>
                             <th>Email Address</th>
                             <th>Location</th>
+                            <th>Blocked</th>
+                            <th>Suspended</th>
+                            <th>Approved</th>
                             <th>Status</th>
                             <th className="text-end">Action</th>
                           </tr>
@@ -219,14 +297,112 @@ const DriverList = () => {
                                 </td>
                                 <td>{user.name || ""}</td>
                                 <td>{user.email || ""}</td>
-                               
                                 <td>
                                   {user.city && `${user.city} `}
                                   {user.state && `${user.state}, `}
                                   {user.country || ""}
                                 </td>
                                 <td>
-                                  <div className="form-check form-switch ">
+                                  <div className="form-check form-switch">
+                                    <input
+                                      className="form-check-input"
+                                      type="checkbox"
+                                      id={`toggleBlock${user.id}`}
+                                      checked={user.block === "1"}
+                                      onChange={() =>
+                                        toggleBlock(user.id, user.block)
+                                      }
+                                      style={{
+                                        backgroundColor:
+                                          user.block === "1"
+                                            ? "#007bff"
+                                            : "lightgray",
+                                        borderColor:
+                                          user.block === "1"
+                                            ? "#007bff"
+                                            : "lightgray",
+                                      }}
+                                    />
+                                  </div>
+                                </td>
+                                <td>
+                                  <div className="form-check form-switch">
+                                    <input
+                                      className="form-check-input"
+                                      type="checkbox"
+                                      id={`toggleSuspend${user.id}`}
+                                      checked={user.suspend === "1"}
+                                      onChange={() =>
+                                        toggleSuspend(user.id, user.suspend)
+                                      }
+                                      style={{
+                                        backgroundColor:
+                                          user.suspend === "1"
+                                            ? "#007bff"
+                                            : "lightgray",
+                                        borderColor:
+                                          user.suspend === "1"
+                                            ? "#007bff"
+                                            : "lightgray",
+                                      }}
+                                    />
+                                  </div>
+                                </td>
+                                <td>
+                                  <div className="dropdown">
+                                    <button
+                                      className={`btn btn-sm dropdown-toggle ${getApprovalClass(
+                                        user.approve
+                                      )}`}
+                                      type="button"
+                                      data-bs-toggle="dropdown"
+                                      aria-expanded="false"
+                                      style={{ minWidth: "100px" }}
+                                    >
+                                      {getApprovalLabel(user.approve)}
+                                    </button>
+                                    <ul className="dropdown-menu">
+                                      <li>
+                                        <button
+                                          className="dropdown-item"
+                                          type="button"
+                                          onClick={() =>
+                                            handleApprovalChange(user.id, "0")
+                                          }
+                                        >
+                                          <i className="ri-time-line me-2 text-warning"></i>
+                                          Pending
+                                        </button>
+                                      </li>
+                                      <li>
+                                        <button
+                                          className="dropdown-item"
+                                          type="button"
+                                          onClick={() =>
+                                            handleApprovalChange(user.id, "1")
+                                          }
+                                        >
+                                          <i className="ri-check-line me-2 text-success"></i>
+                                          Approved
+                                        </button>
+                                      </li>
+                                      <li>
+                                        <button
+                                          className="dropdown-item"
+                                          type="button"
+                                          onClick={() =>
+                                            handleApprovalChange(user.id, "2")
+                                          }
+                                        >
+                                          <i className="ri-close-line me-2 text-danger"></i>
+                                          Rejected
+                                        </button>
+                                      </li>
+                                    </ul>
+                                  </div>
+                                </td>
+                                <td>
+                                  <div className="form-check form-switch">
                                     <input
                                       className="form-check-input"
                                       type="checkbox"
@@ -257,9 +433,22 @@ const DriverList = () => {
                                       data-bs-target="#view-details"
                                       aria-controls="offcanvasRight"
                                       onClick={() => handleViewDetails(user)}
+                                      title="View Details"
                                     >
                                       <i className="ri-eye-fill font-size-16"></i>
                                     </button>
+
+                                    <button
+                                      type="button"
+                                      className="btn btn-soft-info px-2 btn-sm me-1"
+                                      onClick={() =>
+                                        handleViewDocuments(user.id)
+                                      }
+                                      title="View Documents"
+                                    >
+                                      <i className="ri-file-list-line font-size-16"></i>
+                                    </button>
+
                                     <button
                                       onClick={() => deleteUserHandler(user.id)}
                                       className="btn btn-soft-danger px-2 btn-sm"
@@ -268,9 +457,9 @@ const DriverList = () => {
                                         borderColor: "#ea5455",
                                         color: "#fff",
                                       }}
-                                      title="Delete Coach"
+                                      title="Delete Driver"
                                     >
-                                      <i className="ri-delete-bin-line font-size-16"></i>{" "}
+                                      <i className="ri-delete-bin-line font-size-16"></i>
                                     </button>
                                   </div>
                                 </td>
@@ -279,7 +468,7 @@ const DriverList = () => {
                           ) : (
                             <tr>
                               <td
-                                colSpan="7"
+                                colSpan="10"
                                 style={{ textAlign: "center", padding: "20px" }}
                               >
                                 No drivers found
@@ -288,7 +477,7 @@ const DriverList = () => {
                           )}
                         </tbody>
                       </table>
-                      <div className="d-flex justify-content-center align-items-center mt-3 ">
+                      <div className="d-flex justify-content-center align-items-center mt-3">
                         <Stack
                           spacing={2}
                           className="d-flex justify-content-center mt-3"
@@ -489,7 +678,6 @@ const DriverList = () => {
                         : "Not specified"}
                     </td>
                   </tr>
-
                   <tr>
                     <td>Location:</td>
                     <td className="text-end text-black fw-medium">
@@ -503,9 +691,50 @@ const DriverList = () => {
                       }${selectedUser.state || ""}`}
                     </td>
                   </tr>
-
                   <tr>
-                    <td>Status :</td>
+                    <td>Blocked Status :</td>
+                    <td className="text-end text-black fw-medium">
+                      <span
+                        className={`badge ${
+                          selectedUser.block === "1"
+                            ? "bg-danger"
+                            : "bg-success"
+                        }`}
+                      >
+                        {selectedUser.block === "1" ? "Blocked" : "Not Blocked"}
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Suspended Status :</td>
+                    <td className="text-end text-black fw-medium">
+                      <span
+                        className={`badge ${
+                          selectedUser.suspend === "1"
+                            ? "bg-danger"
+                            : "bg-success"
+                        }`}
+                      >
+                        {selectedUser.suspend === "1"
+                          ? "Suspended"
+                          : "Not Suspended"}
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Approval Status :</td>
+                    <td className="text-end text-black fw-medium">
+                      <span
+                        className={`badge ${getApprovalClass(
+                          selectedUser.approve
+                        )}`}
+                      >
+                        {getApprovalLabel(selectedUser.approve)}
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Account Status :</td>
                     <td className="text-end text-black fw-medium">
                       <span
                         className={`badge ${
@@ -518,16 +747,11 @@ const DriverList = () => {
                       </span>
                     </td>
                   </tr>
-                
-                  
-                 
-
-                  
                 </tbody>
               </table>
               <div className="mt-3">
                 <div className="font-size-16 fw-medium mb-2">Bio:</div>
-                <div className="bg-light ">
+                <div className="bg-light">
                   {selectedUser.bio ? (
                     <textarea
                       readOnly

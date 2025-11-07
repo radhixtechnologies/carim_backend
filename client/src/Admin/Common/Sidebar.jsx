@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
+  Activity,
   Book,
   CheckSquare,
+  DollarSign,
   File,
   Image,
   Info,
@@ -52,7 +54,7 @@ function Sidebar({ isOpen }) {
       setActiveMenu("providers");
     } else if (
       pathname === "/driverlist" ||
-      pathname.startsWith("/tutoriallist") ||
+      pathname.startsWith("/documentlist") ||
       pathname.startsWith("/addtutorial") ||
       pathname.startsWith("/updatetutorial")
     ) {
@@ -66,8 +68,13 @@ function Sidebar({ isOpen }) {
       setActiveMenu("banner");
     } else if (pathname === "/teamlist") {
       setActiveMenu("teamManagement");
-    } else if (pathname === "/bookinglist") {
+    } else if (
+      pathname === "/bookinglist" ||
+      pathname.startsWith("/activebookinglist")
+    ) {
       setActiveMenu("booking");
+    } else if (pathname === "/transactionlist") {
+      setActiveMenu("transaction");
     } else if (pathname === "/requestlist") {
       setActiveMenu("request");
     } else if (pathname === "/ratinglist") {
@@ -107,7 +114,7 @@ function Sidebar({ isOpen }) {
       <div className="navbar-brand-box">
         <Link to="/dashboard" className="logo" onClick={handleLinkClick}>
           <span className="logo-lg">
-            <img src="/assets/images/Crewed.png" alt="" height={20} />
+            <img src="/assets/images/carim1.png" alt="" height={20} />
           </span>
         </Link>
         <button
@@ -187,11 +194,11 @@ function Sidebar({ isOpen }) {
                   </li>
                   <li>
                     <Link
-                      className={isActive("/tutoriallist") ? "active" : ""}
-                      to="/tutoriallist"
+                      className={isActive("/documentlist") ? "active" : ""}
+                      to="/documentlist"
                       onClick={handleLinkClick}
                     >
-                      Tutorial listings
+                      Document listings
                     </Link>
                   </li>
                 </ul>
@@ -213,7 +220,16 @@ function Sidebar({ isOpen }) {
                       to="/bookinglist"
                       onClick={handleLinkClick}
                     >
-                      Booking list
+                       Booking list
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      className={isActive("/activebookinglist") ? "active" : ""}
+                      to="/activebookinglist"
+                      onClick={handleLinkClick}
+                    >
+                      Active Booking list
                     </Link>
                   </li>
                 </ul>
@@ -222,9 +238,9 @@ function Sidebar({ isOpen }) {
             <li className={activeMenu === "transaction" ? "mm-active" : ""}>
               <Link
                 className="has-arrow waves-effect"
-                onClick={() => toggleMenu("booking")}
+                onClick={() => toggleMenu("transaction")}
               >
-                <Book />
+                <DollarSign />
                 <span>Transactions</span>
               </Link>
               {isSidebarExpanded && activeMenu === "transaction" && (
@@ -269,7 +285,7 @@ function Sidebar({ isOpen }) {
                 className="has-arrow waves-effect"
                 onClick={() => toggleMenu("report")}
               >
-                <Repeat />
+                <Activity />
                 <span>Reports</span>
               </Link>
               {isSidebarExpanded && activeMenu === "report" && (

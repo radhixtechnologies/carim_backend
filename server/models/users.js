@@ -8,10 +8,10 @@ module.exports = function (sequelize, DataTypes) {
       primaryKey: true
     },
     role: {
-      type: DataTypes.ENUM('0', '1', '2','3'),
+      type: DataTypes.ENUM('0', '1', '2', '3'),
       allowNull: false,
       defaultValue: "1",
-      comment: "o=>admin,1=>player,2=>coach,3=>employee"
+      comment: "o=>admin,1=>user,2=>driver,3=>employee"
     },
     name: {
       type: DataTypes.STRING(255),
@@ -146,41 +146,36 @@ module.exports = function (sequelize, DataTypes) {
       defaultValue: "0",
       comment: "for chat 0=>male, 1=>female, 2=>other"
     },
-     requestStatus: {
-      type: DataTypes.ENUM('0', '1', '2'),
+    block: {
+      type: DataTypes.ENUM('0', '1',),
       allowNull: false,
       defaultValue: "0",
-      comment: " 0=>pending, 1=>accpt, 2=>reject"
+      comment: " 0=>unblock, 1=>block"
     },
-    sportId: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      defaultValue: null,
+    suspend: {
+      type: DataTypes.ENUM('0', '1',),
+      allowNull: false,
+      defaultValue: "0",
+      comment: " 0=>unsuspend, 1=>suspend"
     },
-    levelId: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
+    approve: {
+      type: DataTypes.ENUM('0', '1','2'),
+      allowNull: false,
+      defaultValue: "0",
+      comment: " 0=>pending, 1=>aproved, 2=>rejected"
     },
-    positionId: {
-      type: DataTypes.INTEGER,
-      defaultValue: null,
+    documentVerify: {
+      type: DataTypes.ENUM('0', '1','2'),
+      allowNull: false,
+      defaultValue: "0",
+      comment: " 0=>pending, 1=>verified, 2=>rejected"
     },
-
 
   }, {
     sequelize,
     tableName: 'users',
     timestamps: true,
     paranoid: true,
-    indexes: [
-      {
-        name: "PRIMARY",
-        unique: true,
-        using: "BTREE",
-        fields: [
-          { name: "id" },
-        ]
-      },
-    ]
+
   });
 };

@@ -1,5 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit';
-import userReducer from './PlayerSlice';
+import userReducer from './UserSlice';
 import lenderReducer from './DriverSlice';
 
 

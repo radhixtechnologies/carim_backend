@@ -7,7 +7,7 @@
   --sidebar-width: 268px;
   --black: #222222;
   --deep-black: #05004E;
-  --primary: #007bff;
+  --primary: #1e3308;
   --grey: #737791;
   --grey2: #A098AE;
   --grey3: #5b5d6b;
@@ -61,11 +61,11 @@ header .header-profile-user {
   position: absolute;
   top: 15px;
   left: 14px;
-  color: #007bff;
+  color: #1e3308;
   font-size: 15px;
 }
 .page-title {
-  color: #151D48;
+  color: #19420b;
   font-weight: 600;
 }
 .noti-icon {
@@ -105,7 +105,7 @@ header .header-profile-user {
 }
 .noti-icon i {
   font-size: 18px;
-  color: #007bff;
+  color: #1e3308;
 }
 .noti-icon span {
   position: absolute !important;
@@ -121,13 +121,13 @@ header .header-profile-user {
   width: 285px;
 }
 .dropdown-item.active, .dropdown-item:active {
-  color: #007bff;
+  color: #1e3308;
   text-decoration: none;
   background-color: transparent;
 }
 .vertical-menu-btn {
   background: rgba(93,95,239,.15) !important;
-  color: #007bff !important;
+  color: #1e3308 !important;
   font-size: 18px;
   margin-right: 20px;
   border-radius: 6px;
@@ -176,12 +176,12 @@ header .header-profile-user {
   margin: 2px 0px;
 }
 #side-menu li a.active {
-  background: #007bff;
+  background: #1e3308;
   color: #fff !important;
   font-weight: 500;
 }
 #side-menu li a:hover {
-  color: #007bff
+  color: #1e3308
 }
 #side-menu > li > a i {
   font-size: 20px;
@@ -264,7 +264,7 @@ header .header-profile-user {
 }
 .search-icon i {
   font-size: 22px;
-  color: #007bff
+  color: #1e3308
 }
 .page-content {
     padding: 20px 12px 24px 12px;
@@ -442,7 +442,7 @@ header .header-profile-user {
 }
 .bg-soft-primary {
   background: rgba(93,95,239,.12) !important;
-  color: #007bff !important;
+  color: #1e3308 !important;
 }
 .btn-soft-success {
   background: rgba(0,224,150,.12) !important;
@@ -507,7 +507,7 @@ header .header-profile-user {
 }
 .btn-soft-primary {
   background: rgba(93,95,239,.12) !important;
-  color: #007bff !important;
+  color: #1e3308 !important;
 }
 .table thead th {
   background: #EDF0FE;
@@ -609,12 +609,12 @@ table .badge {
   color: #00E096 !important;
 }
 .btn-outline-primary.new-outline {
-  color: #007bff !important;
+  color: #1e3308 !important;
 }
 .btn-outline-primary.new-outline span {
   border: 1px solid rgba(93,95,239,.3);
   background: rgba(93,95,239,.15);
-  color: #007bff !important;
+  color: #1e3308 !important;
 }
 .btn-outline-primary.new-outline .rev {
   border: 1px solid rgba(255,164,18,.3);
@@ -709,7 +709,7 @@ table .badge {
     display: none;
     width: 8px;
     height: 8px;
-    background: #007bff;
+    background: #1e3308;
     border-radius: 100px;
     margin-right: 6px;
     margin-bottom: 20px;
@@ -815,8 +815,8 @@ table .badge {
   border-top: 0px;
   border-left: 0px;
   border-right: 0px;
-  border-bottom: 0.17rem solid #007bff;
-  color: #007bff;
+  border-bottom: 0.17rem solid #1e3308;
+  color: #1e3308;
 }
 .offcanvas-header {
   border-bottom: 1px solid #e5e5e5;
@@ -874,23 +874,23 @@ table .badge {
 }
 #side-menu .sub-menu li a.active {
   background: transparent !important;
-  color: #007bff !important;
+  color: #1e3308 !important;
 }
 #side-menu .sub-menu a.active:before {
-  background: #007bff !important;
+  background: #1e3308 !important;
 }
 #side-menu > li.mm-active {
   background: rgb(93 95 239 / 10%) !important;
   border-radius: 12px;
 }
 #side-menu > li a.mm-active[aria-expanded=false] {
-  color: #007bff !important;
+  color: #1e3308 !important;
 }
 #side-menu > li a.mm-active[aria-expanded=false].has-arrow:after {
-  border-color: #007bff
+  border-color: #1e3308
 }
 #side-menu > li.mm-active > a {
-  background: #007bff !important;
+  background: #1e3308 !important;
   color: #fff !important;
   font-weight: 500 !important;
 }
@@ -1141,7 +1141,7 @@ table .badge {
   top: 34px;
 }
 .ougwo.active .text-lowdark {
-  color: #007bff !important;
+  color: #1e3308 !important;
 }
 .oeufyhs {
   display: flex;
@@ -1270,8 +1270,8 @@ table .badge {
   border-top: 1px solid transparent;
   border-left: 1px solid transparent;
   border-right: 1px solid transparent;
-  border-bottom: 2px solid #007bff;
-  color: #007bff;
+  border-bottom: 2px solid #1e3308;
+  color: #1e3308;
 }
 .rt-tabb .nav-tabs .nav-link:focus, .rt-tabb .nav-tabs .nav-link:hover {
   border-top: 1px solid transparent;
@@ -1282,7 +1282,7 @@ table .badge {
   width: 97px;
   height: 97px;
   border-radius: 100px;
-  border: 2px dashed #007bff;
+  border: 2px dashed #1e3308;
   padding: 4px;
 }
 .rtuimage img {
@@ -1437,7 +1437,7 @@ body.sidebar-enable li.mm-active > a.mm-active {
     width: 34px;
     height: 34px;
     border-radius: 100px;
-    background: #007bff;
+    background: #1e3308;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -1522,7 +1522,7 @@ body.sidebar-enable li.mm-active > a.mm-active {
 }
 
 .oeufyhs .nav-link.active .text-lowdark {
-  color: #007bff !important
+  color: #1e3308 !important
 }
 .preload {
   position: fixed;
@@ -1577,7 +1577,7 @@ body.sidebar-enable li.mm-active > a.mm-active {
   font-weight: 600;
 }
 .dropdown-item.selected {
-  color: #007bff
+  color: #1e3308
 }
 .scroll-room a {
   max-height: 200px;
@@ -1896,7 +1896,7 @@ body.sidebar-enable li.mm-active > a.mm-active {
 }
 .show-search i {
   font-size: 27px;
-  color: #007bff;
+  color: #1e3308;
   margin-bottom: -2px;
   display: block;
 }
@@ -1977,14 +1977,14 @@ body:not(.showdisp) .rt-title.mt-3 {
 }
 .datename .btn:first-child:active {
   background-color: transparent !important;
-  color: #007bff !important
+  color: #1e3308 !important
 }
 .datename .btn:hover {
   background-color: transparent !important;
-  color: #007bff !important
+  color: #1e3308 !important
 }
 .datename .btn.active {
-  background: #007bff !important;
+  background: #1e3308 !important;
   color: #fff !important
 }
 .flatpickr-months {
@@ -2356,8 +2356,8 @@ abbr {
   border-color: transparent;
 }
 .nav-tab .nav-links.active {
-  color: #007bff;
-  border-color: #007bff;
+  color: #1e3308;
+  border-color: #1e3308;
 }
 .proindet {
   width: 35%
@@ -2662,7 +2662,7 @@ abbr {
 }
 .logform:focus {
   outline: none;
-  border: 1px solid #007bff;
+  border: 1px solid #1e3308;
   box-shadow: none;
 }
 .opencls {
@@ -2722,7 +2722,7 @@ abbr {
 }
 .preloader-dots .dots {
   display: inline-block;
-  background: #007bff;
+  background: #1e3308;
   height: 16px;
   width: 16px;
   border-radius: 50%;
@@ -2928,20 +2928,20 @@ td {
   }
 }
 .dlnotr .btn-success {
-  background: #007bff;
-  border-color: #007bff;
+  background: #1e3308;
+  border-color: #1e3308;
 }
 .dlnotr .btn-success:hover, .dlnotr .btn-success:active {
-  background: #3c3ed9;
-  border-color: #0a58ca;
+  background: #3b551f;
+  border-color: #1e3308;
 }
 .dlnotr .btn-danger {
-  background: #007bff;
-  border-color: #007bff;
+  background: #1e3308;
+  border-color: #1e3308;
 }
 .dlnotr .btn-danger:hover, .dlnotr .btn-danger:active {
-  background: #3c3ed9;
-  border-color: #0a58ca;
+  background: #3b551f;
+  border-color: #1e3308;
 }
 .dlnotr .btn-primary {
   background: #D1490A;

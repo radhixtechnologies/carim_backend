@@ -25,14 +25,12 @@ const BookingList = () => {
     { value: "365", label: "Last Year" },
   ];
 
-  // Helper function to get ride type label
   const getRideTypeLabel = (rideType) => {
     if (rideType === "0") return "Single Ride";
     if (rideType === "1") return "Pool Ride";
     return "Unknown";
   };
 
-  // Helper function to get status badge
   const getStatusBadge = (status) => {
     const statusMap = {
       "0": { label: "Driver on the way", className: "bg-info" },
@@ -101,7 +99,7 @@ const BookingList = () => {
       text: "You won't be able to revert this!",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#007bff",
+      confirmButtonColor: "#1e3308",
       cancelButtonColor: "#d33",
       confirmButtonText: "Yes, delete it!",
     });
@@ -238,7 +236,7 @@ const BookingList = () => {
                                   <td>{match.userbook?.name || "N/A"}</td>
                                   <td>{match.driverbook?.name || "N/A"}</td>
                                   <td>{getRideTypeLabel(match.rideType)}</td>
-                                  <td>{match.bookingPrice || "0"}</td>
+                                  <td>${match.bookingPrice || "0"}</td>
                                   <td>
                                     <span className={`badge ${className}`}>
                                       {label}

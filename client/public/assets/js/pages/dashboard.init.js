@@ -241,7 +241,7 @@ chart.render();
 var options = {
     series: [20, 20, 30, 80],
     labels: ['New', 'Completed', 'In Process', 'In Complete'],
-    colors: ['#007bff','#00E096','#FFA412','#D80027'],
+    colors: ['#1e3308','#00E096','#FFA412','#D80027'],
     chart: {
         type: "donut",
         height: 115,
@@ -272,7 +272,7 @@ chart.render();
 var options = {
     series: [40, 90, 30, 30],
     labels: ['New', 'Completed', 'In Process', 'In Complete'],
-    colors: ['#007bff','#00E096','#FFA412','#D80027'],
+    colors: ['#1e3308','#00E096','#FFA412','#D80027'],
     chart: {
         type: "donut",
         height: 115,
@@ -303,7 +303,7 @@ chart.render();
 var options = {
     series: [40, 40, 20, 40],
     labels: ['New', 'Completed', 'In Process', 'In Complete'],
-    colors: ['#007bff','#00E096','#FFA412','#D80027'],
+    colors: ['#1e3308','#00E096','#FFA412','#D80027'],
     chart: {
         type: "donut",
         height: 115,
@@ -334,7 +334,7 @@ chart.render();
 var options = {
     series: [30, 80, 20, 20],
     labels: ['New', 'Completed', 'In Process', 'In Complete'],
-    colors: ['#007bff','#00E096','#FFA412','#D80027'],
+    colors: ['#1e3308','#00E096','#FFA412','#D80027'],
     chart: {
         type: "donut",
         height: 115,
@@ -395,7 +395,7 @@ document.addEventListener("DOMContentLoaded", function () {
         { city: "New Hampshire", visitors: 225, coords: [43.1939, -71.5724], color: "#991AFF" },
         { city: "New Jersey", visitors: 543, coords: [40.0583, -74.4057], color: "#E666FF" },
         { city: "New Mexico", visitors: 318, coords: [34.9727, -105.0324], color: "#4DB3FF" },
-        { city: "New York", visitors: 9800, coords: [42.8, -76.006], color: "#007bff" },
+        { city: "New York", visitors: 9800, coords: [42.8, -76.006], color: "#1e3308" },
         { city: "North Carolina", visitors: 672, coords: [35.7596, -79.0193], color: "#1AB399" },
         { city: "North Dakota", visitors: 203, coords: [47.5515, -101.0020], color: "#E666B3" },
         { city: "Ohio", visitors: 621, coords: [40.4173, -82.9071], color: "#33991A" },

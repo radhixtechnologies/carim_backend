@@ -23,16 +23,22 @@ router.post('/logout',auth.logout);
 router.get('/dashboard',auth.dashboard);
 router.post('/chartdata',auth.chartData);
 
+// bank details of admin
+router.get('/bankdetails',auth.AdminBank);
+router.post('/updatebank',auth.updateBankDetails);
 
 // router for users
 router.post('/userStatus',usercontroller.userStatus);
 router.post('/userDelete/:id',usercontroller.userDelete);
 router.get('/userlist',usercontroller.userList);
+router.post('/blockstatus',usercontroller.block);
+router.post('/suspendstatus',usercontroller.suspend);
+router.post('/approvedriver',usercontroller.approveDriver);
+
+//driver documents
 router.get('/driverlist',usercontroller.driverList);
-
-
-
-
+router.get('/document',usercontroller.doucmentList);
+router.post('/documentVerified',usercontroller.documentVerified);
 
 
 // router for contact us
@@ -67,6 +73,7 @@ router.post('/imagedelete/:id',tutorialController.imageDelete);
 //booking
 router.get('/bookinglist',bookingController.bookingList);
 router.post('/bookingdelete/:id',bookingController.bookingDelete);
+router.get('/activebookinglist',bookingController.activeBookinglist);
 
 
 //rating
