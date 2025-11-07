@@ -137,7 +137,6 @@ const ScreenShotList = () => {
   const handleCSVExport = async () => {
     try {
       await prepareDataForExport();
-      // The CSVLink component will handle the download automatically
       toast.success("CSV file is being prepared for download");
     } catch (error) {
       console.error("CSV export error:", error);
@@ -285,7 +284,7 @@ const ScreenShotList = () => {
             <div className="container-fluid">
               <div className="title-box mb-3 pb-1">
                 <h4 className="mb-0 page-title">
-                  Transaction Screen Shot List
+                  Transaction Proof List
                 </h4>
                 <nav aria-label="breadcrumb" className="mt-1">
                   <ol className="breadcrumb mb-0">
@@ -296,11 +295,11 @@ const ScreenShotList = () => {
                     </li>
                     <li className="breadcrumb-item">
                       <Link to="/" className="new">
-                        <i className="ri-group-2-line me-1" /> Screen Shots
+                        <i className="ri-group-2-line me-1" /> Transaction Proof
                       </Link>
                     </li>
                     <li className="breadcrumb-item active" aria-current="page">
-                      Transaction Screen Shot Listings
+                      Transaction Proof Listings
                     </li>
                   </ol>
                 </nav>
@@ -516,7 +515,7 @@ const ScreenShotList = () => {
                                 colSpan="7"
                                 style={{ textAlign: "center", padding: "20px" }}
                               >
-                                No transaction screen shot found
+                                No Transaction Proof found
                               </td>
                             </tr>
                           )}
@@ -558,7 +557,7 @@ const ScreenShotList = () => {
                 className="offcanvas-title mb-0 me-3 fw-semibold"
                 id="offcanvasRightLabel"
               >
-                Transaction Screen Shot Details
+                Transaction Proof Details
               </h5>
             </div>
             <button
@@ -664,7 +663,7 @@ const ScreenShotList = () => {
             <div className="text-center py-5">
               <i className="ri-image-line font-size-48 text-muted"></i>
               <p className="mt-3 text-muted">
-                No transaction screen shot selected
+                No Transaction Proof selected
               </p>
             </div>
           )}

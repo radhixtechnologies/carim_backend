@@ -263,7 +263,7 @@ function Sidebar({ isOpen }) {
                       to="/screenshotlist"
                       onClick={handleLinkClick}
                     >
-                      Screen Shot list
+                      Transaction Proof list
                     </Link>
                   </li>
                 </ul>
