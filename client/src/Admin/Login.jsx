@@ -89,7 +89,7 @@ const Login = () => {
         <div className="right-auth">
           <div className="flex-grow-1">
             <div className="authtitle mb-2">
-              <img src="assets/images/.png" width={240} alt="Logo" />
+              <img src="assets/images/carim1.png" width={240} alt="Logo" />
             </div>
             <div className="font-size-18 fw-medium text-white mt-5">Login</div>
 

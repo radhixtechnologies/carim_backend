@@ -152,16 +152,7 @@ header .header-profile-user {
   margin-left: var(--sidebar-width);
   transition-duration: .3s
 }
-.navbar-brand-box {
-  height: 85.6px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.navbar-brand-box .logo-lg img {
-  height: 36px;
-  transition-duration: .3s
-}
+.sidebar-enable .navbar-brand-box{ height: 140px; display: flex; justify-content: space-between; align-items: start; margin-top: 20px; } .navbar-brand-box .logo-lg img { height: 120px; transition-duration: .3s; width: 184px; }
 #nav-first {
   transition-duration: .3s
 }

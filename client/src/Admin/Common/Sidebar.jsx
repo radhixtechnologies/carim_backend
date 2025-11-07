@@ -116,6 +116,7 @@ function Sidebar({ isOpen }) {
           <span className="logo-lg">
             <img src="/assets/images/carim1.png" alt="" height={20} />
           </span>
+          
         </Link>
         <button
           type="button"
