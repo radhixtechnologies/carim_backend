@@ -5,6 +5,7 @@ const { Validator } = require('node-input-validator');
 const jwt = require("jsonwebtoken");
 const { Op } = require("sequelize");
 
+
 module.exports = {
 
     login: async (req, res) => {

@@ -152,7 +152,7 @@ header .header-profile-user {
   margin-left: var(--sidebar-width);
   transition-duration: .3s
 }
-.sidebar-enable .navbar-brand-box{ height: 140px; display: flex; justify-content: space-between; align-items: start; margin-top: 20px; } .navbar-brand-box .logo-lg img { height: 120px; transition-duration: .3s; width: 184px; }
+.sidebar-enable .navbar-brand-box{  display: flex; justify-content: space-between; align-items: start; margin-top: 20px; } .navbar-brand-box .logo-lg img { height: 120px; transition-duration: .3s; width: 184px; }
 #nav-first {
   transition-duration: .3s
 }
@@ -218,7 +218,9 @@ header .header-profile-user {
 }
 @media (min-width: 1200px) {
   .sidebar-enable:not(.hovered) .navbar-brand-box .logo-lg img {
-    height: 43px;
+            height: 40px;
+        width: 45px;
+        margin-left: -1px;
   }
   .sidebar-enable:not(.hovered) .navbar-brand-box {
     width: 43px;

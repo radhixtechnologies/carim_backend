@@ -7,6 +7,8 @@ import Stack from "@mui/material/Stack";
 import "@fancyapps/fancybox/dist/jquery.fancybox.css";
 import "@fancyapps/fancybox";
 import { axiosInstance } from "../../Config";
+import { CSVLink } from "react-csv"; 
+import * as XLSX from "xlsx"; 
 
 const TransactionList = () => {
   const [matches, setMatches] = useState([]);
@@ -43,7 +45,7 @@ const TransactionList = () => {
       } else {
         Swal.fire(
           "Error",
-          response.data.message || "Failed to load transactionlist",
+          response.data.message || "Failed to load transaction list",
           "error"
         );
       }
@@ -111,17 +113,40 @@ const TransactionList = () => {
       } catch (error) {
         Swal.fire(
           "Error!",
-          error.response?.data?.message || "Error deleting Transaction",
+          error.response?.data?.message || "Error deleting transaction",
           "error"
         );
       }
-    } else {
-      Swal.fire("Cancelled", "Transaction deletion has been cancelled", "info");
     }
   };
 
   const handleViewDetails = (match) => {
     setSelectedMatch(match);
+  };
+
+ const prepareDataForExport = () => {
+  return matches.map(match => ({
+    "Transaction ID": match.id,
+    "User Name": match.usertransaction?.name || "N/A",
+    "Driver Name": match.drivertransaction?.name || "N/A",
+    "Total Amount($)": match.totalAmount || "0",
+    "Payment Status": match.paymentStatus === "0" ? "Pending" : match.paymentStatus === "1" ? "Success" : match.paymentStatus === "2" ? "Failed" : "N/A",
+    "Payment Method": match.paymentMethod === "0" ? "Cash" : match.paymentMethod === "1" ? "Online" : "N/A",
+    "Transaction Date": new Date(match.transactionDate).toLocaleString() || "N/A",
+    "Transaction ID (Backend)": match.trasactionid || "N/A",
+    "Booking ID": match.transactionbooking?.id || "N/A",
+    "Stripe Charge($)": match.stripeCharge || "0",
+    "Payment Gateway": match.paymentGateway || "N/A",
+    "Payment Confirmation ID": match.paymentConfirmationId || "N/A",
+  }));
+};
+
+
+  const handleExcelExport = () => {
+    const ws = XLSX.utils.json_to_sheet(prepareDataForExport());
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Transactions");
+    XLSX.writeFile(wb, "transactions.xlsx");
   };
 
   return (
@@ -191,6 +216,21 @@ const TransactionList = () => {
                       </ul>
                     </div>
                   </div>
+                  <div className="d-flex justify-content-end mb-3">
+                    <CSVLink
+                      data={prepareDataForExport()}
+                      filename={"transactions.csv"}
+                      className="btn btn-success me-2"
+                    >
+                      Export to CSV
+                    </CSVLink>
+                    <button
+                      className="btn btn-primary"
+                      onClick={handleExcelExport}
+                    >
+                      Export to Excel
+                    </button>
+                  </div>
                   <div className="table-responsive table-card border-top">
                     <div data-simplebar="" className="cus-scroll scmob">
                       <table className="table table-centered cus-nowrap align-middle hltr mb-0">
@@ -207,13 +247,9 @@ const TransactionList = () => {
                         <tbody>
                           {matches.length > 0 ? (
                             matches.map((match, index) => {
-                   
-
                               return (
                                 <tr key={match.id}>
-                                  <td>
-                                    {(currentPage - 1) * limit + index + 1}
-                                  </td>
+                                  <td>{(currentPage - 1) * limit + index + 1}</td>
                                   <td>{match.usertransaction?.name || "N/A"}</td>
                                   <td>{match.drivertransaction?.name || "N/A"}</td>
                                   <td>${match.totalAmount || "0"}</td>
@@ -238,7 +274,6 @@ const TransactionList = () => {
                                       >
                                         <i className="ri-eye-fill font-size-16"></i>
                                       </button>
-
                                       <button
                                         onClick={() => deleteMatch(match.id)}
                                         className="btn btn-soft-danger px-2 btn-sm"

@@ -26,6 +26,7 @@ import TransactionList from './Admin/Transactions/TransactionList';
 import DriverDocuments from './Admin/Drivers/DriverDocuments';
 import AdminBank from './Admin/AdminBank';
 import ActiveBookingList from './Admin/Bookings/ActiveBookingList';
+import ScreenShotList from './Admin/Transactions/ScreenShotList';
 
 
 const App = () => {
@@ -67,16 +68,17 @@ const App = () => {
             <Route path="/faqlist" element={<PrivateRoute element={<FaqList />} />} />
             <Route path="/addfaq" element={<PrivateRoute element={<FaqAdd />} />} />
             <Route path="/updatefaq/:id" element={<PrivateRoute element={<FaqEdit />} />} />
-            <Route path="/bookinglist" element={<PrivateRoute element={<BookingList />} />} />
-            <Route path="/activebookinglist" element={<PrivateRoute element={<ActiveBookingList />} />} />
+            <Route path="/ridelist" element={<PrivateRoute element={<BookingList />} />} />
+            <Route path="/activeridelist" element={<PrivateRoute element={<ActiveBookingList />} />} />
             <Route path="/ratinglist" element={<PrivateRoute element={<RatingList />} />} />
             <Route path="/reportlist" element={<PrivateRoute element={<ReportList />} />} />
             <Route path="/bannerlist" element={<PrivateRoute element={<BannerList />} />} />
             <Route path="/addbanner" element={<PrivateRoute element={<BannerAdd />} />} />
             <Route path="/updatebanner/:id" element={<PrivateRoute element={<BannerEdit />} />} />
             <Route path="/transactionlist" element={<PrivateRoute element={<TransactionList />} />} />
-            <Route path="/documentlist" element={<PrivateRoute element={<DriverDocuments />} />} />
             <Route path="/bankdetail" element={<PrivateRoute element={<AdminBank />} />} />
+            <Route path="/documentlist/:driverId?" element={<PrivateRoute element={<DriverDocuments />} />} />
+            <Route path="/screenshotlist" element={<PrivateRoute element={<ScreenShotList />} />} />
 
           </Route>
         </Routes>

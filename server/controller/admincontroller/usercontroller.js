@@ -225,7 +225,7 @@ module.exports = {
     },
     doucmentList: async (req, res) => {
         try {
-            let { page, limit, search, dateFilter } = req.query;
+            let { page, limit, search, dateFilter, driverId } = req.query;
             page = parseInt(page) || 1;
             limit = parseInt(limit) || 10;
             const offset = (page - 1) * limit;
@@ -233,6 +233,11 @@ module.exports = {
 
             const Op = db.Sequelize.Op;
             const whereCondition = { role: "2" };
+
+            // Add driverId filter if provided
+            if (driverId && driverId.trim() !== "") {
+                whereCondition.id = driverId;
+            }
 
             if (search && search.trim() !== "") {
                 whereCondition[Op.or] = [
@@ -266,7 +271,7 @@ module.exports = {
                 order: [["id", "DESC"]],
             });
 
-            return helper.success(res, "All ddriver Detail", {
+            return helper.success(res, "All driver Detail", {
                 data: rows,
                 currentPage: page,
                 totalPages: Math.ceil(count / limit),

@@ -69,11 +69,14 @@ function Sidebar({ isOpen }) {
     } else if (pathname === "/teamlist") {
       setActiveMenu("teamManagement");
     } else if (
-      pathname === "/bookinglist" ||
-      pathname.startsWith("/activebookinglist")
+      pathname === "/ridelist" ||
+      pathname.startsWith("/activeridelist")
     ) {
       setActiveMenu("booking");
-    } else if (pathname === "/transactionlist") {
+    } else if (
+      pathname === "/screenshotlist" ||
+      pathname === "/transactionlist"
+    ) {
       setActiveMenu("transaction");
     } else if (pathname === "/requestlist") {
       setActiveMenu("request");
@@ -116,7 +119,6 @@ function Sidebar({ isOpen }) {
           <span className="logo-lg">
             <img src="/assets/images/carim1.png" alt="" height={20} />
           </span>
-          
         </Link>
         <button
           type="button"
@@ -211,26 +213,26 @@ function Sidebar({ isOpen }) {
                 onClick={() => toggleMenu("booking")}
               >
                 <Book />
-                <span>Bookings</span>
+                <span>Rides</span>
               </Link>
               {isSidebarExpanded && activeMenu === "booking" && (
                 <ul className="sub-menu mm-show">
                   <li>
                     <Link
-                      className={isActive("/bookinglist") ? "active" : ""}
-                      to="/bookinglist"
+                      className={isActive("/ridelist") ? "active" : ""}
+                      to="/ridelist"
                       onClick={handleLinkClick}
                     >
-                       Booking list
+                      Ride list
                     </Link>
                   </li>
                   <li>
                     <Link
-                      className={isActive("/activebookinglist") ? "active" : ""}
-                      to="/activebookinglist"
+                      className={isActive("/activeridelist") ? "active" : ""}
+                      to="/activeridelist"
                       onClick={handleLinkClick}
                     >
-                      Active Booking list
+                      Active Ride list
                     </Link>
                   </li>
                 </ul>
@@ -253,6 +255,15 @@ function Sidebar({ isOpen }) {
                       onClick={handleLinkClick}
                     >
                       Transaction list
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      className={isActive("/screenshotlist") ? "active" : ""}
+                      to="/screenshotlist"
+                      onClick={handleLinkClick}
+                    >
+                      Screen Shot list
                     </Link>
                   </li>
                 </ul>

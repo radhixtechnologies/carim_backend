@@ -3,12 +3,12 @@ module.exports = function (sequelize, DataTypes) {
   return sequelize.define('userBanks', {
     id: {
       autoIncrement: true,
-      type: DataTypes.BIGINT,
+      type: DataTypes.INTEGER,
       allowNull: false,
       primaryKey: true
     },
     userId: {
-      type: DataTypes.BIGINT,
+      type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 0
     },

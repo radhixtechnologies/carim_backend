@@ -117,7 +117,6 @@ const ContactList = () => {
         );
       }
     } else {
-      Swal.fire("Cancelled", "Contact deletion has been cancelled", "info");
     }
   };
 

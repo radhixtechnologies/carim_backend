@@ -97,7 +97,6 @@ const BannerList = () => {
         );
       }
     } else {
-      Swal.fire("Cancelled", "Banner deletion has been cancelled", "info");
     }
   };
 

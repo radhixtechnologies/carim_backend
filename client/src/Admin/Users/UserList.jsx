@@ -98,7 +98,7 @@ const UserList = () => {
         );
       }
     } else {
-      Swal.fire("Cancelled", "User deletion has been cancelled", "info");
+      
     }
   };
 

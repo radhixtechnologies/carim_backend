@@ -137,7 +137,6 @@ const RatingList = () => {
         );
       }
     } else {
-      Swal.fire("Cancelled", "Rating deletion has been cancelled", "info");
     }
   };
 

@@ -13,52 +13,40 @@ const DriverDocuments = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filteredDriverId, setFilteredDriverId] = useState(null);
+  const [showOffcanvas, setShowOffcanvas] = useState(false);
 
-  // Get driverId from route parameters
   const { driverId } = useParams();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (driverId) {
       setFilteredDriverId(driverId);
-      fetchSingleDriverData(driverId);
+      fetchDriverData(driverId);
     } else {
       fetchAllData();
     }
   }, [driverId]);
 
-  const fetchSingleDriverData = async (driverId) => {
+  const fetchDriverData = async (id) => {
     try {
       setLoading(true);
-      const response = await axiosInstance.get(`/document?driverId=${driverId}`);
-      console.log("Single Driver Document Response:", response);
+      const response = await axiosInstance.get(`/document?driverId=${id}`);
+      console.log("Driver Document Response:", response);
 
       if (response.data.success && response.data.body.data.length > 0) {
-        // Show only the specific driver's data
         setUsers(response.data.body.data);
-        // Auto-open the details view for the single driver
-        if (response.data.body.data[0]) {
-          setSelectedUser(response.data.body.data[0]);
-          // Auto-open the offcanvas
-          setTimeout(() => {
-            const offcanvasElement = document.getElementById('view-details');
-            if (offcanvasElement) {
-              const offcanvas = new window.bootstrap.Offcanvas(offcanvasElement);
-              offcanvas.show();
-            }
-          }, 500);
-        }
+        // Don't auto-select or auto-open - let user click manually
       } else {
         Swal.fire(
           "Not Found",
-          `No documents found for Driver ID: ${driverId}`,
+          `No documents found for Driver ID: ${id}`,
           "warning"
         ).then(() => {
           navigate('/documentlist');
         });
       }
     } catch (error) {
-      console.error("Error fetching single driver data:", error);
+      console.error("Error fetching driver data:", error);
       Swal.fire(
         "Error",
         "An error occurred while fetching driver documents",
@@ -80,18 +68,11 @@ const DriverDocuments = () => {
       if (response.data.success) {
         setUsers(response.data.body.data || []);
       } else {
-        Swal.fire(
-          "Error",
-          response.data.message || "Failed to load document list",
-          "error"
-        );
+        toast.error(response.data.message || "Failed to load document list");
       }
     } catch (error) {
-      Swal.fire(
-        "Error",
-        "An error occurred while fetching the document list",
-        "error"
-      );
+      console.error("Error fetching all data:", error);
+      toast.error("An error occurred while fetching the document list");
     } finally {
       setLoading(false);
     }
@@ -103,6 +84,19 @@ const DriverDocuments = () => {
 
   const handleViewDetails = (user) => {
     setSelectedUser(user);
+    setShowOffcanvas(true);
+    
+    // Use Bootstrap's offcanvas programmatically
+    const offcanvasElement = document.getElementById('view-details');
+    if (offcanvasElement) {
+      const offcanvas = new window.bootstrap.Offcanvas(offcanvasElement);
+      offcanvas.show();
+    }
+  };
+
+  const handleCloseOffcanvas = () => {
+    setShowOffcanvas(false);
+    setSelectedUser(null);
   };
 
   const getApprovalLabel = (documentVerify) => {
@@ -152,18 +146,21 @@ const DriverDocuments = () => {
       });
 
       if (response.data.success) {
-        if (driverId) {
-          fetchSingleDriverData(driverId);
+        // Refresh data based on current view
+        if (filteredDriverId) {
+          fetchDriverData(filteredDriverId);
         } else {
           fetchAllData();
         }
+        
         // Update selected user if it's the same user
         if (selectedUser && selectedUser.id === userId) {
-          setSelectedUser({
-            ...selectedUser,
-            documentVerify: newStatus,
-          });
+          setSelectedUser(prev => ({
+            ...prev,
+            documentVerify: newStatus
+          }));
         }
+        
         toast.success("Document status updated successfully");
       } else {
         toast.error(response.data.message || "Failed to update status");
@@ -174,7 +171,6 @@ const DriverDocuments = () => {
     }
   };
 
-  // Update breadcrumb and title based on whether we're filtering by driver
   const getPageTitle = () => {
     return filteredDriverId 
       ? `Driver Documents - ID: ${filteredDriverId}`
@@ -187,11 +183,13 @@ const DriverDocuments = () => {
       : "Driver Documents Listings";
   };
 
-  // When viewing single driver, show only that driver's details
-  const displayUsers = filteredDriverId ? users : users.filter(user => 
-    user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter users for search (only when not viewing single driver)
+  const displayUsers = filteredDriverId 
+    ? users 
+    : users.filter(user => 
+        user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
 
   return (
     <>
@@ -210,8 +208,8 @@ const DriverDocuments = () => {
                       </Link>
                     </li>
                     <li className="breadcrumb-item">
-                      <Link to="/" className="new">
-                        <i className="ri-group-2-line me-1" /> Documents
+                      <Link to="/documentlist" className="new">
+                        <i className="ri-file-text-line me-1" /> Documents
                       </Link>
                     </li>
                     <li className="breadcrumb-item active" aria-current="page">
@@ -246,7 +244,7 @@ const DriverDocuments = () => {
               ) : (
                 <div className="card">
                   <div className="card-body cusbar">
-                    {/* Hide search and filters when viewing single driver */}
+                    {/* Hide search when viewing single driver */}
                     {!filteredDriverId && (
                       <div
                         className="card-head justify-content-start adjusttwo mb-3"
@@ -295,7 +293,10 @@ const DriverDocuments = () => {
                                       }}
                                     />
                                   ) : (
-                                    "No Image"
+                                    <div className="bg-light rounded-circle d-flex align-items-center justify-content-center"
+                                      style={{ width: "50px", height: "50px" }}>
+                                      <i className="ri-user-line text-muted"></i>
+                                    </div>
                                   )}
                                 </td>
                                 <td>{user.name || "N/A"}</td>
@@ -354,16 +355,13 @@ const DriverDocuments = () => {
                                     </ul>
                                   </div>
                                 </td>
-
                                 <td>
                                   <div className="d-flex justify-content-end">
                                     <button
                                       type="button"
                                       className="btn btn-soft-primary px-2 btn-sm me-1"
-                                      data-bs-toggle="offcanvas"
-                                      data-bs-target="#view-details"
-                                      aria-controls="offcanvasRight"
                                       onClick={() => handleViewDetails(user)}
+                                      title="View Details"
                                     >
                                       <i className="ri-eye-fill font-size-16"></i>
                                     </button>
@@ -421,6 +419,7 @@ const DriverDocuments = () => {
               className="btn-close"
               data-bs-dismiss="offcanvas"
               aria-label="Close"
+              onClick={handleCloseOffcanvas}
             ></button>
           </div>
         </div>
@@ -430,7 +429,7 @@ const DriverDocuments = () => {
               {selectedUser.documents && selectedUser.documents.length > 0 ? (
                 <div className="row">
                   {selectedUser.documents.map((document, index) => (
-                    <div key={document.id || index} className="col-12 col-md-6">
+                    <div key={document.id || index} className="col-12 col-md-6 mb-3">
                       <div className="card">
                         <div className="card-body">
                           {document.image ? (
@@ -606,12 +605,6 @@ const DriverDocuments = () => {
                           ? ", "
                           : ""
                       }${selectedUser.state || ""}` || "N/A"}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Phone:</td>
-                    <td className="text-end text-black fw-medium">
-                      {selectedUser.phone || selectedUser.countryCode || "N/A"}
                     </td>
                   </tr>
                   <tr>

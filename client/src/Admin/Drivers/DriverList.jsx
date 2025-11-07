@@ -26,7 +26,7 @@ const DriverList = () => {
   const limit = 10;
   const [dateFilter, setDateFilter] = useState("all");
 
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
 
   const dateFilters = [
     { value: "all", label: "All Data" },
@@ -75,7 +75,7 @@ const DriverList = () => {
       text: "You won't be able to revert this!",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#007bff",
+      confirmButtonColor: "#1e3308",
       cancelButtonColor: "#d33",
       confirmButtonText: "Yes, delete it!",
     });
@@ -101,7 +101,6 @@ const DriverList = () => {
         );
       }
     } else {
-      Swal.fire("Cancelled", "Driver deletion has been cancelled", "info");
     }
   };
 
@@ -182,8 +181,8 @@ const DriverList = () => {
   };
 
   const handleViewDocuments = (driverId) => {
-    navigate(`/documentlist?driverId=${driverId}`);
-  };
+  navigate(`/documentlist/${driverId}`);
+};
 
   const getCurrentFilterLabel = () => {
     const filter = dateFilters.find((f) => f.value === dateFilter);
@@ -270,7 +269,8 @@ const DriverList = () => {
                             <th>Location</th>
                             <th>Blocked</th>
                             <th>Suspended</th>
-                            <th>Approved</th>
+                            <th>Driver Approved</th>
+                            <th>Verified Document</th>
                             <th>Status</th>
                             <th className="text-end">Action</th>
                           </tr>
@@ -401,6 +401,16 @@ const DriverList = () => {
                                     </ul>
                                   </div>
                                 </td>
+                                <td>
+                                  {user.documentVerify === "1"
+                                    ? "Verified"
+                                    : user.documentVerify === "0"
+                                    ? "Pending"
+                                    : user.documentVerify === "2"
+                                    ? "Rejected"
+                                    : "Unknown Status"}
+                                </td>
+
                                 <td>
                                   <div className="form-check form-switch">
                                     <input

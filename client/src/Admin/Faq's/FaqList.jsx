@@ -113,7 +113,6 @@ const FaqList = () => {
         );
       }
     } else {
-      Swal.fire("Cancelled", "FAQ deletion has been cancelled", "info");
     }
   };
 

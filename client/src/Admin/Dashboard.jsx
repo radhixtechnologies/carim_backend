@@ -147,7 +147,7 @@ const Dashboard = () => {
                       </div>
 
                       <div className="col">
-                        <Link to="/bookinglist">
+                        <Link to="/ridelist ">
                           <div className="card bg-soft-blue">
                             <div
                               className="card-body"
@@ -165,7 +165,7 @@ const Dashboard = () => {
                                     {booking}
                                   </h5>
                                   <p className="text-muted mb-1 fw-medium font-size-15 one-ellips">
-                                    Total Bookings
+                                    Total Rides
                                   </p>
                                 </div>
                               </div>

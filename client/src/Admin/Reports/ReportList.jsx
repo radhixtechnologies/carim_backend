@@ -115,7 +115,6 @@ const ReportList = () => {
         );
       }
     } else {
-      Swal.fire("Cancelled", "Report deletion has been cancelled", "info");
     }
   };
 

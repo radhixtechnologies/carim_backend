@@ -92,6 +92,9 @@ router.get('/bannerdetail/:id', bannerController.bannerDetail);
 //transaction routes
 router.get('/transactionlist', transactionController.transactionList);
 router.post('/transactiondelete/:id', transactionController.transactionDelete);
+router.get('/transferscreenshotlist', transactionController.screenshotlist);
+router.post('/transferscreenshotdelete/:id', transactionController.screenshotdelete);
+router.post('/transferscreenshotstatus', transactionController.screenshotstatus);
 
 
 module.exports = router;

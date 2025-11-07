@@ -139,17 +139,16 @@ const ActiveBookingList = () => {
             setTotalPages(newTotalPages);
           }
 
-          Swal.fire("Deleted!", "Booking has been deleted.", "success");
+          Swal.fire("Deleted!", "Ride has been deleted.", "success");
         }
       } catch (error) {
         Swal.fire(
           "Error!",
-          error.response?.data?.message || "Error deleting booking",
+          error.response?.data?.message || "Error deleting Ride",
           "error"
         );
       }
     } else {
-      Swal.fire("Cancelled", "Booking deletion has been cancelled", "info");
     }
   };
 
@@ -164,7 +163,7 @@ const ActiveBookingList = () => {
           <div className="page-content">
             <div className="container-fluid">
               <div className="title-box mb-3 pb-1">
-                <h4 className="mb-0 page-title">Active Booking List</h4>
+                <h4 className="mb-0 page-title">Active Ride List</h4>
                 <nav aria-label="breadcrumb" className="mt-1">
                   <ol className="breadcrumb mb-0">
                     <li className="breadcrumb-item">
@@ -174,11 +173,11 @@ const ActiveBookingList = () => {
                     </li>
                     <li className="breadcrumb-item">
                       <Link to="/" className="new">
-                        <i className="ri-group-2-line me-1" /> Bookings
+                        <i className="ri-group-2-line me-1" /> Rides
                       </Link>
                     </li>
                     <li className="breadcrumb-item active" aria-current="page">
-                      Active Booking Listings
+                      Active Ride Listings
                     </li>
                   </ol>
                 </nav>
@@ -320,7 +319,7 @@ const ActiveBookingList = () => {
                                 colSpan="7"
                                 style={{ textAlign: "center", padding: "20px" }}
                               >
-                                No active bookings found
+                                No active rides found
                               </td>
                             </tr>
                           )}
@@ -362,7 +361,7 @@ const ActiveBookingList = () => {
                 className="offcanvas-title mb-0 me-3 fw-semibold"
                 id="offcanvasRightLabel"
               >
-                Booking Details
+                Ride Details
               </h5>
             </div>
             <button
@@ -382,7 +381,7 @@ const ActiveBookingList = () => {
               >
                 <tbody>
                   <tr>
-                    <td>Booking ID :</td>
+                    <td>Ride ID :</td>
                     <td className="text-end text-black fw-medium">
                       {selectedMatch.id}
                     </td>
@@ -455,7 +454,7 @@ const ActiveBookingList = () => {
           ) : (
             <div className="text-center py-5">
               <i className="ri-user-line font-size-48 text-muted"></i>
-              <p className="mt-3 text-muted">No booking selected</p>
+              <p className="mt-3 text-muted">No rides selected</p>
             </div>
           )}
         </div>
