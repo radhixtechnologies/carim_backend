@@ -8,8 +8,8 @@ import Stack from "@mui/material/Stack";
 import "@fancyapps/fancybox/dist/jquery.fancybox.css";
 import "@fancyapps/fancybox";
 import { axiosInstance, BASE_URL } from "../../Config";
-import { CSVLink } from "react-csv"; 
-import * as XLSX from "xlsx"; 
+import { CSVLink } from "react-csv";
+import * as XLSX from "xlsx";
 
 const ScreenShotList = () => {
   const [transactions, setTransactions] = useState([]);
@@ -82,24 +82,28 @@ const ScreenShotList = () => {
 
   const prepareDataForExport = async () => {
     const allData = await fetchAllDataForExport();
-    
+
     const formattedData = allData.map((transaction, index) => ({
       "Sr No.": index + 1,
       "Transaction ID": transaction.id || "N/A",
       "User Name": transaction.screenshotuser?.name || "N/A",
       "Driver Name": transaction.screenshotdriver?.name || "N/A",
       "Total Amount ($)": transaction.totalAmount || "0",
-      "Transaction ID (Payment)": transaction.trasactionid || transaction.transactionId || "N/A",
+      "Transaction ID (Payment)":
+        transaction.trasactionid || transaction.transactionId || "N/A",
       "Booking ID": transaction.bookingId || "N/A",
       "Payment Method": getPaymentMethodText(transaction.paymentMethod),
       "Payment Status": getStatusText(transaction.paymentStatus),
       "Verification Status": getApprovalLabel(transaction.status),
-      "Screenshot URL": transaction.screenshotImage ? 
-        `${BASE_URL}/${transaction.screenshotImage}` : "No Image",
-      "Created Date": transaction.createdAt ? 
-        new Date(transaction.createdAt).toLocaleDateString() : "N/A",
-      "Created DateTime": transaction.createdAt ? 
-        new Date(transaction.createdAt).toLocaleString() : "N/A",
+      "Screenshot URL": transaction.screenshotImage
+        ? `${BASE_URL}/${transaction.screenshotImage}`
+        : "No Image",
+      "Created Date": transaction.createdAt
+        ? new Date(transaction.createdAt).toLocaleDateString()
+        : "N/A",
+      "Created DateTime": transaction.createdAt
+        ? new Date(transaction.createdAt).toLocaleString()
+        : "N/A",
     }));
 
     setExportData(formattedData);
@@ -109,17 +113,20 @@ const ScreenShotList = () => {
   const handleExcelExport = async () => {
     try {
       const data = await prepareDataForExport();
-      
+
       // Create workbook and worksheet
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.json_to_sheet(data);
-      
+
       // Add worksheet to workbook
       XLSX.utils.book_append_sheet(wb, ws, "Transactions");
-      
+
       // Generate Excel file and trigger download
-      XLSX.writeFile(wb, `transaction-screenshots-${new Date().toISOString().split('T')[0]}.xlsx`);
-      
+      XLSX.writeFile(
+        wb,
+        `transaction-screenshots-${new Date().toISOString().split("T")[0]}.xlsx`
+      );
+
       toast.success("Excel file downloaded successfully");
     } catch (error) {
       console.error("Excel export error:", error);
@@ -171,9 +178,9 @@ const ScreenShotList = () => {
     if (result.isConfirmed) {
       try {
         await axiosInstance.post(`/transferscreenshotdelete/${id}`);
-        
+
         fetchData(currentPage, searchTerm, dateFilter);
-        
+
         Swal.fire(
           "Deleted!",
           "Transaction Screen Shot has been deleted.",
@@ -229,8 +236,10 @@ const ScreenShotList = () => {
 
       if (response.data.success) {
         fetchData(currentPage, searchTerm, dateFilter);
-        
-        toast.success(`Status changed to ${getApprovalLabel(newStatus)} successfully`);
+
+        toast.success(
+          `Status changed to ${getApprovalLabel(newStatus)} successfully`
+        );
       } else {
         toast.error(response.data.message || "Failed to update status");
       }
@@ -337,12 +346,14 @@ const ScreenShotList = () => {
                       </ul>
                     </div>
                   </div>
-                  
+
                   {/* Export Buttons */}
                   <div className="d-flex justify-content-end mb-3">
                     <CSVLink
                       data={exportData}
-                      filename={`transaction-screenshots-${new Date().toISOString().split('T')[0]}.csv`}
+                      filename={`transaction-screenshots-${
+                        new Date().toISOString().split("T")[0]
+                      }.csv`}
                       className="btn btn-success me-2"
                       onClick={handleCSVExport}
                     >
@@ -381,22 +392,16 @@ const ScreenShotList = () => {
                                     {(currentPage - 1) * limit + index + 1}
                                   </td>
                                   <td>
-                                    {transaction.screenshotImage ? (
-                                      <a
-                                        href={`${BASE_URL}/${transaction.screenshotImage}`}
-                                        data-fancybox="gallery"
-                                      >
-                                        <img
-                                          src={`${BASE_URL}/${transaction.screenshotImage}`}
-                                          alt="Screenshot"
-                                          style={{
-                                            width: "50px",
-                                            height: "50px",
-                                            borderRadius: "4px",
-                                            objectFit: "cover",
-                                          }}
-                                        />
-                                      </a>
+                                    {transaction.image ? (
+                                      <img
+                                        src={`${BASE_URL}/${transaction.image}`}
+                                        alt="User"
+                                        style={{
+                                          width: "50px",
+                                          height: "50px",
+                                          borderRadius: "50%",
+                                        }}
+                                      />
                                     ) : (
                                       "No Image"
                                     )}
@@ -405,7 +410,8 @@ const ScreenShotList = () => {
                                     {transaction.screenshotuser?.name || "N/A"}
                                   </td>
                                   <td>
-                                    {transaction.screenshotdriver?.name || "N/A"}
+                                    {transaction.screenshotdriver?.name ||
+                                      "N/A"}
                                   </td>
                                   <td>${transaction.totalAmount || "0"}</td>
                                   <td>
@@ -427,7 +433,10 @@ const ScreenShotList = () => {
                                             className="dropdown-item"
                                             type="button"
                                             onClick={() =>
-                                              handleStatusChange(transaction.id, "0")
+                                              handleStatusChange(
+                                                transaction.id,
+                                                "0"
+                                              )
                                             }
                                           >
                                             <i className="ri-time-line me-2 text-warning"></i>
@@ -439,7 +448,10 @@ const ScreenShotList = () => {
                                             className="dropdown-item"
                                             type="button"
                                             onClick={() =>
-                                              handleStatusChange(transaction.id, "1")
+                                              handleStatusChange(
+                                                transaction.id,
+                                                "1"
+                                              )
                                             }
                                           >
                                             <i className="ri-check-line me-2 text-success"></i>
@@ -451,7 +463,10 @@ const ScreenShotList = () => {
                                             className="dropdown-item"
                                             type="button"
                                             onClick={() =>
-                                              handleStatusChange(transaction.id, "2")
+                                              handleStatusChange(
+                                                transaction.id,
+                                                "2"
+                                              )
                                             }
                                           >
                                             <i className="ri-close-line me-2 text-danger"></i>
@@ -469,13 +484,17 @@ const ScreenShotList = () => {
                                         data-bs-toggle="offcanvas"
                                         data-bs-target="#view-details"
                                         aria-controls="offcanvasRight"
-                                        onClick={() => handleViewDetails(transaction)}
+                                        onClick={() =>
+                                          handleViewDetails(transaction)
+                                        }
                                       >
                                         <i className="ri-eye-fill font-size-16"></i>
                                       </button>
 
                                       <button
-                                        onClick={() => deleteTransaction(transaction.id)}
+                                        onClick={() =>
+                                          deleteTransaction(transaction.id)
+                                        }
                                         className="btn btn-soft-danger px-2 btn-sm"
                                         style={{
                                           backgroundColor: "#ea5455",
@@ -554,21 +573,20 @@ const ScreenShotList = () => {
           {selectedTransaction ? (
             <>
               <div className="scroll-room mb-3" id="scrollRoom">
-                {selectedTransaction.screenshotImage ? (
+                {selectedTransaction.image ? (
                   <a
-                    href={`${BASE_URL}/${selectedTransaction.screenshotImage}`}
+                    href={`${BASE_URL}/${selectedTransaction.image}`}
                     data-fancybox="gallery"
                     className="image-popup-gallery-item"
                   >
                     <img
-                      src={`${BASE_URL}/${selectedTransaction.screenshotImage}`}
+                      src={`${BASE_URL}/${selectedTransaction.image}`}
                       className="img-fluid rounded"
-                      alt="Screenshot"
+                      alt="User"
                       style={{
                         width: "100%",
                         maxHeight: "300px",
-                        objectFit: "contain",
-                        backgroundColor: "#f8f9fa",
+                        objectFit: "cover",
                       }}
                     />
                   </a>
@@ -577,7 +595,7 @@ const ScreenShotList = () => {
                     className="bg-light rounded d-flex align-items-center justify-content-center"
                     style={{ height: "200px" }}
                   >
-                    <span className="text-muted">No Screenshot Available</span>
+                    <span className="text-muted">No Image Available</span>
                   </div>
                 )}
               </div>
@@ -613,7 +631,9 @@ const ScreenShotList = () => {
                   <tr>
                     <td>Transaction ID:</td>
                     <td className="text-end text-black fw-medium">
-                      {selectedTransaction.trasactionid || selectedTransaction.transactionId || "N/A"}
+                      {selectedTransaction.trasactionid ||
+                        selectedTransaction.transactionId ||
+                        "N/A"}
                     </td>
                   </tr>
                   <tr>
@@ -622,33 +642,21 @@ const ScreenShotList = () => {
                       {selectedTransaction.bookingId || "N/A"}
                     </td>
                   </tr>
-                  <tr>
-                    <td>Payment Method:</td>
-                    <td className="text-end text-black fw-medium">
-                      {getPaymentMethodText(selectedTransaction.paymentMethod)}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Payment Status:</td>
-                    <td className="text-end text-black fw-medium">
-                      {getStatusText(selectedTransaction.paymentStatus)}
-                    </td>
-                  </tr>
+                 
+                
                   <tr>
                     <td>Verification Status:</td>
                     <td className="text-end">
-                      <span className={`badge ${getApprovalClass(selectedTransaction.status)}`}>
+                      <span
+                        className={`badge ${getApprovalClass(
+                          selectedTransaction.status
+                        )}`}
+                      >
                         {getApprovalLabel(selectedTransaction.status)}
                       </span>
                     </td>
                   </tr>
-                  <tr>
-                    <td>Created Date:</td>
-                    <td className="text-end text-black fw-medium">
-                      {selectedTransaction.createdAt ? 
-                        new Date(selectedTransaction.createdAt).toLocaleDateString() : "N/A"}
-                    </td>
-                  </tr>
+                 
                 </tbody>
               </table>
             </>
