@@ -102,7 +102,6 @@ const ApexCharts = () => {
           },
         }));
       } catch (error) {
-        toast.error("Error fetching data: " + error.message);
       }
     };
 

@@ -87,8 +87,24 @@ const BannerList = () => {
     if (result.isConfirmed) {
       try {
         await axiosInstance.post(`/bannerdelete/${id}`);
-        fetchData(currentPage, searchTerm, dateFilter); 
-        Swal.fire("Deleted!", "Banner has been deleted.", "success");
+
+        const response = await axiosInstance.get(
+          `/bannerlist?page=${currentPage}&limit=${limit}&search=${encodeURIComponent(
+            searchTerm
+          )}&dateFilter=${dateFilter}`
+        );
+
+        if (response.data.success) {
+          const newData = response.data.body.data || [];
+
+          if (newData.length === 0 && currentPage > 1) {
+            setCurrentPage(currentPage - 1);
+          } else {
+            fetchData(currentPage, searchTerm, dateFilter);
+          }
+
+          Swal.fire("Deleted!", "Banner has been deleted.", "success");
+        }
       } catch (error) {
         Swal.fire(
           "Error!",
@@ -96,12 +112,13 @@ const BannerList = () => {
           "error"
         );
       }
-    } else {
     }
   };
 
   const truncateText = (text, maxLength = 100) => {
-    return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
+    return text.length > maxLength
+      ? text.substring(0, maxLength) + "..."
+      : text;
   };
 
   return (
@@ -132,7 +149,10 @@ const BannerList = () => {
 
             <div className="card">
               <div className="card-body cusbar">
-                <div className="card-head justify-content-start adjusttwo mb-3" style={{ flexWrap: "nowrap" }}>
+                <div
+                  className="card-head justify-content-start adjusttwo mb-3"
+                  style={{ flexWrap: "nowrap" }}
+                >
                   <div className="tbl-search position-relative">
                     <input
                       type="text"
@@ -144,13 +164,22 @@ const BannerList = () => {
                     <i className="ri-search-line" />
                   </div>
                   <div className="dropdown tbl-drop mb-3">
-                    <button className="btn btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <button
+                      className="btn btn-light dropdown-toggle"
+                      type="button"
+                      data-bs-toggle="dropdown"
+                      aria-expanded="false"
+                    >
                       {getCurrentFilterLabel()}
                     </button>
                     <ul className="dropdown-menu">
                       {dateFilters.map((filter) => (
                         <li key={filter.value}>
-                          <button className="dropdown-item" type="button" onClick={() => handleDateFilter(filter.value)}>
+                          <button
+                            className="dropdown-item"
+                            type="button"
+                            onClick={() => handleDateFilter(filter.value)}
+                          >
                             {filter.label}
                           </button>
                         </li>
@@ -158,7 +187,10 @@ const BannerList = () => {
                     </ul>
                   </div>
                   <div className="d-flex justify-content-end ms-auto">
-                    <Link to="/addbanner" className="btn btn-soft-primary px-2 btn-sm me-1">
+                    <Link
+                      to="/addbanner"
+                      className="btn btn-soft-primary px-2 btn-sm me-1"
+                    >
                       <i className="ri-add-fill font-size-16"></i>
                     </Link>
                   </div>
@@ -182,17 +214,38 @@ const BannerList = () => {
                             <td>{truncateText(banner.title)}</td>
                             <td>
                               {banner.image ? (
-                                <img src={`${BASE_URL}/${banner.image}`} alt="Banner" style={{ width: "50px", height: "50px", borderRadius: "5px" }} />
+                                <img
+                                  src={`${BASE_URL}/${banner.image}`}
+                                  alt="Banner"
+                                  style={{
+                                    width: "50px",
+                                    height: "50px",
+                                    borderRadius: "5px",
+                                  }}
+                                />
                               ) : (
                                 "No Image"
                               )}
                             </td>
                             <td>
                               <div className="d-flex justify-content-end">
-                                <Link to={`/updatebanner/${banner.id}`} className="btn btn-soft-primary px-2 btn-sm me-1" title="Edit Banner">
+                                <Link
+                                  to={`/updatebanner/${banner.id}`}
+                                  className="btn btn-soft-primary px-2 btn-sm me-1"
+                                  title="Edit Banner"
+                                >
                                   <i className="ri-edit-fill font-size-16"></i>
                                 </Link>
-                                <button onClick={() => deleteBanner(banner.id)} className="btn btn-soft-danger px-2 btn-sm" style={{ backgroundColor: "#ea5455", borderColor: "#ea5455", color: "#fff" }} title="Delete Banner">
+                                <button
+                                  onClick={() => deleteBanner(banner.id)}
+                                  className="btn btn-soft-danger px-2 btn-sm"
+                                  style={{
+                                    backgroundColor: "#ea5455",
+                                    borderColor: "#ea5455",
+                                    color: "#fff",
+                                  }}
+                                  title="Delete Banner"
+                                >
                                   <i className="ri-delete-bin-line font-size-16"></i>
                                 </button>
                               </div>
@@ -201,14 +254,24 @@ const BannerList = () => {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan="4" style={{ textAlign: "center", padding: "20px" }}>No banners found</td>
+                          <td
+                            colSpan="4"
+                            style={{ textAlign: "center", padding: "20px" }}
+                          >
+                            No banners found
+                          </td>
                         </tr>
                       )}
                     </tbody>
                   </table>
                   <div className="d-flex justify-content-center align-items-center mt-3">
                     <Stack spacing={2}>
-                      <Pagination count={totalPages} page={currentPage} onChange={handlePageChange} color="primary" />
+                      <Pagination
+                        count={totalPages}
+                        page={currentPage}
+                        onChange={handlePageChange}
+                        color="primary"
+                      />
                     </Stack>
                   </div>
                 </div>

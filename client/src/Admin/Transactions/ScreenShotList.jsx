@@ -61,7 +61,6 @@ const ScreenShotList = () => {
     }
   };
 
-  // Fetch all data for export
   const fetchAllDataForExport = async () => {
     try {
       const response = await axiosInstance.get(
@@ -114,14 +113,11 @@ const ScreenShotList = () => {
     try {
       const data = await prepareDataForExport();
 
-      // Create workbook and worksheet
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.json_to_sheet(data);
 
-      // Add worksheet to workbook
       XLSX.utils.book_append_sheet(wb, ws, "Transactions");
 
-      // Generate Excel file and trigger download
       XLSX.writeFile(
         wb,
         `transaction-screenshots-${new Date().toISOString().split("T")[0]}.xlsx`
@@ -178,13 +174,27 @@ const ScreenShotList = () => {
       try {
         await axiosInstance.post(`/transferscreenshotdelete/${id}`);
 
-        fetchData(currentPage, searchTerm, dateFilter);
-
-        Swal.fire(
-          "Deleted!",
-          "Transaction Screen Shot has been deleted.",
-          "success"
+        const response = await axiosInstance.get(
+          `/transferscreenshotlist?page=${currentPage}&limit=${limit}&search=${encodeURIComponent(
+            searchTerm
+          )}&dateFilter=${dateFilter}`
         );
+
+        if (response.data.success) {
+          const newData = response.data.body.data || [];
+
+          if (newData.length === 0 && currentPage > 1) {
+            setCurrentPage(currentPage - 1);
+          } else {
+            fetchData(currentPage, searchTerm, dateFilter);
+          }
+
+          Swal.fire(
+            "Deleted!",
+            "Transaction Screen Shot has been deleted.",
+            "success"
+          );
+        }
       } catch (error) {
         Swal.fire(
           "Error!",
@@ -283,9 +293,7 @@ const ScreenShotList = () => {
           <div className="page-content">
             <div className="container-fluid">
               <div className="title-box mb-3 pb-1">
-                <h4 className="mb-0 page-title">
-                  Transaction Proof List
-                </h4>
+                <h4 className="mb-0 page-title">Transaction Proof List</h4>
                 <nav aria-label="breadcrumb" className="mt-1">
                   <ol className="breadcrumb mb-0">
                     <li className="breadcrumb-item">
@@ -641,8 +649,7 @@ const ScreenShotList = () => {
                       {selectedTransaction.bookingId || "N/A"}
                     </td>
                   </tr>
-                 
-                
+
                   <tr>
                     <td>Verification Status:</td>
                     <td className="text-end">
@@ -655,16 +662,13 @@ const ScreenShotList = () => {
                       </span>
                     </td>
                   </tr>
-                 
                 </tbody>
               </table>
             </>
           ) : (
             <div className="text-center py-5">
               <i className="ri-image-line font-size-48 text-muted"></i>
-              <p className="mt-3 text-muted">
-                No Transaction Proof selected
-              </p>
+              <p className="mt-3 text-muted">No Transaction Proof selected</p>
             </div>
           )}
         </div>

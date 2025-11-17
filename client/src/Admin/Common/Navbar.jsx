@@ -34,7 +34,6 @@ function Navbar({ toggleSidebar }) {
           setEmail(email);
         }
       } catch (error) {
-        toast.error("Error fetching profile data", error);
       }
     };
 

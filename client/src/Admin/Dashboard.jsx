@@ -7,7 +7,6 @@ import ApexCharts from "./ApexChart";
 import {
   Users,
   UserCheck,
-
   ClipboardList,
   Star,
   MessageSquare,
@@ -26,30 +25,18 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          toast.error("Authentication token missing");
-          navigate("/login");
-          return;
-        }
-
-        const response = await axiosInstance.get("/dashboard", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await axiosInstance.get("/dashboard", {});
 
         if (response.data.success) {
           const body = response.data.body;
           setUsers(body.player || 0);
           setLenderCount(body.coach || 0);
-            
+
           setBooking(body.booking || 0);
           setRating(body.rating || 0);
           setContact(body.contact || 0);
           setFaq(body.faq || 0);
         } else {
-          toast.error("Failed to fetch dashboard data");
         }
       } catch (error) {
         toast.error("An error occurred while fetching the dashboard data");
@@ -267,7 +254,6 @@ const Dashboard = () => {
                   </div>
                 </div>
               </div>
-              
             </div>
           </div>
         </div>

@@ -8,7 +8,6 @@ import {
   File,
   Image,
   Info,
-  Repeat,
   Star,
 } from "react-feather";
 

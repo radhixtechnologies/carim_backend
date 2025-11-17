@@ -19,18 +19,8 @@ const Profile = () => {
 
   useEffect(() => {
     const fetchProfileData = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        toast.error("No token found. Please log in again.");
-        return;
-      }
-
       try {
-        const response = await axiosInstance.get(`/profile`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await axiosInstance.get(`/profile`, {});
 
         if (response.data && response.data.body) {
           setData(response.data.body);
