@@ -53,7 +53,7 @@ function Sidebar({ isOpen }) {
       setActiveMenu("providers");
     } else if (
       pathname === "/driverlist" ||
-      pathname.startsWith("/documentlist") ||
+      pathname.startsWith("/driverrides") ||
       pathname.startsWith("/addtutorial") ||
       pathname.startsWith("/updatetutorial")
     ) {
@@ -74,7 +74,7 @@ function Sidebar({ isOpen }) {
       setActiveMenu("booking");
     } else if (
       pathname === "/screenshotlist" ||
-      pathname === "/transactionlist"
+      pathname === "/bookingcompleted"
     ) {
       setActiveMenu("transaction");
     } else if (pathname === "/requestlist") {

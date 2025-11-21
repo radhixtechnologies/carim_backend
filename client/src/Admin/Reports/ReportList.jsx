@@ -234,7 +234,7 @@ const ReportList = () => {
                                           borderColor: "#ea5455",
                                           color: "#fff",
                                         }}
-                                        title="Delete Match"
+                                        title="Delete report"
                                       >
                                         <i className="ri-delete-bin-line font-size-16"></i>{" "}
                                       </button>

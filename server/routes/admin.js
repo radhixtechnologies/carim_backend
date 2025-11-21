@@ -76,6 +76,9 @@ router.post('/bookingdelete/:id',bookingController.bookingDelete);
 router.get('/activebookinglist',bookingController.activeBookinglist);
 router.get('/bookingcompleted',bookingController.bookingCompleted);
 
+//for driver bokinglist
+router.get('/driverride/:id',bookingController.bookingDriverList);
+
 
 //rating
 router.get('/ratinglist',ratingController.ratingList);

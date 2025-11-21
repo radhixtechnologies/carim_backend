@@ -41,10 +41,10 @@ const ActiveBookingList = () => {
 
   const getStatusBadge = (status) => {
     const statusMap = {
-      "1": { label: "Arrived", className: "bg-primary" },
-      "2": { label: "Ride Started", className: "bg-warning" },
+      1: { label: "Arrived", className: "bg-primary" },
+      2: { label: "Ride Started", className: "bg-warning" },
     };
-    
+
     return statusMap[status] || { label: "Unknown", className: "bg-light" };
   };
 
@@ -52,7 +52,12 @@ const ActiveBookingList = () => {
     fetchData(currentPage, searchTerm, dateFilter, statusFilter);
   }, [currentPage, searchTerm, dateFilter, statusFilter]);
 
-  const fetchData = async (page, search = "", dateFilter = "all", statusFilter = "all") => {
+  const fetchData = async (
+    page,
+    search = "",
+    dateFilter = "all",
+    statusFilter = "all"
+  ) => {
     try {
       const response = await axiosInstance.get(
         `/activebookinglist?page=${page}&limit=${limit}&search=${encodeURIComponent(
@@ -131,7 +136,7 @@ const ActiveBookingList = () => {
         if (response.data.success) {
           const newTotalPages = response.data.body.totalPages;
           const newData = response.data.body.data;
-          
+
           if (newData.length === 0 && currentPage > 1) {
             setCurrentPage((prevPage) => prevPage - 1);
           } else {
@@ -199,7 +204,7 @@ const ActiveBookingList = () => {
                       />
                       <i className="ri-search-line" />
                     </div>
-                    
+
                     {/* Date Filter Dropdown */}
                     <div className="dropdown tbl-drop mb-3 me-2">
                       <button
@@ -267,8 +272,10 @@ const ActiveBookingList = () => {
                         <tbody>
                           {matches.length > 0 ? (
                             matches.map((match, index) => {
-                              const { label, className } = getStatusBadge(match.status);
-                              
+                              const { label, className } = getStatusBadge(
+                                match.status
+                              );
+
                               return (
                                 <tr key={match.id}>
                                   <td>
@@ -304,7 +311,7 @@ const ActiveBookingList = () => {
                                           borderColor: "#ea5455",
                                           color: "#fff",
                                         }}
-                                        title="Delete Match"
+                                        title="Delete ride"
                                       >
                                         <i className="ri-delete-bin-line font-size-16"></i>
                                       </button>
@@ -413,9 +420,14 @@ const ActiveBookingList = () => {
                   <tr>
                     <td>Booking Date:</td>
                     <td className="text-end text-black fw-medium">
-                      {selectedMatch.bookingDate || "N/A"}
+                      {selectedMatch.bookingDate
+                        ? new Date(
+                            selectedMatch.bookingDate
+                          ).toLocaleDateString()
+                        : "N/A"}
                     </td>
                   </tr>
+
                   <tr>
                     <td>Pickup Location:</td>
                     <td className="text-end text-black fw-medium">
@@ -437,13 +449,21 @@ const ActiveBookingList = () => {
                   <tr>
                     <td>Payment Method:</td>
                     <td className="text-end text-black fw-medium">
-                      {selectedMatch.paymentMethod === "0" ? "Cash" : selectedMatch.paymentMethod === "1" ? "Online" : "N/A"}
+                      {selectedMatch.paymentMethod === "0"
+                        ? "Cash"
+                        : selectedMatch.paymentMethod === "1"
+                        ? "Online"
+                        : "N/A"}
                     </td>
                   </tr>
                   <tr>
                     <td>Status :</td>
                     <td className="text-end text-black fw-medium">
-                      <span className={`badge ${getStatusBadge(selectedMatch.status).className}`}>
+                      <span
+                        className={`badge ${
+                          getStatusBadge(selectedMatch.status).className
+                        }`}
+                      >
                         {getStatusBadge(selectedMatch.status).label}
                       </span>
                     </td>

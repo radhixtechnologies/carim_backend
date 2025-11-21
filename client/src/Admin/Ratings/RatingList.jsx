@@ -255,7 +255,7 @@ const RatingList = () => {
                                           borderColor: "#ea5455",
                                           color: "#fff",
                                         }}
-                                        title="Delete Match"
+                                        title="Delete rating"
                                       >
                                         <i className="ri-delete-bin-line font-size-16"></i>{" "}
                                       </button>

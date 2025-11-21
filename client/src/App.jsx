@@ -28,6 +28,7 @@ import AdminBank from './Admin/AdminBank';
 import ActiveBookingList from './Admin/Bookings/ActiveBookingList';
 import ScreenShotList from './Admin/Transactions/ScreenShotList';
 import BookingCompleted from './Admin/Bookings/BookingCompleted';
+import DriverBookingList from './Admin/Drivers/DriverBookingList';
 
 
 const App = () => {
@@ -62,6 +63,7 @@ const App = () => {
             <Route path="/password" element={<PrivateRoute element={<Password />} />} />
             <Route path="/userlist" element={<PrivateRoute element={<UserList />} />} />
             <Route path="/driverlist" element={<PrivateRoute element={<DriverList />} />} />
+            <Route path="/driverrides/:id" element={<PrivateRoute element={<DriverBookingList />} />} />
             <Route path="/contactlist" element={<PrivateRoute element={<ContactList />} />} />
             <Route path="/privacypolicy" element={<PrivateRoute element={<PrivacyPolicy />} />} />
             <Route path="/aboutus" element={<PrivateRoute element={<AboutUs />} />} />

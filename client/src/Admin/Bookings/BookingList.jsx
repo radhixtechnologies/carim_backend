@@ -33,14 +33,14 @@ const BookingList = () => {
 
   const getStatusBadge = (status) => {
     const statusMap = {
-      "0": { label: "Driver on the way", className: "bg-info" },
-      "1": { label: "Arrived", className: "bg-primary" },
-      "2": { label: "Ride Started", className: "bg-warning" },
-      "3": { label: "Completed", className: "bg-success" },
-      "4": { label: "Cancelled", className: "bg-danger" },
-      "5": { label: "Pending", className: "bg-secondary" }
+      0: { label: "Driver on the way", className: "bg-info" },
+      1: { label: "Arrived", className: "bg-primary" },
+      2: { label: "Ride Started", className: "bg-warning" },
+      3: { label: "Completed", className: "bg-success" },
+      4: { label: "Cancelled", className: "bg-danger" },
+      5: { label: "Pending", className: "bg-secondary" },
     };
-    
+
     return statusMap[status] || { label: "Unknown", className: "bg-light" };
   };
 
@@ -225,8 +225,10 @@ const BookingList = () => {
                         <tbody>
                           {matches.length > 0 ? (
                             matches.map((match, index) => {
-                              const { label, className } = getStatusBadge(match.status);
-                              
+                              const { label, className } = getStatusBadge(
+                                match.status
+                              );
+
                               return (
                                 <tr key={match.id}>
                                   <td>
@@ -262,7 +264,7 @@ const BookingList = () => {
                                           borderColor: "#ea5455",
                                           color: "#fff",
                                         }}
-                                        title="Delete Match"
+                                        title="Delete ride"
                                       >
                                         <i className="ri-delete-bin-line font-size-16"></i>
                                       </button>
@@ -368,10 +370,15 @@ const BookingList = () => {
                       ${selectedMatch.bookingPrice || "0"}
                     </td>
                   </tr>
+
                   <tr>
                     <td>Booking Date:</td>
                     <td className="text-end text-black fw-medium">
-                      {selectedMatch.bookingDate || "N/A"}
+                      {selectedMatch.bookingDate
+                        ? new Date(
+                            selectedMatch.bookingDate
+                          ).toLocaleDateString()
+                        : "N/A"}
                     </td>
                   </tr>
                   <tr>
@@ -395,13 +402,21 @@ const BookingList = () => {
                   <tr>
                     <td>Payment Method:</td>
                     <td className="text-end text-black fw-medium">
-                      {selectedMatch.paymentMethod === "0" ? "Cash" : selectedMatch.paymentMethod === "1" ? "Online" : "N/A"}
+                      {selectedMatch.paymentMethod === "0"
+                        ? "Cash"
+                        : selectedMatch.paymentMethod === "1"
+                        ? "Online"
+                        : "N/A"}
                     </td>
                   </tr>
                   <tr>
                     <td>Status :</td>
                     <td className="text-end text-black fw-medium">
-                      <span className={`badge ${getStatusBadge(selectedMatch.status).className}`}>
+                      <span
+                        className={`badge ${
+                          getStatusBadge(selectedMatch.status).className
+                        }`}
+                      >
                         {getStatusBadge(selectedMatch.status).label}
                       </span>
                     </td>

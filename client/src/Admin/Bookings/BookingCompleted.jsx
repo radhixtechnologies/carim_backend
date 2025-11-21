@@ -263,7 +263,7 @@ const BookingCompleted = () => {
                                           borderColor: "#ea5455",
                                           color: "#fff",
                                         }}
-                                        title="Delete Match"
+                                        title="Delete transaction"
                                       >
                                         <i className="ri-delete-bin-line font-size-16"></i>
                                       </button>
@@ -372,9 +372,14 @@ const BookingCompleted = () => {
                   <tr>
                     <td>Booking Date:</td>
                     <td className="text-end text-black fw-medium">
-                      {selectedMatch.bookingDate || "N/A"}
+                      {selectedMatch.bookingDate
+                        ? new Date(
+                            selectedMatch.bookingDate
+                          ).toLocaleDateString()
+                        : "N/A"}
                     </td>
                   </tr>
+
                   <tr>
                     <td>Pickup Location:</td>
                     <td className="text-end text-black fw-medium">

@@ -7,22 +7,12 @@ module.exports = function(sequelize, DataTypes) {
       allowNull: false,
       primaryKey: true
     },
-    userId: {   
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        defaultValue: 0
-    },
     driverId: {
       type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 0
     },
-    bookingId: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      defaultValue: 0
-    },
-    totalAmount: {
+    amount: {
       type: DataTypes.DOUBLE(10,2),
       allowNull: false,
       defaultValue: 0.00

@@ -115,24 +115,10 @@ module.exports = {
             const includeClause = [
                 {
                     model: db.users,
-                    as: 'screenshotuser',
-                    required: false,
-                },
-                {
-                    model: db.users,
                     as: 'screenshotdriver',
                     required: false,
+                    attributes: ['id', 'name', 'totalAmount']
                 },
-                {
-                    model: db.bookings,
-                    as: 'bookingscreen',
-                    required: false,
-                },
-                {
-                    model: db.transactions,
-                    as: 'screenshottransaction',
-                    required: false,
-                }
             ];
 
             if (dateFilter !== 'all') {
@@ -148,13 +134,6 @@ module.exports = {
 
             if (search) {
                 const searchConditions = [];
-
-                searchConditions.push({
-                    '$screenshotuser.name$': {
-                        [db.Sequelize.Op.like]: `%${search}%`
-                    }
-                });
-
                 searchConditions.push({
                     '$screenshotdriver.name$': {
                         [db.Sequelize.Op.like]: `%${search}%`
@@ -186,38 +165,8 @@ module.exports = {
                 subQuery: false,
             });
 
-            const processedTransactions = await Promise.all(transactions.map(async (transaction) => {
-                const transactionData = transaction.toJSON();
-
-                if (transactionData.totalAmount) {
-                    try {
-                        const adminUser = await db.users.findOne({
-                            where: { role: "0" },
-                            attributes: ['adminCommission']
-                        });
-
-                        if (adminUser && adminUser.adminCommission) {
-                            const commissionPercentage = parseFloat(adminUser.adminCommission);
-                            if (!isNaN(commissionPercentage) && commissionPercentage > 0) {
-                                transactionData.adminAmount = (transactionData.totalAmount * commissionPercentage) / 100;
-                            } else {
-                                transactionData.adminAmount = 0;
-                            }
-                        } else {
-                            transactionData.adminAmount = 0;
-                        }
-                    } catch (error) {
-                        transactionData.adminAmount = 0;
-                    }
-                } else {
-                    transactionData.adminAmount = 0;
-                }
-
-                return transactionData;
-            }));
-
             return helper.success(res, "All transaction screen details", {
-                data: processedTransactions,
+                data: transactions,
                 total: totalTransactions,
                 page,
                 limit,
@@ -229,7 +178,7 @@ module.exports = {
     },
     screenshotstatus: async (req, res) => {
         try {
-            const { id, status, adminAmount } = req.body;
+            const { id, status, addAmount } = req.body;
             if (!id) {
                 return helper.error(res, "Transaction ID is required");
             }
@@ -237,10 +186,6 @@ module.exports = {
             const transaction = await db.transferscreenshot.findOne({
                 where: { id },
                 include: [
-                    {
-                        model: db.users,
-                        as: 'screenshotuser'
-                    },
                     {
                         model: db.users,
                         as: 'screenshotdriver'
@@ -265,11 +210,12 @@ module.exports = {
                 await db.transferscreenshot.update(
                     {
                         status,
-                        adminAmount: status === "1" ? parseFloat(adminAmount) : null
+                        addedAmount: status === "1" ? parseFloat(addAmount) : null
                     },
                     { where: { id }, transaction: t }
                 );
-                if (status === "1" && adminAmount) {
+
+                if (status === "1" && addAmount) {
                     let driverId = transaction.driverId;
 
                     if (!driverId && transaction.screenshotdriver) {
@@ -295,19 +241,11 @@ module.exports = {
                         await t.rollback();
                         return helper.error(res, `Driver not found.`);
                     }
+
                     const currentDriverAmount = parseFloat(driver.totalAmount || 0);
-                    const deductionAmount = parseFloat(adminAmount);
-                    if (currentDriverAmount < deductionAmount) {
-                        await t.rollback();
-                        await db.transferscreenshot.update(
-                            { status: "0" },
-                            { where: { id } }
-                        );
+                    const amountToAdd = parseFloat(addAmount);
+                    const newDriverAmount = currentDriverAmount + amountToAdd;
 
-                        return helper.error(res, `Insufficient driver balance. Driver current balance: $${currentDriverAmount.toFixed(2)}, Required deduction: $${deductionAmount.toFixed(2)}. Transaction verification failed.`);
-                    }
-
-                    const newDriverAmount = currentDriverAmount - deductionAmount;
                     await db.users.update(
                         {
                             totalAmount: newDriverAmount
@@ -317,7 +255,6 @@ module.exports = {
                             transaction: t
                         }
                     );
-
                 }
 
                 await t.commit();
@@ -329,15 +266,11 @@ module.exports = {
                             model: db.users,
                             as: 'screenshotdriver'
                         },
-                        {
-                            model: db.users,
-                            as: 'screenshotuser'
-                        }
                     ]
                 });
 
                 let updatedDriver = null;
-                if (status === "1" && adminAmount) {
+                if (status === "1" && addAmount) {
                     let driverId = transaction.driverId || (transaction.screenshotdriver && transaction.screenshotdriver.id);
                     if (driverId) {
                         updatedDriver = await db.users.findOne({
@@ -349,7 +282,7 @@ module.exports = {
                 return helper.success(res, "Status updated successfully", {
                     id: updatedTransaction.id,
                     status: updatedTransaction.status,
-                    adminAmount: updatedTransaction.adminAmount,
+                    addedAmount: updatedTransaction.addedAmount,
                     driverTotalAmount: updatedDriver?.totalAmount,
                     success: true
                 });

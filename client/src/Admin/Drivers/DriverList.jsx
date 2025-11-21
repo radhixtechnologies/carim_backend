@@ -447,6 +447,14 @@ const DriverList = () => {
                                     >
                                       <i className="ri-eye-fill font-size-16"></i>
                                     </button>
+                                    <Link
+                                      to={`/driverrides/${user.id}`}
+                                      className="btn btn-soft-warning px-2 btn-sm me-1"
+                                      title="View history ride"
+                                    >
+                                      <i className="ri-roadster-line font-size-16"></i>{" "}
+                                     
+                                    </Link>
 
                                     <button
                                       type="button"
@@ -758,9 +766,9 @@ const DriverList = () => {
                     </td>
                   </tr>
                   <tr>
-                    <td>Total Amount :</td>
+                    <td>Balance :</td>
                     <td className="text-end text-black fw-medium">
-                      $ {selectedUser.totalAmount || 0}
+                      ${selectedUser.totalAmount || 0}
                     </td>
                   </tr>
                 </tbody>
