@@ -14,9 +14,19 @@ const DriverDocuments = () => {
   const [loading, setLoading] = useState(true);
   const [filteredDriverId, setFilteredDriverId] = useState(null);
   const [showOffcanvas, setShowOffcanvas] = useState(false);
+  const [driverName, setDriverName] = useState("");
+  const [dateFilter, setDateFilter] = useState("all");
 
   const { driverId } = useParams();
   const navigate = useNavigate();
+
+  const dateFilters = [
+    { value: "all", label: "All Data" },
+    { value: "7", label: "Last 7 Days" },
+    { value: "30", label: "This Month" },
+    { value: "180", label: "Last 6 Months" },
+    { value: "365", label: "Last Year" },
+  ];
 
   useEffect(() => {
     if (driverId) {
@@ -25,16 +35,20 @@ const DriverDocuments = () => {
     } else {
       fetchAllData();
     }
-  }, [driverId]);
+  }, [driverId, dateFilter]); 
 
   const fetchDriverData = async (id) => {
     try {
       setLoading(true);
-      const response = await axiosInstance.get(`/document?driverId=${id}`);
-      console.log("Driver Document Response:", response);
+      const response = await axiosInstance.get(`/document?driverId=${id}&dateFilter=${dateFilter}`);
 
       if (response.data.success && response.data.body.data.length > 0) {
-        setUsers(response.data.body.data);
+        const driverData = response.data.body.data;
+        setUsers(driverData);
+        
+        if (driverData.length > 0 && driverData[0].name) {
+          setDriverName(driverData[0].name);
+        }
       } else {
         Swal.fire(
           "Not Found",
@@ -45,7 +59,6 @@ const DriverDocuments = () => {
         });
       }
     } catch (error) {
-      console.error("Error fetching driver data:", error);
       Swal.fire(
         "Error",
         "An error occurred while fetching driver documents",
@@ -61,24 +74,34 @@ const DriverDocuments = () => {
   const fetchAllData = async () => {
     try {
       setLoading(true);
-      const response = await axiosInstance.get(`/document`);
-      console.log("All Documents Response:", response);
+      const response = await axiosInstance.get(`/document?dateFilter=${dateFilter}`);
 
       if (response.data.success) {
         setUsers(response.data.body.data || []);
+        setDriverName(""); 
       } else {
         toast.error(response.data.message || "Failed to load document list");
       }
     } catch (error) {
-      console.error("Error fetching all data:", error);
       toast.error("An error occurred while fetching the document list");
     } finally {
       setLoading(false);
     }
   };
 
+  const handleShowAllDocuments = () => {
+    setFilteredDriverId(null);
+    setDriverName("");
+    setDateFilter("all"); 
+    navigate("/documentlist");
+  };
+
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
+  };
+
+  const handleDateFilter = (value) => {
+    setDateFilter(value);
   };
 
   const handleViewDetails = (user) => {
@@ -162,21 +185,25 @@ const DriverDocuments = () => {
         toast.error(response.data.message || "Failed to update status");
       }
     } catch (error) {
-      console.error("Error updating status:", error);
       toast.error("An error occurred while updating document status");
     }
   };
 
   const getPageTitle = () => {
     return filteredDriverId
-      ? `Driver Documents - ID: ${filteredDriverId}`
+      ? `Driver Documents - ${driverName || `ID: ${filteredDriverId}`}`
       : "Driver Documents List";
   };
 
   const getBreadcrumbText = () => {
     return filteredDriverId
-      ? `Driver ${filteredDriverId} Documents`
+      ? `${driverName || `Driver ${filteredDriverId}`} Documents`
       : "Driver Documents Listings";
+  };
+
+  const getCurrentFilterLabel = () => {
+    const filter = dateFilters.find((f) => f.value === dateFilter);
+    return filter ? filter.label : "All Data";
   };
 
   const displayUsers = filteredDriverId
@@ -217,16 +244,20 @@ const DriverDocuments = () => {
 
               {filteredDriverId && (
                 <div className="alert alert-info mb-3">
-                  <i className="ri-information-line me-2"></i>
-                  Showing documents for Driver ID:{" "}
-                  <strong>{filteredDriverId}</strong>
-                  <Link
-                    to="/documentlist"
-                    className="btn btn-sm btn-outline-primary ms-3"
-                  >
-                    <i className="ri-list-unordered me-1"></i>
-                    View All Documents
-                  </Link>
+                  <div className="d-flex justify-content-between align-items-center">
+                    <div>
+                      <i className="ri-information-line me-2"></i>
+                      Showing documents for:{" "}
+                      <strong>{driverName || `Driver ID: ${filteredDriverId}`}</strong>
+                    </div>
+                    <button
+                      onClick={handleShowAllDocuments}
+                      className="btn btn-sm btn-outline-primary"
+                    >
+                      <i className="ri-list-unordered me-1"></i>
+                      Show All Documents
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -240,12 +271,12 @@ const DriverDocuments = () => {
               ) : (
                 <div className="card">
                   <div className="card-body cusbar">
-                    {!filteredDriverId && (
-                      <div
-                        className="card-head justify-content-start adjusttwo mb-3"
-                        style={{ flexWrap: "nowrap" }}
-                      >
-                        <div className="tbl-search position-relative">
+                    <div
+                      className="card-head justify-content-start adjusttwo mb-3"
+                      style={{ flexWrap: "nowrap" }}
+                    >
+                      {!filteredDriverId && (
+                        <div className="tbl-search position-relative me-3">
                           <input
                             type="text"
                             className="form-control"
@@ -255,8 +286,39 @@ const DriverDocuments = () => {
                           />
                           <i className="ri-search-line" />
                         </div>
+                      )}
+                      
+                      {/* Date Filter Dropdown */}
+                      <div className="dropdown tbl-drop">
+                        <button
+                          className="btn btn-light dropdown-toggle"
+                          type="button"
+                          data-bs-toggle="dropdown"
+                          aria-expanded="false"
+                        >
+                          <i className="ri-calendar-2-line me-2"></i>
+                          {getCurrentFilterLabel()}
+                        </button>
+                        <ul className="dropdown-menu">
+                          {dateFilters.map((filter) => (
+                            <li key={filter.value}>
+                              <button
+                                className={`dropdown-item ${
+                                  dateFilter === filter.value ? "active" : ""
+                                }`}
+                                type="button"
+                                onClick={() => handleDateFilter(filter.value)}
+                              >
+                                {filter.label}
+                                {dateFilter === filter.value && (
+                                  <i className="ri-check-line ms-2 text-success"></i>
+                                )}
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
                       </div>
-                    )}
+                    </div>
 
                     <div className="table-responsive table-card border-top">
                       <table className="table table-centered cus-nowrap align-middle hltr mb-0">
@@ -268,6 +330,7 @@ const DriverDocuments = () => {
                             <th>Email</th>
                             <th>Location</th>
                             <th>Verified Status</th>
+                            <th>Upload Date</th>
                             <th className="text-end">Action</th>
                           </tr>
                         </thead>
@@ -353,6 +416,13 @@ const DriverDocuments = () => {
                                   </div>
                                 </td>
                                 <td>
+                                  {user.createdAt ? (
+                                    new Date(user.createdAt).toLocaleDateString()
+                                  ) : (
+                                    "N/A"
+                                  )}
+                                </td>
+                                <td>
                                   <div className="d-flex justify-content-end">
                                     <button
                                       type="button"
@@ -369,11 +439,11 @@ const DriverDocuments = () => {
                           ) : (
                             <tr>
                               <td
-                                colSpan="7"
+                                colSpan="8"
                                 style={{ textAlign: "center", padding: "20px" }}
                               >
                                 {filteredDriverId
-                                  ? `No documents found for Driver ID: ${filteredDriverId}`
+                                  ? `No documents found for ${driverName || `Driver ID: ${filteredDriverId}`}`
                                   : "No drivers found"}
                               </td>
                             </tr>
@@ -403,7 +473,7 @@ const DriverDocuments = () => {
               id="offcanvasRightLabel"
             >
               {filteredDriverId
-                ? `Driver ${filteredDriverId} Documents`
+                ? `${driverName || `Driver ${filteredDriverId}`} Documents`
                 : "Driver Documents"}
             </h5>
             {selectedUser && (
@@ -433,6 +503,17 @@ const DriverDocuments = () => {
                     >
                       <div className="card">
                         <div className="card-body">
+                          <div className="d-flex justify-content-between align-items-center mb-2">
+                            <h6 className="card-title mb-0">
+                              Document {index + 1}
+                            </h6>
+                            <small className="text-muted">
+                              {document.createdAt ? 
+                                new Date(document.createdAt).toLocaleDateString() : 
+                                "N/A"
+                              }
+                            </small>
+                          </div>
                           {document.image ? (
                             <div className="text-center">
                               {/\.(jpg|jpeg|png|gif|bmp|tiff|webp)$/i.test(
@@ -612,6 +693,15 @@ const DriverDocuments = () => {
                     <td>Verification Status:</td>
                     <td className="text-end">
                       {getApprovalBadge(selectedUser.documentVerify)}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Last Updated:</td>
+                    <td className="text-end text-black fw-medium">
+                      {selectedUser.updatedAt ? 
+                        new Date(selectedUser.updatedAt).toLocaleDateString() : 
+                        "N/A"
+                      }
                     </td>
                   </tr>
                 </tbody>

@@ -54,7 +54,7 @@ function Sidebar({ isOpen }) {
     } else if (
       pathname === "/driverlist" ||
       pathname.startsWith("/driverrides") ||
-      pathname.startsWith("/addtutorial") ||
+      pathname.startsWith("/documentlist") ||
       pathname.startsWith("/updatetutorial")
     ) {
       setActiveMenu("seekers");

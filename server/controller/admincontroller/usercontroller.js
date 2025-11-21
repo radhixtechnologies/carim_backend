@@ -234,7 +234,6 @@ module.exports = {
             const Op = db.Sequelize.Op;
             const whereCondition = { role: "2" };
 
-            // Add driverId filter if provided
             if (driverId && driverId.trim() !== "") {
                 whereCondition.id = driverId;
             }
@@ -302,9 +301,4 @@ module.exports = {
             return helper.error(res, error.message);
         }
     },
-
-
-
-
-
 }

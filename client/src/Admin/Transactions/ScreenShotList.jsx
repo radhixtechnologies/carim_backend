@@ -255,7 +255,7 @@ const ScreenShotList = () => {
         setPendingVerification(null);
         setAddAmount("");
         toast.success(
-          `Transaction verified successfully and ${parseFloat(
+          `Transaction verified successfully and $${parseFloat(
             addAmount
           ).toFixed(2)} added to driver's balance`
         );
