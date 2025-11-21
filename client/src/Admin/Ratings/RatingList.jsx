@@ -373,7 +373,7 @@ const RatingList = () => {
                     <textarea
                       readOnly
                       className="form-control"
-                      rows="4"
+                      rows="12"
                       value={selectedMatch.review}
                       style={{
                         resize: "none",

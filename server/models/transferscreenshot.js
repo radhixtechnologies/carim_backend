@@ -1,5 +1,4 @@
 const Sequelize = require('sequelize');
-const transactions = require('./transactions');
 module.exports = function(sequelize, DataTypes) {
   return sequelize.define('transferscreenshot', {
     id: {
@@ -7,11 +6,6 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.INTEGER,
       allowNull: false,
       primaryKey: true
-    },
-    transactionId: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      defaultValue: 0
     },
     userId: {   
         type: DataTypes.INTEGER,

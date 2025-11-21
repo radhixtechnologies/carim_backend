@@ -11,6 +11,7 @@ const Profile = () => {
     phoneNumber: "",
     image: "",
     countryCode: "",
+    adminCommission: "",
   });
   const [imagePreview, setImagePreview] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
@@ -63,6 +64,22 @@ const Profile = () => {
     return "";
   };
 
+  const validateAdminCommission = (commission) => {
+    if (!commission && commission !== 0) return "Admin Commission is required";
+
+    const numberRegex = /^[0-9]+$/;
+    if (!numberRegex.test(commission))
+      return "Admin Commission must contain only numbers";
+
+    const commissionNum = parseInt(commission, 10);
+    if (isNaN(commissionNum)) return "Admin Commission must be a valid number";
+    if (commissionNum < 0) return "Admin Commission cannot be negative";
+    if (commissionNum < 0 || commissionNum > 99)
+      return "Admin Commission must be between 0 and 99";
+
+    return "";
+  };
+
   const handleNameChange = (e) => {
     const { value } = e.target;
     setData((prevData) => ({ ...prevData, name: value }));
@@ -77,6 +94,21 @@ const Profile = () => {
     setErrors((prevErrors) => ({ ...prevErrors, phoneNumber: phoneError }));
   };
 
+  const handleAdminCommissionChange = (e) => {
+    const { value } = e.target;
+
+    const cleanedValue = value.replace(/\s/g, "");
+
+    if (cleanedValue === "" || /^[0-9]+$/.test(cleanedValue)) {
+      setData((prevData) => ({ ...prevData, adminCommission: cleanedValue }));
+      const commissionError = validateAdminCommission(cleanedValue);
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        adminCommission: commissionError,
+      }));
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -84,9 +116,11 @@ const Profile = () => {
 
     const nameError = validateName(data.name);
     const phoneError = validatePhone(data.phoneNumber);
+    const commissionError = validateAdminCommission(data.adminCommission);
 
     if (nameError) formErrors.name = nameError;
     if (phoneError) formErrors.phoneNumber = phoneError;
+    if (commissionError) formErrors.adminCommission = commissionError;
 
     if (Object.keys(formErrors).length > 0) {
       setErrors(formErrors);
@@ -103,6 +137,7 @@ const Profile = () => {
     formData.append("name", data.name);
     formData.append("email", data.email);
     formData.append("phoneNumber", data.phoneNumber);
+    formData.append("adminCommission", data.adminCommission);
     if (selectedImage) {
       formData.append("image", selectedImage);
     }
@@ -175,7 +210,8 @@ const Profile = () => {
                         </div>
                       </div>
                       <form onSubmit={handleSubmit}>
-                        <div className="mb-3">
+                        <div className="row">
+                          <div className="mb-3 col-6">
                           <label className="mb-1 fw-medium">Name</label>
                           <input
                             type="text"
@@ -190,7 +226,7 @@ const Profile = () => {
                           )}
                         </div>
 
-                        <div className="mb-3">
+                        <div className="mb-3 col-6">
                           <label className="mb-1 fw-medium">Email</label>
                           <input
                             type="email"
@@ -199,6 +235,7 @@ const Profile = () => {
                             value={data.email}
                             disabled
                           />
+                        </div>
                         </div>
 
                         <div className="mb-3 row">
@@ -228,6 +265,32 @@ const Profile = () => {
                                 {errors.phoneNumber}
                               </div>
                             )}
+                          </div>
+                        </div>
+                        <div style={{ marginBottom: "16px" }}>
+                          <label htmlFor="adminCommission" className="mb-1 fw-medium">
+                            Admin Commission*
+                          </label>
+                          <div className="input-group">
+                            <input
+                              type="text"
+                              className="form-control"
+                              name="adminCommission"
+                              value={data.adminCommission}
+                              onChange={handleAdminCommissionChange}
+                              placeholder="Enter commission between 0-99"
+                              maxLength={2}
+                            />
+                            <span className="input-group-text">%</span>
+                          </div>
+                          {errors.adminCommission && (
+                            <div className="text-danger">
+                              {errors.adminCommission}
+                            </div>
+                          )}
+                          <div className="form-text">
+                            Commission must be a number between 0 and 99 (no
+                            spaces or special characters allowed)
                           </div>
                         </div>
 

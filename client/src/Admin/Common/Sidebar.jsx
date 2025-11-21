@@ -249,13 +249,22 @@ function Sidebar({ isOpen }) {
                 <ul className="sub-menu mm-show">
                   <li>
                     <Link
+                      className={isActive("/bookingcompleted") ? "active" : ""}
+                      to="/bookingcompleted"
+                      onClick={handleLinkClick}
+                    >
+                      Transaction list
+                    </Link>
+                  </li>
+                  {/* <li>
+                    <Link
                       className={isActive("/transactionlist") ? "active" : ""}
                       to="/transactionlist"
                       onClick={handleLinkClick}
                     >
                       Transaction list
                     </Link>
-                  </li>
+                  </li> */}
                   <li>
                     <Link
                       className={isActive("/screenshotlist") ? "active" : ""}

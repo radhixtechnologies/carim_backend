@@ -85,8 +85,9 @@ db.userBanks.belongsTo(db.users, { foreignKey: 'userId', as: 'banks' });
 db.users.hasMany(db.userBanks, { foreignKey: 'userId', as: 'banks' });
 
 //screenshot associations 
-// Correct associations - you're associating transactions with itself which is wrong
 db.transferscreenshot.belongsTo(db.users, { foreignKey: 'userId', as: 'screenshotuser' });
 db.transferscreenshot.belongsTo(db.users, { foreignKey: 'driverId', as: 'screenshotdriver' });
 db.transferscreenshot.belongsTo(db.bookings, { foreignKey: 'bookingId', as: 'bookingscreen' });
 db.transferscreenshot.hasMany(db.transactions, { foreignKey: 'transactionId', as: 'screenshottransaction' }); 
+
+

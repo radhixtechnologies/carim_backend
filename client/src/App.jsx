@@ -27,6 +27,7 @@ import DriverDocuments from './Admin/Drivers/DriverDocuments';
 import AdminBank from './Admin/AdminBank';
 import ActiveBookingList from './Admin/Bookings/ActiveBookingList';
 import ScreenShotList from './Admin/Transactions/ScreenShotList';
+import BookingCompleted from './Admin/Bookings/BookingCompleted';
 
 
 const App = () => {
@@ -79,6 +80,7 @@ const App = () => {
             <Route path="/bankdetail" element={<PrivateRoute element={<AdminBank />} />} />
             <Route path="/documentlist/:driverId?" element={<PrivateRoute element={<DriverDocuments />} />} />
             <Route path="/screenshotlist" element={<PrivateRoute element={<ScreenShotList />} />} />
+            <Route path="/bookingcompleted" element={<PrivateRoute element={<BookingCompleted />} />} />
 
           </Route>
         </Routes>

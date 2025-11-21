@@ -35,14 +35,13 @@ const DriverDocuments = () => {
 
       if (response.data.success && response.data.body.data.length > 0) {
         setUsers(response.data.body.data);
-        // Don't auto-select or auto-open - let user click manually
       } else {
         Swal.fire(
           "Not Found",
           `No documents found for Driver ID: ${id}`,
           "warning"
         ).then(() => {
-          navigate('/documentlist');
+          navigate("/documentlist");
         });
       }
     } catch (error) {
@@ -52,7 +51,7 @@ const DriverDocuments = () => {
         "An error occurred while fetching driver documents",
         "error"
       ).then(() => {
-        navigate('/documentlist');
+        navigate("/documentlist");
       });
     } finally {
       setLoading(false);
@@ -85,9 +84,8 @@ const DriverDocuments = () => {
   const handleViewDetails = (user) => {
     setSelectedUser(user);
     setShowOffcanvas(true);
-    
-    // Use Bootstrap's offcanvas programmatically
-    const offcanvasElement = document.getElementById('view-details');
+
+    const offcanvasElement = document.getElementById("view-details");
     if (offcanvasElement) {
       const offcanvas = new window.bootstrap.Offcanvas(offcanvasElement);
       offcanvas.show();
@@ -146,21 +144,19 @@ const DriverDocuments = () => {
       });
 
       if (response.data.success) {
-        // Refresh data based on current view
         if (filteredDriverId) {
           fetchDriverData(filteredDriverId);
         } else {
           fetchAllData();
         }
-        
-        // Update selected user if it's the same user
+
         if (selectedUser && selectedUser.id === userId) {
-          setSelectedUser(prev => ({
+          setSelectedUser((prev) => ({
             ...prev,
-            documentVerify: newStatus
+            documentVerify: newStatus,
           }));
         }
-        
+
         toast.success("Document status updated successfully");
       } else {
         toast.error(response.data.message || "Failed to update status");
@@ -172,23 +168,23 @@ const DriverDocuments = () => {
   };
 
   const getPageTitle = () => {
-    return filteredDriverId 
+    return filteredDriverId
       ? `Driver Documents - ID: ${filteredDriverId}`
       : "Driver Documents List";
   };
 
   const getBreadcrumbText = () => {
-    return filteredDriverId 
+    return filteredDriverId
       ? `Driver ${filteredDriverId} Documents`
       : "Driver Documents Listings";
   };
 
-  // Filter users for search (only when not viewing single driver)
-  const displayUsers = filteredDriverId 
-    ? users 
-    : users.filter(user => 
-        user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  const displayUsers = filteredDriverId
+    ? users
+    : users.filter(
+        (user) =>
+          user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          user.email?.toLowerCase().includes(searchTerm.toLowerCase())
       );
 
   return (
@@ -219,13 +215,13 @@ const DriverDocuments = () => {
                 </nav>
               </div>
 
-              {/* Show filter info banner when filtering by driver */}
               {filteredDriverId && (
                 <div className="alert alert-info mb-3">
                   <i className="ri-information-line me-2"></i>
-                  Showing documents for Driver ID: <strong>{filteredDriverId}</strong>
-                  <Link 
-                    to="/documentlist" 
+                  Showing documents for Driver ID:{" "}
+                  <strong>{filteredDriverId}</strong>
+                  <Link
+                    to="/documentlist"
                     className="btn btn-sm btn-outline-primary ms-3"
                   >
                     <i className="ri-list-unordered me-1"></i>
@@ -244,7 +240,6 @@ const DriverDocuments = () => {
               ) : (
                 <div className="card">
                   <div className="card-body cusbar">
-                    {/* Hide search when viewing single driver */}
                     {!filteredDriverId && (
                       <div
                         className="card-head justify-content-start adjusttwo mb-3"
@@ -293,8 +288,10 @@ const DriverDocuments = () => {
                                       }}
                                     />
                                   ) : (
-                                    <div className="bg-light rounded-circle d-flex align-items-center justify-content-center"
-                                      style={{ width: "50px", height: "50px" }}>
+                                    <div
+                                      className="bg-light rounded-circle d-flex align-items-center justify-content-center"
+                                      style={{ width: "50px", height: "50px" }}
+                                    >
                                       <i className="ri-user-line text-muted"></i>
                                     </div>
                                   )}
@@ -375,10 +372,9 @@ const DriverDocuments = () => {
                                 colSpan="7"
                                 style={{ textAlign: "center", padding: "20px" }}
                               >
-                                {filteredDriverId 
+                                {filteredDriverId
                                   ? `No documents found for Driver ID: ${filteredDriverId}`
-                                  : "No drivers found"
-                                }
+                                  : "No drivers found"}
                               </td>
                             </tr>
                           )}
@@ -406,7 +402,9 @@ const DriverDocuments = () => {
               className="offcanvas-title mb-0 me-3 fw-semibold"
               id="offcanvasRightLabel"
             >
-              {filteredDriverId ? `Driver ${filteredDriverId} Documents` : "Driver Documents"}
+              {filteredDriverId
+                ? `Driver ${filteredDriverId} Documents`
+                : "Driver Documents"}
             </h5>
             {selectedUser && (
               <div className="d-flex align-items-center">
@@ -429,7 +427,10 @@ const DriverDocuments = () => {
               {selectedUser.documents && selectedUser.documents.length > 0 ? (
                 <div className="row">
                   {selectedUser.documents.map((document, index) => (
-                    <div key={document.id || index} className="col-12 col-md-6 mb-3">
+                    <div
+                      key={document.id || index}
+                      className="col-12 col-md-6 mb-3"
+                    >
                       <div className="card">
                         <div className="card-body">
                           {document.image ? (
@@ -616,18 +617,19 @@ const DriverDocuments = () => {
                 </tbody>
               </table>
 
-              {/* Bio Section */}
               <div className="mt-4">
                 <div className="font-size-16 fw-medium mb-2">Bio:</div>
                 <div className="bg-light p-3 rounded">
                   {selectedUser.bio ? (
                     <textarea
                       readOnly
-                      className="form-control bg-transparent border-0"
+                      className="form-control "
                       rows="4"
                       value={selectedUser.bio}
                       style={{
                         resize: "none",
+                        backgroundColor: "#f8f9fa",
+                        border: "1px solid black",
                       }}
                     />
                   ) : (

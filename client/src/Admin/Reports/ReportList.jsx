@@ -344,7 +344,7 @@ const ReportList = () => {
                     <textarea
                       readOnly
                       className="form-control"
-                      rows="4"
+                      rows="14"
                       value={selectedMatch.rason}
                       style={{
                         resize: "none",

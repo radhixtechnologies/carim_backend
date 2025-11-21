@@ -19,6 +19,10 @@ const ScreenShotList = () => {
   const [dateFilter, setDateFilter] = useState("all");
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [exportData, setExportData] = useState([]);
+  const [showAmountPopup, setShowAmountPopup] = useState(false);
+  const [pendingVerification, setPendingVerification] = useState(null);
+  const [adminAmount, setAdminAmount] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
   const limit = 10;
 
   const dateFilters = [
@@ -40,7 +44,6 @@ const ScreenShotList = () => {
           search
         )}&dateFilter=${filter}`
       );
-      console.log("Transaction List Response:", response);
       if (response.data.success) {
         setTransactions(response.data.body.data || []);
         setTotalPages(response.data.body.totalPages || 1);
@@ -52,7 +55,6 @@ const ScreenShotList = () => {
         );
       }
     } catch (error) {
-      console.error("Fetch error:", error);
       Swal.fire(
         "Error",
         "An error occurred while fetching the screenshot list",
@@ -73,7 +75,6 @@ const ScreenShotList = () => {
       }
       return [];
     } catch (error) {
-      console.error("Export data fetch error:", error);
       toast.error("Failed to fetch data for export");
       return [];
     }
@@ -88,6 +89,7 @@ const ScreenShotList = () => {
       "User Name": transaction.screenshotuser?.name || "N/A",
       "Driver Name": transaction.screenshotdriver?.name || "N/A",
       "Total Amount ($)": transaction.totalAmount || "0",
+      "Admin Amount ($)": transaction.adminAmount || "0",
       "Transaction ID (Payment)":
         transaction.trasactionid || transaction.transactionId || "N/A",
       "Booking ID": transaction.bookingId || "N/A",
@@ -125,7 +127,6 @@ const ScreenShotList = () => {
 
       toast.success("Excel file downloaded successfully");
     } catch (error) {
-      console.error("Excel export error:", error);
       toast.error("Failed to export Excel file");
     }
   };
@@ -135,7 +136,6 @@ const ScreenShotList = () => {
       await prepareDataForExport();
       toast.success("CSV file is being prepared for download");
     } catch (error) {
-      console.error("CSV export error:", error);
       toast.error("Failed to prepare CSV file");
     }
   };
@@ -236,7 +236,73 @@ const ScreenShotList = () => {
     }
   };
 
+  const showAdminAmountPopup = (transaction) => {
+    if (transaction.status === "1") {
+      toast.info("This transaction is already verified");
+      return;
+    }
+
+    setPendingVerification(transaction);
+
+    const existingAdminAmount = transaction.adminAmount || "";
+    setAdminAmount(existingAdminAmount);
+
+    setShowAmountPopup(true);
+  };
+
+  const handleAdminAmountSubmit = async () => {
+    if (!adminAmount || isNaN(adminAmount) || parseFloat(adminAmount) <= 0) {
+      toast.error("Please enter a valid admin amount");
+      return;
+    }
+
+    if (parseFloat(adminAmount) > parseFloat(pendingVerification.totalAmount)) {
+      toast.error("Admin amount cannot be greater than total amount");
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      const response = await axiosInstance.post(`/transferscreenshotstatus`, {
+        id: pendingVerification.id,
+        status: "1",
+        adminAmount: parseFloat(adminAmount),
+      });
+
+      if (response.data.success) {
+        fetchData(currentPage, searchTerm, dateFilter);
+        setShowAmountPopup(false);
+        setPendingVerification(null);
+        setAdminAmount("");
+
+        toast.success(
+          "Transaction verified successfully and amount deducted from driver"
+        );
+      } else {
+        toast.error(response.data.message || "Failed to verify transaction");
+      }
+    } catch (error) {
+
+      if (error.response?.data?.message) {
+        toast.error(error.response.data.message);
+      } else {
+        toast.error("An error occurred while verifying transaction");
+      }
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const handleStatusChange = async (transactionId, newStatus) => {
+    if (newStatus === "1") {
+      const transaction = transactions.find((t) => t.id === transactionId);
+      if (transaction) {
+        showAdminAmountPopup(transaction);
+      }
+      return;
+    }
+
     try {
       const response = await axiosInstance.post(`/transferscreenshotstatus`, {
         id: transactionId,
@@ -245,7 +311,6 @@ const ScreenShotList = () => {
 
       if (response.data.success) {
         fetchData(currentPage, searchTerm, dateFilter);
-
         toast.success(
           `Status changed to ${getApprovalLabel(newStatus)} successfully`
         );
@@ -253,7 +318,6 @@ const ScreenShotList = () => {
         toast.error(response.data.message || "Failed to update status");
       }
     } catch (error) {
-      console.error("Error updating status:", error);
       toast.error("An error occurred while updating status");
     }
   };
@@ -284,6 +348,18 @@ const ScreenShotList = () => {
       default:
         return status || "N/A";
     }
+  };
+
+  const formatCurrency = (amount) => {
+    if (amount === null || amount === undefined) return "$0";
+    return `$${parseFloat(amount).toFixed(2)}`;
+  };
+
+  const getAdminAmountForDisplay = (transaction) => {
+    if (transaction.adminAmount) {
+      return formatCurrency(transaction.adminAmount);
+    }
+    return "Not set";
   };
 
   return (
@@ -354,7 +430,6 @@ const ScreenShotList = () => {
                     </div>
                   </div>
 
-                  {/* Export Buttons */}
                   <div className="d-flex justify-content-end mb-3">
                     <CSVLink
                       data={exportData}
@@ -386,6 +461,7 @@ const ScreenShotList = () => {
                             <th>User Name</th>
                             <th>Driver Name</th>
                             <th>Total Amount($)</th>
+                            <th>Admin Amount($)</th>
                             <th>Status</th>
                             <th className="text-end">Action</th>
                           </tr>
@@ -420,7 +496,12 @@ const ScreenShotList = () => {
                                     {transaction.screenshotdriver?.name ||
                                       "N/A"}
                                   </td>
-                                  <td>${transaction.totalAmount || "0"}</td>
+                                  <td>
+                                    {formatCurrency(transaction.totalAmount)}
+                                  </td>
+                                  <td>
+                                    {getAdminAmountForDisplay(transaction)}
+                                  </td>
                                   <td>
                                     <div className="dropdown">
                                       <button
@@ -431,6 +512,7 @@ const ScreenShotList = () => {
                                         data-bs-toggle="dropdown"
                                         aria-expanded="false"
                                         style={{ minWidth: "100px" }}
+                                        disabled={transaction.status === "1"}
                                       >
                                         {getApprovalLabel(transaction.status)}
                                       </button>
@@ -444,6 +526,9 @@ const ScreenShotList = () => {
                                                 transaction.id,
                                                 "0"
                                               )
+                                            }
+                                            disabled={
+                                              transaction.status === "1"
                                             }
                                           >
                                             <i className="ri-time-line me-2 text-warning"></i>
@@ -460,6 +545,9 @@ const ScreenShotList = () => {
                                                 "1"
                                               )
                                             }
+                                            disabled={
+                                              transaction.status === "1"
+                                            }
                                           >
                                             <i className="ri-check-line me-2 text-success"></i>
                                             Verified
@@ -474,6 +562,9 @@ const ScreenShotList = () => {
                                                 transaction.id,
                                                 "2"
                                               )
+                                            }
+                                            disabled={
+                                              transaction.status === "1"
                                             }
                                           >
                                             <i className="ri-close-line me-2 text-danger"></i>
@@ -520,7 +611,7 @@ const ScreenShotList = () => {
                           ) : (
                             <tr>
                               <td
-                                colSpan="7"
+                                colSpan="8"
                                 style={{ textAlign: "center", padding: "20px" }}
                               >
                                 No Transaction Proof found
@@ -550,6 +641,101 @@ const ScreenShotList = () => {
           </div>
         </div>
       </div>
+
+      {/* Admin Amount Popup Modal - FIXED */}
+      {showAmountPopup && (
+        <div
+          className="modal fade show"
+          style={{ display: "block", backgroundColor: "rgba(0,0,0,0.5)" }}
+        >
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Enter Admin Amount</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => {
+                    setShowAmountPopup(false);
+                    setPendingVerification(null);
+                    setAdminAmount("");
+                  }}
+                  disabled={isProcessing}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <div className="mb-3">
+                  <label className="form-label">Total Amount:</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={formatCurrency(pendingVerification?.totalAmount)}
+                    disabled
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">Current Admin Amount:</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={getAdminAmountForDisplay(pendingVerification)}
+                    disabled
+                  />
+                </div>
+                <div className="mb-3">
+                  <label className="form-label">Admin Amount ($):</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={adminAmount}
+                    onChange={(e) => setAdminAmount(e.target.value)}
+                    placeholder="Enter admin amount to deduct"
+                    min="0"
+                    max={pendingVerification?.totalAmount || 0}
+                    step="0.01"
+                    disabled={isProcessing}
+                  />
+                  <div className="form-text">
+                    This amount will be deducted from the driver's total
+                    balance. If driver has insufficient balance, verification
+                    will fail.
+                  </div>
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    setShowAmountPopup(false);
+                    setPendingVerification(null);
+                    setAdminAmount("");
+                  }}
+                  disabled={isProcessing}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleAdminAmountSubmit}
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" />
+                      Processing...
+                    </>
+                  ) : (
+                    "Verify & Deduct Amount"
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Transaction Details Offcanvas */}
       <div
@@ -632,15 +818,13 @@ const ScreenShotList = () => {
                   <tr>
                     <td>Total Amount:</td>
                     <td className="text-end text-black fw-medium">
-                      ${selectedTransaction.totalAmount || "0"}
+                      {formatCurrency(selectedTransaction.totalAmount)}
                     </td>
                   </tr>
                   <tr>
-                    <td>Transaction ID:</td>
+                    <td>Admin Amount:</td>
                     <td className="text-end text-black fw-medium">
-                      {selectedTransaction.trasactionid ||
-                        selectedTransaction.transactionId ||
-                        "N/A"}
+                      {getAdminAmountForDisplay(selectedTransaction)}
                     </td>
                   </tr>
                   <tr>
@@ -649,7 +833,6 @@ const ScreenShotList = () => {
                       {selectedTransaction.bookingId || "N/A"}
                     </td>
                   </tr>
-
                   <tr>
                     <td>Verification Status:</td>
                     <td className="text-end">

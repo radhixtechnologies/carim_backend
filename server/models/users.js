@@ -159,17 +159,28 @@ module.exports = function (sequelize, DataTypes) {
       comment: " 0=>unsuspend, 1=>suspend"
     },
     approve: {
-      type: DataTypes.ENUM('0', '1','2'),
+      type: DataTypes.ENUM('0', '1', '2'),
       allowNull: false,
       defaultValue: "0",
       comment: " 0=>pending, 1=>aproved, 2=>rejected"
     },
     documentVerify: {
-      type: DataTypes.ENUM('0', '1','2'),
+      type: DataTypes.ENUM('0', '1', '2'),
       allowNull: false,
       defaultValue: "0",
       comment: " 0=>pending, 1=>verified, 2=>rejected"
     },
+    adminCommission: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      defaultValue: "",
+      comment: "for admin charge"
+    },
+    totalAmount: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      defaultValue: "",
+    }
 
   }, {
     sequelize,

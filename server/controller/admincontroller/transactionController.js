@@ -88,11 +88,9 @@ module.exports = {
                 totalPages: Math.ceil(totalTransactions / limit),
             });
         } catch (error) {
-            console.error("Transaction list error:", error);
             return helper.error(res, error.message);
         }
     },
-
     transactionDelete: async (req, res) => {
         try {
             const { id } = req.params;
@@ -188,33 +186,178 @@ module.exports = {
                 subQuery: false,
             });
 
+            const processedTransactions = await Promise.all(transactions.map(async (transaction) => {
+                const transactionData = transaction.toJSON();
+
+                if (transactionData.totalAmount) {
+                    try {
+                        const adminUser = await db.users.findOne({
+                            where: { role: "0" },
+                            attributes: ['adminCommission']
+                        });
+
+                        if (adminUser && adminUser.adminCommission) {
+                            const commissionPercentage = parseFloat(adminUser.adminCommission);
+                            if (!isNaN(commissionPercentage) && commissionPercentage > 0) {
+                                transactionData.adminAmount = (transactionData.totalAmount * commissionPercentage) / 100;
+                            } else {
+                                transactionData.adminAmount = 0;
+                            }
+                        } else {
+                            transactionData.adminAmount = 0;
+                        }
+                    } catch (error) {
+                        transactionData.adminAmount = 0;
+                    }
+                } else {
+                    transactionData.adminAmount = 0;
+                }
+
+                return transactionData;
+            }));
+
             return helper.success(res, "All transaction screen details", {
-                data: transactions,
+                data: processedTransactions,
                 total: totalTransactions,
                 page,
                 limit,
                 totalPages: Math.ceil(totalTransactions / limit),
             });
         } catch (error) {
-            console.error("Transaction list error:", error);
             return helper.error(res, error.message);
         }
     },
     screenshotstatus: async (req, res) => {
         try {
-            const { id, status } = req.body;
-            const driver = await db.transferscreenshot.findOne();
-     
-            if (!['0', '1', '2'].includes(status)) {
-                return helper.error(res, "Invalid d status");
+            const { id, status, adminAmount } = req.body;
+            if (!id) {
+                return helper.error(res, "Transaction ID is required");
             }
-            await db.transferscreenshot.update({ status }, { where: { id } });
-            const updatedDriver = await db.transferscreenshot.findOne({ where: { id } });
-            return helper.success(res, " status updated successfully", {
-                id: updatedDriver.id,
-                status: updatedDriver.status,
-                success: true
+
+            const transaction = await db.transferscreenshot.findOne({
+                where: { id },
+                include: [
+                    {
+                        model: db.users,
+                        as: 'screenshotuser'
+                    },
+                    {
+                        model: db.users,
+                        as: 'screenshotdriver'
+                    }
+                ]
             });
+
+            if (!transaction) {
+                return helper.error(res, "Transaction not found");
+            }
+            if (transaction.status === "1") {
+                return helper.error(res, "Transaction is already verified");
+            }
+
+            if (!['0', '1', '2'].includes(status)) {
+                return helper.error(res, "Invalid status");
+            }
+
+            const t = await db.sequelize.transaction();
+
+            try {
+                await db.transferscreenshot.update(
+                    {
+                        status,
+                        adminAmount: status === "1" ? parseFloat(adminAmount) : null
+                    },
+                    { where: { id }, transaction: t }
+                );
+                if (status === "1" && adminAmount) {
+                    let driverId = transaction.driverId;
+
+                    if (!driverId && transaction.screenshotdriver) {
+                        driverId = transaction.screenshotdriver.id;
+                    }
+                    if (!driverId) {
+                        driverId = transaction.dataValues?.driverId;
+                    }
+                    if (!driverId) {
+                        await t.rollback();
+                        return helper.error(res, "Driver ID not found in transaction. Please check transaction data.");
+                    }
+
+                    const driver = await db.users.findOne({
+                        where: {
+                            id: driverId,
+                            role: "2"
+                        },
+                        transaction: t
+                    });
+
+                    if (!driver) {
+                        await t.rollback();
+                        return helper.error(res, `Driver not found.`);
+                    }
+                    const currentDriverAmount = parseFloat(driver.totalAmount || 0);
+                    const deductionAmount = parseFloat(adminAmount);
+                    if (currentDriverAmount < deductionAmount) {
+                        await t.rollback();
+                        await db.transferscreenshot.update(
+                            { status: "0" },
+                            { where: { id } }
+                        );
+
+                        return helper.error(res, `Insufficient driver balance. Driver current balance: $${currentDriverAmount.toFixed(2)}, Required deduction: $${deductionAmount.toFixed(2)}. Transaction verification failed.`);
+                    }
+
+                    const newDriverAmount = currentDriverAmount - deductionAmount;
+                    await db.users.update(
+                        {
+                            totalAmount: newDriverAmount
+                        },
+                        {
+                            where: { id: driverId },
+                            transaction: t
+                        }
+                    );
+
+                }
+
+                await t.commit();
+
+                const updatedTransaction = await db.transferscreenshot.findOne({
+                    where: { id },
+                    include: [
+                        {
+                            model: db.users,
+                            as: 'screenshotdriver'
+                        },
+                        {
+                            model: db.users,
+                            as: 'screenshotuser'
+                        }
+                    ]
+                });
+
+                let updatedDriver = null;
+                if (status === "1" && adminAmount) {
+                    let driverId = transaction.driverId || (transaction.screenshotdriver && transaction.screenshotdriver.id);
+                    if (driverId) {
+                        updatedDriver = await db.users.findOne({
+                            where: { id: driverId }
+                        });
+                    }
+                }
+
+                return helper.success(res, "Status updated successfully", {
+                    id: updatedTransaction.id,
+                    status: updatedTransaction.status,
+                    adminAmount: updatedTransaction.adminAmount,
+                    driverTotalAmount: updatedDriver?.totalAmount,
+                    success: true
+                });
+
+            } catch (error) {
+                await t.rollback();
+                throw error;
+            }
         } catch (error) {
             return helper.error(res, error.message);
         }

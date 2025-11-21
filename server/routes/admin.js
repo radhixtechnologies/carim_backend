@@ -74,6 +74,7 @@ router.post('/imagedelete/:id',tutorialController.imageDelete);
 router.get('/bookinglist',bookingController.bookingList);
 router.post('/bookingdelete/:id',bookingController.bookingDelete);
 router.get('/activebookinglist',bookingController.activeBookinglist);
+router.get('/bookingcompleted',bookingController.bookingCompleted);
 
 
 //rating

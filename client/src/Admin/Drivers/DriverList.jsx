@@ -181,8 +181,8 @@ const DriverList = () => {
   };
 
   const handleViewDocuments = (driverId) => {
-  navigate(`/documentlist/${driverId}`);
-};
+    navigate(`/documentlist/${driverId}`);
+  };
 
   const getCurrentFilterLabel = () => {
     const filter = dateFilters.find((f) => f.value === dateFilter);
@@ -755,6 +755,12 @@ const DriverList = () => {
                       >
                         {selectedUser.status === "1" ? "Active" : "Inactive"}
                       </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Total Amount :</td>
+                    <td className="text-end text-black fw-medium">
+                      $ {selectedUser.totalAmount || 0}
                     </td>
                   </tr>
                 </tbody>
