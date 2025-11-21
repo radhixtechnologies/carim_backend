@@ -87,9 +87,8 @@ const ScreenShotList = () => {
       "Sr No.": index + 1,
       "Transaction ID": transaction.id || "",
       "Driver Name": transaction.screenshotdriver?.name || "",
+      "Driver Email": transaction.screenshotdriver?.email || "",
       "Driver Balance ($)": transaction.screenshotdriver?.totalAmount || "0",
-      "Transaction Amount ($)": transaction.amount || "0",
-      "Added Amount ($)": transaction.addedAmount || "0",
       "Verification Status": getApprovalLabel(transaction.status),
       "Screenshot URL": transaction.image
         ? `${BASE_URL}/${transaction.image}`
@@ -230,7 +229,7 @@ const ScreenShotList = () => {
       return;
     }
     setPendingVerification(transaction);
-    setAddAmount(transaction.amount || "0");
+    setAddAmount(transaction.addedAmount || "");
     setShowVerifyPopup(true);
   };
 
@@ -417,8 +416,8 @@ const ScreenShotList = () => {
                             <th>Sr no.</th>
                             <th>Image</th>
                             <th>Driver Name</th>
+                            <th>Driver Email</th>
                             <th>Driver Balance($)</th>
-                            <th>Add Amount($)</th>
                             <th>Status</th>
                             <th className="text-end">Action</th>
                           </tr>
@@ -450,15 +449,16 @@ const ScreenShotList = () => {
                                   <td>
                                     {transaction.screenshotdriver?.name || ""}
                                   </td>
+                                   <td>
+                                    {transaction.screenshotdriver?.email || ""}
+                                  </td>
                                   <td>
                                     {formatCurrency(
                                       transaction.screenshotdriver
                                         ?.totalAmount || 0
                                     )}
                                   </td>
-                                  <td>
-                                    {formatCurrency(transaction?.amount || 0)}
-                                  </td>
+
                                   <td>
                                     <div className="dropdown">
                                       <button
@@ -770,15 +770,15 @@ const ScreenShotList = () => {
               >
                 <tbody>
                   <tr>
-                    <td>Transaction ID:</td>
-                    <td className="text-end text-black fw-medium">
-                      {selectedTransaction.id}
-                    </td>
-                  </tr>
-                  <tr>
                     <td>Driver Name:</td>
                     <td className="text-end text-black fw-medium">
                       {selectedTransaction.screenshotdriver?.name || ""}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Driver Email:</td>
+                    <td className="text-end text-black fw-medium">
+                      {selectedTransaction.screenshotdriver?.email || ""}
                     </td>
                   </tr>
                   <tr>
@@ -789,12 +789,7 @@ const ScreenShotList = () => {
                       )}
                     </td>
                   </tr>
-                  <tr>
-                    <td>Transaction Amount:</td>
-                    <td className="text-end text-black fw-medium">
-                      {formatCurrency(selectedTransaction.amount)}
-                    </td>
-                  </tr>
+
                   <tr>
                     <td>Verification Status:</td>
                     <td className="text-end">

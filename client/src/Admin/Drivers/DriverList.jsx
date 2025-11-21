@@ -498,10 +498,12 @@ const DriverList = () => {
                           ) : (
                             <tr>
                               <td
-                                colSpan="10"
+                                colSpan="12"
                                 style={{ textAlign: "center", padding: "20px" }}
                               >
+                                <p className="no-found">
                                 No drivers found
+                                </p>
                               </td>
                             </tr>
                           )}

@@ -61,14 +61,14 @@ const BookingList = () => {
       } else {
         Swal.fire(
           "Error",
-          response.data.message || "Failed to load bookings",
+          response.data.message || "Failed to load ride",
           "error"
         );
       }
     } catch (error) {
       Swal.fire(
         "Error",
-        "An error occurred while fetching the bookings list",
+        "An error occurred while fetching the ride list",
         "error"
       );
     }

@@ -117,7 +117,6 @@ module.exports = {
                     model: db.users,
                     as: 'screenshotdriver',
                     required: false,
-                    attributes: ['id', 'name', 'totalAmount']
                 },
             ];
 
@@ -207,6 +206,7 @@ module.exports = {
             const t = await db.sequelize.transaction();
 
             try {
+                // Update transaction status and addedAmount
                 await db.transferscreenshot.update(
                     {
                         status,

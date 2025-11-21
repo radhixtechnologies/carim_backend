@@ -326,7 +326,7 @@ const DriverDocuments = () => {
                       </div>
                     </div>
 
-                    <div className="table-responsive table-card border-top">
+                    <div className="table-responsive table-card border-top overflow-visible">
                       <table className="table table-centered cus-nowrap align-middle hltr mb-0">
                         <thead>
                           <tr>
@@ -373,7 +373,7 @@ const DriverDocuments = () => {
                                   }${user.country || ""}` || ""}
                                 </td>
                                 <td>
-                                  <div className="dropdown">
+                                  <div className="dropdown dropup">
                                     <button
                                       className={`btn btn-sm dropdown-toggle ${getApprovalClass(
                                         user.documentVerify

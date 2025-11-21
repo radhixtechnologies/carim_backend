@@ -40,7 +40,7 @@ module.exports = {
                 const searchConditions = [];
 
                 searchConditions.push({
-                    '$bookedcoach.name$': {
+                    '$driverbook.name$': {
                         [db.Sequelize.Op.like]: `%${search}%`
                     }
                 });
@@ -238,7 +238,7 @@ module.exports = {
                 const searchConditions = [];
 
                 searchConditions.push({
-                    '$bookedcoach.name$': {
+                    '$driverbook.name$': {
                         [db.Sequelize.Op.like]: `%${search}%`
                     }
                 });
@@ -332,7 +332,7 @@ module.exports = {
             }
 
             const whereClause = {
-                driverId: driverId 
+                driverId: driverId
             };
 
             const includeClause = [
