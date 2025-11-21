@@ -35,17 +35,19 @@ const DriverDocuments = () => {
     } else {
       fetchAllData();
     }
-  }, [driverId, dateFilter]); 
+  }, [driverId, dateFilter]);
 
   const fetchDriverData = async (id) => {
     try {
       setLoading(true);
-      const response = await axiosInstance.get(`/document?driverId=${id}&dateFilter=${dateFilter}`);
+      const response = await axiosInstance.get(
+        `/document?driverId=${id}&dateFilter=${dateFilter}`
+      );
 
       if (response.data.success && response.data.body.data.length > 0) {
         const driverData = response.data.body.data;
         setUsers(driverData);
-        
+
         if (driverData.length > 0 && driverData[0].name) {
           setDriverName(driverData[0].name);
         }
@@ -74,11 +76,13 @@ const DriverDocuments = () => {
   const fetchAllData = async () => {
     try {
       setLoading(true);
-      const response = await axiosInstance.get(`/document?dateFilter=${dateFilter}`);
+      const response = await axiosInstance.get(
+        `/document?dateFilter=${dateFilter}`
+      );
 
       if (response.data.success) {
         setUsers(response.data.body.data || []);
-        setDriverName(""); 
+        setDriverName("");
       } else {
         toast.error(response.data.message || "Failed to load document list");
       }
@@ -92,7 +96,7 @@ const DriverDocuments = () => {
   const handleShowAllDocuments = () => {
     setFilteredDriverId(null);
     setDriverName("");
-    setDateFilter("all"); 
+    setDateFilter("all");
     navigate("/documentlist");
   };
 
@@ -248,7 +252,9 @@ const DriverDocuments = () => {
                     <div>
                       <i className="ri-information-line me-2"></i>
                       Showing documents for:{" "}
-                      <strong>{driverName || `Driver ID: ${filteredDriverId}`}</strong>
+                      <strong>
+                        {driverName || `Driver ID: ${filteredDriverId}`}
+                      </strong>
                     </div>
                     <button
                       onClick={handleShowAllDocuments}
@@ -287,7 +293,7 @@ const DriverDocuments = () => {
                           <i className="ri-search-line" />
                         </div>
                       )}
-                      
+
                       {/* Date Filter Dropdown */}
                       <div className="dropdown tbl-drop">
                         <button
@@ -359,12 +365,12 @@ const DriverDocuments = () => {
                                     </div>
                                   )}
                                 </td>
-                                <td>{user.name || "N/A"}</td>
-                                <td>{user.email || "N/A"}</td>
+                                <td>{user.name || ""}</td>
+                                <td>{user.email || ""}</td>
                                 <td>
                                   {`${user.city || ""}${
                                     user.city && user.country ? ", " : ""
-                                  }${user.country || ""}` || "N/A"}
+                                  }${user.country || ""}` || ""}
                                 </td>
                                 <td>
                                   <div className="dropdown">
@@ -380,47 +386,63 @@ const DriverDocuments = () => {
                                       {getApprovalLabel(user.documentVerify)}
                                     </button>
                                     <ul className="dropdown-menu">
-                                      {["0", "1", "2"].map((status) => (
-                                        <li key={status}>
+                                      <li>
+                                        <button
+                                          className="dropdown-item"
+                                          disabled
+                                        >
+                                          <i
+                                            className={`${
+                                              user.documentVerify === "0"
+                                                ? "ri-time-line text-warning"
+                                                : user.documentVerify === "1"
+                                                ? "ri-check-line text-success"
+                                                : "ri-close-line text-danger"
+                                            } me-2`}
+                                          ></i>
+                                          {getApprovalLabel(
+                                            user.documentVerify
+                                          )}
+                                          <i className="ri-check-line ms-2"></i>
+                                        </button>
+                                      </li>
+
+                                      {user.documentVerify !== "1" && (
+                                        <li>
                                           <button
-                                            className={`dropdown-item ${
-                                              status === user.documentVerify
-                                                ? "active bg-light text-dark"
-                                                : ""
-                                            }`}
-                                            type="button"
+                                            className="dropdown-item"
                                             onClick={() =>
-                                              changeStatus(user.id, status)
-                                            }
-                                            disabled={
-                                              status === user.documentVerify
+                                              changeStatus(user.id, "1")
                                             }
                                           >
-                                            {status === "0" && (
-                                              <i className="ri-time-line me-2 text-warning"></i>
-                                            )}
-                                            {status === "1" && (
-                                              <i className="ri-check-line me-2 text-success"></i>
-                                            )}
-                                            {status === "2" && (
-                                              <i className="ri-close-line me-2 text-danger"></i>
-                                            )}
-                                            {getApprovalLabel(status)}
-                                            {status === user.documentVerify && (
-                                              <i className="ri-check-line ms-2 text-success"></i>
-                                            )}
+                                            <i className="ri-check-line me-2 text-success"></i>
+                                            Verify
                                           </button>
                                         </li>
-                                      ))}
+                                      )}
+
+                                      {user.documentVerify !== "2" && (
+                                        <li>
+                                          <button
+                                            className="dropdown-item"
+                                            onClick={() =>
+                                              changeStatus(user.id, "2")
+                                            }
+                                          >
+                                            <i className="ri-close-line me-2 text-danger"></i>
+                                            Reject
+                                          </button>
+                                        </li>
+                                      )}
                                     </ul>
                                   </div>
                                 </td>
                                 <td>
-                                  {user.createdAt ? (
-                                    new Date(user.createdAt).toLocaleDateString()
-                                  ) : (
-                                    "N/A"
-                                  )}
+                                  {user.createdAt
+                                    ? new Date(
+                                        user.createdAt
+                                      ).toLocaleDateString()
+                                    : ""}
                                 </td>
                                 <td>
                                   <div className="d-flex justify-content-end">
@@ -443,7 +465,10 @@ const DriverDocuments = () => {
                                 style={{ textAlign: "center", padding: "20px" }}
                               >
                                 {filteredDriverId
-                                  ? `No documents found for ${driverName || `Driver ID: ${filteredDriverId}`}`
+                                  ? `No documents found for ${
+                                      driverName ||
+                                      `Driver ID: ${filteredDriverId}`
+                                    }`
                                   : "No drivers found"}
                               </td>
                             </tr>
@@ -508,10 +533,11 @@ const DriverDocuments = () => {
                               Document {index + 1}
                             </h6>
                             <small className="text-muted">
-                              {document.createdAt ? 
-                                new Date(document.createdAt).toLocaleDateString() : 
-                                "N/A"
-                              }
+                              {document.createdAt
+                                ? new Date(
+                                    document.createdAt
+                                  ).toLocaleDateString()
+                                : ""}
                             </small>
                           </div>
                           {document.image ? (
@@ -608,36 +634,45 @@ const DriverDocuments = () => {
                         {getApprovalLabel(selectedUser.documentVerify)}
                       </button>
                       <ul className="dropdown-menu">
-                        {["0", "1", "2"].map((status) => (
-                          <li key={status}>
+                        <li>
+                          <button className="dropdown-item" disabled>
+                            <i
+                              className={`${
+                                selectedUser.documentVerify === "0"
+                                  ? "ri-time-line text-warning"
+                                  : selectedUser.documentVerify === "1"
+                                  ? "ri-check-line text-success"
+                                  : "ri-close-line text-danger"
+                              } me-2`}
+                            ></i>
+                            {getApprovalLabel(selectedUser.documentVerify)}
+                            <i className="ri-check-line ms-2"></i>
+                          </button>
+                        </li>
+
+                        {selectedUser.documentVerify !== "1" && (
+                          <li>
                             <button
-                              className={`dropdown-item ${
-                                status === selectedUser.documentVerify
-                                  ? "active bg-light text-dark"
-                                  : ""
-                              }`}
-                              type="button"
-                              onClick={() =>
-                                changeStatus(selectedUser.id, status)
-                              }
-                              disabled={status === selectedUser.documentVerify}
+                              className="dropdown-item"
+                              onClick={() => changeStatus(selectedUser.id, "1")}
                             >
-                              {status === "0" && (
-                                <i className="ri-time-line me-2 text-warning"></i>
-                              )}
-                              {status === "1" && (
-                                <i className="ri-check-line me-2 text-success"></i>
-                              )}
-                              {status === "2" && (
-                                <i className="ri-close-line me-2 text-danger"></i>
-                              )}
-                              {getApprovalLabel(status)}
-                              {status === selectedUser.documentVerify && (
-                                <i className="ri-check-line ms-2 text-success"></i>
-                              )}
+                              <i className="ri-check-line me-2 text-success"></i>
+                              Verify
                             </button>
                           </li>
-                        ))}
+                        )}
+
+                        {selectedUser.documentVerify !== "2" && (
+                          <li>
+                            <button
+                              className="dropdown-item"
+                              onClick={() => changeStatus(selectedUser.id, "2")}
+                            >
+                              <i className="ri-close-line me-2 text-danger"></i>
+                              Reject
+                            </button>
+                          </li>
+                        )}
                       </ul>
                     </div>
                     <div className="text-muted small">
@@ -667,13 +702,13 @@ const DriverDocuments = () => {
                   <tr>
                     <td>Name:</td>
                     <td className="text-end text-black fw-medium">
-                      {selectedUser.name || "N/A"}
+                      {selectedUser.name || ""}
                     </td>
                   </tr>
                   <tr>
                     <td>Email:</td>
                     <td className="text-end text-black fw-medium">
-                      {selectedUser.email || "N/A"}
+                      {selectedUser.email || ""}
                     </td>
                   </tr>
                   <tr>
@@ -686,7 +721,7 @@ const DriverDocuments = () => {
                         selectedUser.state
                           ? ", "
                           : ""
-                      }${selectedUser.state || ""}` || "N/A"}
+                      }${selectedUser.state || ""}` || ""}
                     </td>
                   </tr>
                   <tr>
@@ -698,10 +733,9 @@ const DriverDocuments = () => {
                   <tr>
                     <td>Last Updated:</td>
                     <td className="text-end text-black fw-medium">
-                      {selectedUser.updatedAt ? 
-                        new Date(selectedUser.updatedAt).toLocaleDateString() : 
-                        "N/A"
-                      }
+                      {selectedUser.updatedAt
+                        ? new Date(selectedUser.updatedAt).toLocaleDateString()
+                        : ""}
                     </td>
                   </tr>
                 </tbody>

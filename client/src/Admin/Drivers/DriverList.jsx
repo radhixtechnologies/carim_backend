@@ -362,18 +362,22 @@ const DriverList = () => {
                                       {getApprovalLabel(user.approve)}
                                     </button>
                                     <ul className="dropdown-menu">
-                                      <li>
-                                        <button
-                                          className="dropdown-item"
-                                          type="button"
-                                          onClick={() =>
-                                            handleApprovalChange(user.id, "0")
-                                          }
-                                        >
-                                          <i className="ri-time-line me-2 text-warning"></i>
-                                          Pending
-                                        </button>
-                                      </li>
+                                      {user.approve === "0" && (
+                                        <li>
+                                          <button
+                                            className="dropdown-item"
+                                            type="button"
+                                            onClick={() =>
+                                              handleApprovalChange(user.id, "0")
+                                            }
+                                            disabled
+                                          >
+                                            <i className="ri-time-line me-2 text-warning"></i>
+                                            Pending
+                                            <i className="ri-check-line ms-2"></i>
+                                          </button>
+                                        </li>
+                                      )}
                                       <li>
                                         <button
                                           className="dropdown-item"
@@ -381,11 +385,16 @@ const DriverList = () => {
                                           onClick={() =>
                                             handleApprovalChange(user.id, "1")
                                           }
+                                          disabled={user.approve === "1"}
                                         >
                                           <i className="ri-check-line me-2 text-success"></i>
                                           Approved
+                                          {user.approve === "1" && (
+                                            <i className="ri-check-line ms-2"></i>
+                                          )}
                                         </button>
                                       </li>
+
                                       <li>
                                         <button
                                           className="dropdown-item"
@@ -393,9 +402,13 @@ const DriverList = () => {
                                           onClick={() =>
                                             handleApprovalChange(user.id, "2")
                                           }
+                                          disabled={user.approve === "2"}
                                         >
                                           <i className="ri-close-line me-2 text-danger"></i>
                                           Rejected
+                                          {user.approve === "2" && (
+                                            <i className="ri-check-line ms-2"></i>
+                                          )}
                                         </button>
                                       </li>
                                     </ul>
@@ -453,7 +466,6 @@ const DriverList = () => {
                                       title="View history ride"
                                     >
                                       <i className="ri-roadster-line font-size-16"></i>{" "}
-                                     
                                     </Link>
 
                                     <button
