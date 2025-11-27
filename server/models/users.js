@@ -95,21 +95,21 @@ module.exports = function (sequelize, DataTypes) {
       allowNull: false,
       defaultValue: ""
     },
-    is_notification: {
+    isNotificationOn: {
       type: DataTypes.ENUM('0', '1'),
       allowNull: false,
-      defaultValue: "0"
+      defaultValue: "1",
+      comment:'0 off ,1 on'
     },
     deviceToken: {
-      type: DataTypes.TEXT,
-      allowNull: false,
+      type: DataTypes.STRING(255),
+      allowNull: true,
       defaultValue: ""
     },
     deviceType: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      defaultValue: 0,
-      comment: "1=>iOS, 2=>android"
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      defaultValue: ""
     },
     socket_id: {
       type: DataTypes.STRING(255),

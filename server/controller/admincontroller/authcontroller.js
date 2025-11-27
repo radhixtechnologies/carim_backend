@@ -50,7 +50,6 @@ module.exports = {
             delete userResponse.password;
 
             return helper.success(res, "Login successful", {
-                ...userResponse,
                 token
             });
 

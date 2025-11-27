@@ -7,7 +7,6 @@ export const BASE_URL = process.env.REACT_APP_BASE_URL;
 
 const axiosInstance = axios.create({
   baseURL: BASE_URL,
-  timeout: 1000,
 });
 
 axiosInstance.interceptors.request.use(
@@ -27,7 +26,7 @@ axiosInstance.interceptors.response.use(
     if (error.response) {
       const { status } = error.response;
 
-      if (status === 400) {
+      if (status === 401) {
         localStorage.removeItem('token');
         window.location.replace('/');
       }

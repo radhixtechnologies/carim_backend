@@ -37,7 +37,7 @@ Object.keys(db).forEach(modelName => {
   }
 });
 
-sequelize.sync({ alter: false })
+sequelize.sync({ alter: true })
   .then(() => {
     console.log('Database synced successfully');
   })
