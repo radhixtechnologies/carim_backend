@@ -19,6 +19,7 @@ const AdminBank = () => {
     isDefault: "0",
   });
   const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -41,13 +42,20 @@ const AdminBank = () => {
 
         if (response.data && response.data.body) {
           const bankData = response.data.body.bankuser || {};
+
+          const stringifiedBankData = Object.fromEntries(
+            Object.entries(bankData).map(([key, value]) => [
+              key,
+              value !== null && value !== undefined ? String(value) : "",
+            ])
+          );
+
           setData((prevData) => ({
             ...prevData,
-            ...bankData,
+            ...stringifiedBankData,
           }));
         }
       } catch (error) {
-        console.error("Error fetching bank data:", error);
         toast.error("Error fetching bank details");
       }
       setLoading(false);
@@ -56,59 +64,86 @@ const AdminBank = () => {
     fetchBankData();
   }, []);
 
+  const safeTrim = (value) => {
+    if (typeof value === "string") {
+      return value.trim();
+    }
+    if (value === null || value === undefined) {
+      return "";
+    }
+    return String(value).trim();
+  };
+
   const validateField = (name, value) => {
-    if (!value.trim()) {
-      return `${name.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} is required`;
+    const stringValue = String(value);
+    const trimmedValue = safeTrim(stringValue);
+
+    if (["accountType", "accountOwnerInfo", "isDefault"].includes(name)) {
+      return "";
     }
 
-    if (/^\s+$/.test(value)) {
+    if (!trimmedValue) {
+      return `${name
+        .replace(/([A-Z])/g, " $1")
+        .replace(/^./, (str) => str.toUpperCase())} is required`;
+    }
+
+    if (/^\s+$/.test(stringValue)) {
       return "Only spaces are not allowed. Please enter valid text";
     }
 
-    if (value.length > 60) {
+    if (stringValue.length > 60) {
       return `Maximum 60 characters allowed`;
     }
 
     switch (name) {
       case "bankName":
-        if (value.length < 2)
+        if (trimmedValue.length < 2)
           return "Bank name must be at least 2 characters";
         return "";
 
       case "accountNumber":
-        if (!/^\d+$/.test(value.trim()))
+        if (!/^\d+$/.test(trimmedValue))
           return "Account number must contain only numbers";
-        if (value.trim().length < 5 || value.trim().length > 20)
+        if (trimmedValue.length < 5 || trimmedValue.length > 20)
           return "Account number must be between 5 and 20 digits";
         return "";
 
       case "holderName":
-        if (value.length < 2)
+        if (trimmedValue.length < 2)
           return "Holder name must be at least 2 characters";
         return "";
 
       case "sortCode":
-        if (!/^[A-Za-z0-9]+$/.test(value.trim()))
+        if (!/^[A-Za-z0-9]+$/.test(trimmedValue))
           return "Sort code must be alphanumeric";
         return "";
 
       case "postalCode":
-        if (value.length < 3)
+        if (trimmedValue.length < 3)
           return "Postal code must be at least 3 characters";
         return "";
 
       case "accountCountry":
+        if (trimmedValue.length < 2)
+          return "Country must be at least 2 characters";
         return "";
 
       case "currency":
-        if (value.trim().length !== 3)
+        if (trimmedValue.length !== 3)
           return "Currency must be 3 characters (e.g., USD, EUR)";
+        if (!/^[A-Z]{3}$/.test(trimmedValue))
+          return "Currency must be 3 uppercase letters (e.g., USD, EUR)";
         return "";
 
       case "city":
+        if (trimmedValue.length < 2)
+          return "City must be at least 2 characters";
         return "";
 
       case "address":
+        if (trimmedValue.length < 5)
+          return "Address must be at least 5 characters";
         return "";
 
       default:
@@ -118,14 +153,31 @@ const AdminBank = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
-    if (value.length > 60) {
+
+    if (value.length > 60 && !["accountNumber", "postalCode"].includes(name)) {
       return;
     }
 
     setData((prevData) => ({
       ...prevData,
       [name]: value,
+    }));
+
+    if (touched[name] || errors[name]) {
+      const error = validateField(name, value);
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        [name]: error,
+      }));
+    }
+  };
+
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+
+    setTouched((prevTouched) => ({
+      ...prevTouched,
+      [name]: true,
     }));
 
     const error = validateField(name, value);
@@ -136,34 +188,15 @@ const AdminBank = () => {
   };
 
   const handleKeyPress = (e) => {
-    if (e.key === ' ' && !e.target.value.trim()) {
+    if (e.key === " " && !e.target.value.trim()) {
       e.preventDefault();
     }
   };
 
-  const validateForm = () => {
-    const newErrors = {};
 
-    Object.keys(data).forEach((key) => {
-      if (['accountType', 'accountOwnerInfo', 'isDefault'].includes(key)) {
-        return;
-      }
-      
-      const error = validateField(key, data[key]);
-      if (error) newErrors[key] = error;
-    });
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      toast.error("Please fix the validation errors before submitting");
-      return;
-    }
 
     const token = localStorage.getItem("token");
     if (!token) {
@@ -183,10 +216,13 @@ const AdminBank = () => {
       toast.success("Bank details updated successfully");
       navigate("/bankdetail");
     } catch (error) {
-      console.error("Error updating bank details:", error);
       toast.error("Error updating bank details");
     }
     setLoading(false);
+  };
+
+  const shouldShowError = (fieldName) => {
+    return touched[fieldName] && errors[fieldName];
   };
 
   return (
@@ -204,7 +240,7 @@ const AdminBank = () => {
                 <div className="col-lg-12">
                   <div className="card">
                     <div className="card-body">
-                      <form onSubmit={handleSubmit}>
+                      <form onSubmit={handleSubmit} noValidate>
                         <div className="row">
                           <div className="col-md-4 mb-3">
                             <label className="mb-1 fw-medium">
@@ -220,20 +256,24 @@ const AdminBank = () => {
                               <option value="0">Current Account</option>
                             </select>
                           </div>
+
                           <div className="col-md-4 mb-3">
                             <label className="mb-1 fw-medium">Bank Name</label>
                             <input
                               type="text"
-                              className="form-control"
+                              className={`form-control ${
+                                shouldShowError("bankName") ? "is-invalid" : ""
+                              }`}
                               name="bankName"
                               value={data.bankName}
                               onChange={handleChange}
+                              onBlur={handleBlur}
                               onKeyPress={handleKeyPress}
                               maxLength={60}
                               placeholder="Enter bank name (max 60 characters)"
                             />
-                            {errors.bankName && (
-                              <div className="text-danger small">
+                            {shouldShowError("bankName") && (
+                              <div className="invalid-feedback d-block">
                                 {errors.bankName}
                               </div>
                             )}
@@ -241,22 +281,28 @@ const AdminBank = () => {
                               {data.bankName.length}/60
                             </div>
                           </div>
+
                           <div className="col-md-4 mb-3">
                             <label className="mb-1 fw-medium">
                               Account Country
                             </label>
                             <input
                               type="text"
-                              className="form-control"
+                              className={`form-control ${
+                                shouldShowError("accountCountry")
+                                  ? "is-invalid"
+                                  : ""
+                              }`}
                               name="accountCountry"
                               value={data.accountCountry}
                               onChange={handleChange}
+                              onBlur={handleBlur}
                               onKeyPress={handleKeyPress}
                               maxLength={60}
                               placeholder="Enter country (max 60 characters)"
                             />
-                            {errors.accountCountry && (
-                              <div className="text-danger small">
+                            {shouldShowError("accountCountry") && (
+                              <div className="invalid-feedback d-block">
                                 {errors.accountCountry}
                               </div>
                             )}
@@ -265,21 +311,26 @@ const AdminBank = () => {
                             </div>
                           </div>
                         </div>
+
                         <div className="row">
                           <div className="col-md-6 mb-3">
                             <label className="mb-1 fw-medium">Currency</label>
                             <input
                               type="text"
-                              className="form-control"
+                              className={`form-control ${
+                                shouldShowError("currency") ? "is-invalid" : ""
+                              }`}
                               name="currency"
                               value={data.currency}
                               onChange={handleChange}
+                              onBlur={handleBlur}
                               onKeyPress={handleKeyPress}
                               maxLength={3}
                               placeholder="USD, EUR, etc. (3 characters)"
+                              style={{ textTransform: "uppercase" }}
                             />
-                            {errors.currency && (
-                              <div className="text-danger small">
+                            {shouldShowError("currency") && (
+                              <div className="invalid-feedback d-block">
                                 {errors.currency}
                               </div>
                             )}
@@ -287,20 +338,24 @@ const AdminBank = () => {
                               {data.currency.length}/3
                             </div>
                           </div>
+
                           <div className="col-md-6 mb-3">
                             <label className="mb-1 fw-medium">Sort Code</label>
                             <input
                               type="text"
-                              className="form-control"
+                              className={`form-control ${
+                                shouldShowError("sortCode") ? "is-invalid" : ""
+                              }`}
                               name="sortCode"
                               value={data.sortCode}
                               onChange={handleChange}
+                              onBlur={handleBlur}
                               onKeyPress={handleKeyPress}
                               maxLength={60}
                               placeholder="Enter sort code (max 60 characters)"
                             />
-                            {errors.sortCode && (
-                              <div className="text-danger small">
+                            {shouldShowError("sortCode") && (
+                              <div className="invalid-feedback d-block">
                                 {errors.sortCode}
                               </div>
                             )}
@@ -317,16 +372,21 @@ const AdminBank = () => {
                             </label>
                             <input
                               type="text"
-                              className="form-control"
+                              className={`form-control ${
+                                shouldShowError("accountNumber")
+                                  ? "is-invalid"
+                                  : ""
+                              }`}
                               name="accountNumber"
                               value={data.accountNumber}
                               onChange={handleChange}
+                              onBlur={handleBlur}
                               onKeyPress={handleKeyPress}
                               maxLength={20}
                               placeholder="Enter account number"
                             />
-                            {errors.accountNumber && (
-                              <div className="text-danger small">
+                            {shouldShowError("accountNumber") && (
+                              <div className="invalid-feedback d-block">
                                 {errors.accountNumber}
                               </div>
                             )}
@@ -341,16 +401,21 @@ const AdminBank = () => {
                             </label>
                             <input
                               type="text"
-                              className="form-control"
+                              className={`form-control ${
+                                shouldShowError("holderName")
+                                  ? "is-invalid"
+                                  : ""
+                              }`}
                               name="holderName"
                               value={data.holderName}
                               onChange={handleChange}
+                              onBlur={handleBlur}
                               onKeyPress={handleKeyPress}
                               maxLength={60}
                               placeholder="Enter holder name (max 60 characters)"
                             />
-                            {errors.holderName && (
-                              <div className="text-danger small">
+                            {shouldShowError("holderName") && (
+                              <div className="invalid-feedback d-block">
                                 {errors.holderName}
                               </div>
                             )}
@@ -363,16 +428,19 @@ const AdminBank = () => {
                             <label className="mb-1 fw-medium">City</label>
                             <input
                               type="text"
-                              className="form-control"
+                              className={`form-control ${
+                                shouldShowError("city") ? "is-invalid" : ""
+                              }`}
                               name="city"
                               value={data.city}
                               onChange={handleChange}
+                              onBlur={handleBlur}
                               onKeyPress={handleKeyPress}
                               maxLength={60}
                               placeholder="Enter city (max 60 characters)"
                             />
-                            {errors.city && (
-                              <div className="text-danger small">
+                            {shouldShowError("city") && (
+                              <div className="invalid-feedback d-block">
                                 {errors.city}
                               </div>
                             )}
@@ -387,16 +455,19 @@ const AdminBank = () => {
                             <label className="mb-1 fw-medium">Address</label>
                             <input
                               type="text"
-                              className="form-control"
+                              className={`form-control ${
+                                shouldShowError("address") ? "is-invalid" : ""
+                              }`}
                               name="address"
                               value={data.address}
                               onChange={handleChange}
+                              onBlur={handleBlur}
                               onKeyPress={handleKeyPress}
                               maxLength={60}
                               placeholder="Enter address (max 60 characters)"
                             />
-                            {errors.address && (
-                              <div className="text-danger small">
+                            {shouldShowError("address") && (
+                              <div className="invalid-feedback d-block">
                                 {errors.address}
                               </div>
                             )}
@@ -411,16 +482,21 @@ const AdminBank = () => {
                             </label>
                             <input
                               type="text"
-                              className="form-control"
+                              className={`form-control ${
+                                shouldShowError("postalCode")
+                                  ? "is-invalid"
+                                  : ""
+                              }`}
                               name="postalCode"
                               value={data.postalCode}
                               onChange={handleChange}
+                              onBlur={handleBlur}
                               onKeyPress={handleKeyPress}
                               maxLength={20}
                               placeholder="Enter postal code"
                             />
-                            {errors.postalCode && (
-                              <div className="text-danger small">
+                            {shouldShowError("postalCode") && (
+                              <div className="invalid-feedback d-block">
                                 {errors.postalCode}
                               </div>
                             )}
