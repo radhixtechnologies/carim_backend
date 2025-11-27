@@ -2,6 +2,7 @@ var express = require('express');
 var router = express.Router();
 const middleware = require('../middleware/authtoken');
 const authController = require('../controller/apicontroller/authController');
+const faqController = require('../controller/apicontroller/faqController');
 
 
 router.use(middleware.authenticateHeader);
@@ -16,6 +17,11 @@ router.post("/deleteaccount", authController.deleteAccount);
 router.post("/logout", authController.logout);
 router.post('/notificationOnOff', authController.notificationOnOff);
 router.post('/createcontact', authController.createContactUs);
+
+//faq
+router.get('/faqlist',faqController.getAllFaqs);
+router.get('/faqdetail/:id',faqController.getFaqs);
+
 
 
 module.exports = router;

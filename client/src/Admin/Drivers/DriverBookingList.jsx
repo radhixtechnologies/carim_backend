@@ -105,48 +105,7 @@ const DriverBookingList = () => {
     return filter ? filter.label : "All Data";
   };
 
-  const deleteMatch = async (id) => {
-    const result = await Swal.fire({
-      title: "Are you sure?",
-      text: "You won't be able to revert this!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#1e3308",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, delete it!",
-    });
-
-    if (result.isConfirmed) {
-      try {
-        await axiosInstance.post(`/bookingdelete/${id}`);
-
-        const response = await axiosInstance.get(
-          `/driverride/${id}?page=${currentPage}&limit=${limit}&search=${encodeURIComponent(
-            searchTerm
-          )}&dateFilter=${dateFilter}`
-        );
-
-        if (response.data.success) {
-          const newTotalPages = response.data.body.totalPages;
-          const newData = response.data.body.data;
-          if (newData.length === 0 && currentPage > 1) {
-            setCurrentPage((prevPage) => prevPage - 1);
-          } else {
-            setMatches(newData);
-            setTotalPages(newTotalPages);
-          }
-
-          Swal.fire("Deleted!", "Ride has been deleted.", "success");
-        }
-      } catch (error) {
-        Swal.fire(
-          "Error!",
-          error.response?.data?.message || "Error deleting Ride",
-          "error"
-        );
-      }
-    }
-  };
+  
 
   const handleViewDetails = (match) => {
     setSelectedMatch(match);

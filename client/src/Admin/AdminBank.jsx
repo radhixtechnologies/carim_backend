@@ -57,55 +57,58 @@ const AdminBank = () => {
   }, []);
 
   const validateField = (name, value) => {
+    if (!value.trim()) {
+      return `${name.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} is required`;
+    }
+
+    if (/^\s+$/.test(value)) {
+      return "Only spaces are not allowed. Please enter valid text";
+    }
+
+    if (value.length > 60) {
+      return `Maximum 60 characters allowed`;
+    }
+
     switch (name) {
       case "bankName":
-        if (!value.trim()) return "Bank name is required";
-        if (value.length < 2 || value.length > 255)
-          return "Bank name must be between 2 and 255 characters";
+        if (value.length < 2)
+          return "Bank name must be at least 2 characters";
         return "";
 
       case "accountNumber":
-        if (!value.trim()) return "Account number is required";
-        if (!/^\d+$/.test(value))
+        if (!/^\d+$/.test(value.trim()))
           return "Account number must contain only numbers";
-        if (value.length < 5 || value.length > 20)
+        if (value.trim().length < 5 || value.trim().length > 20)
           return "Account number must be between 5 and 20 digits";
         return "";
 
       case "holderName":
-        if (!value.trim()) return "Holder name is required";
-        if (value.length < 2 || value.length > 255)
-          return "Holder name must be between 2 and 255 characters";
+        if (value.length < 2)
+          return "Holder name must be at least 2 characters";
         return "";
 
       case "sortCode":
-        if (!value.trim()) return "Sort code is required";
-        if (!/^[A-Za-z0-9]+$/.test(value))
+        if (!/^[A-Za-z0-9]+$/.test(value.trim()))
           return "Sort code must be alphanumeric";
         return "";
 
       case "postalCode":
-        if (!value.trim()) return "Postal code is required";
-        if (value.length < 3 || value.length > 20)
-          return "Postal code must be between 3 and 20 characters";
+        if (value.length < 3)
+          return "Postal code must be at least 3 characters";
         return "";
 
       case "accountCountry":
-        if (!value.trim()) return "Account country is required";
         return "";
 
       case "currency":
-        if (!value.trim()) return "Currency is required";
-        if (value.length !== 3)
+        if (value.trim().length !== 3)
           return "Currency must be 3 characters (e.g., USD, EUR)";
         return "";
 
       case "city":
-        if (!value.trim()) return "City is required";
         return "";
 
       case "address":
-        if (!value.trim()) return "Address is required";
         return "";
 
       default:
@@ -115,6 +118,11 @@ const AdminBank = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
+    if (value.length > 60) {
+      return;
+    }
+
     setData((prevData) => ({
       ...prevData,
       [name]: value,
@@ -127,10 +135,20 @@ const AdminBank = () => {
     }));
   };
 
+  const handleKeyPress = (e) => {
+    if (e.key === ' ' && !e.target.value.trim()) {
+      e.preventDefault();
+    }
+  };
+
   const validateForm = () => {
     const newErrors = {};
 
     Object.keys(data).forEach((key) => {
+      if (['accountType', 'accountOwnerInfo', 'isDefault'].includes(key)) {
+        return;
+      }
+      
       const error = validateField(key, data[key]);
       if (error) newErrors[key] = error;
     });
@@ -155,7 +173,7 @@ const AdminBank = () => {
 
     try {
       setLoading(true);
-      const response = await axiosInstance.post(`/updatebank`, data, {
+      await axiosInstance.post(`/updatebank`, data, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -210,13 +228,18 @@ const AdminBank = () => {
                               name="bankName"
                               value={data.bankName}
                               onChange={handleChange}
-                              maxLength={255}
+                              onKeyPress={handleKeyPress}
+                              maxLength={60}
+                              placeholder="Enter bank name (max 60 characters)"
                             />
                             {errors.bankName && (
                               <div className="text-danger small">
                                 {errors.bankName}
                               </div>
                             )}
+                            <div className="text-end small text-muted">
+                              {data.bankName.length}/60
+                            </div>
                           </div>
                           <div className="col-md-4 mb-3">
                             <label className="mb-1 fw-medium">
@@ -228,13 +251,18 @@ const AdminBank = () => {
                               name="accountCountry"
                               value={data.accountCountry}
                               onChange={handleChange}
-                              maxLength={255}
+                              onKeyPress={handleKeyPress}
+                              maxLength={60}
+                              placeholder="Enter country (max 60 characters)"
                             />
                             {errors.accountCountry && (
                               <div className="text-danger small">
                                 {errors.accountCountry}
                               </div>
                             )}
+                            <div className="text-end small text-muted">
+                              {data.accountCountry.length}/60
+                            </div>
                           </div>
                         </div>
                         <div className="row">
@@ -246,32 +274,39 @@ const AdminBank = () => {
                               name="currency"
                               value={data.currency}
                               onChange={handleChange}
+                              onKeyPress={handleKeyPress}
                               maxLength={3}
-                              placeholder="USD, EUR, etc."
+                              placeholder="USD, EUR, etc. (3 characters)"
                             />
                             {errors.currency && (
                               <div className="text-danger small">
                                 {errors.currency}
                               </div>
                             )}
+                            <div className="text-end small text-muted">
+                              {data.currency.length}/3
+                            </div>
                           </div>
                           <div className="col-md-6 mb-3">
-                            <label className="mb-1 fw-medium">
-                              Sort Code
-                            </label>
+                            <label className="mb-1 fw-medium">Sort Code</label>
                             <input
                               type="text"
                               className="form-control"
                               name="sortCode"
                               value={data.sortCode}
                               onChange={handleChange}
-                              maxLength={50}
+                              onKeyPress={handleKeyPress}
+                              maxLength={60}
+                              placeholder="Enter sort code (max 60 characters)"
                             />
                             {errors.sortCode && (
                               <div className="text-danger small">
                                 {errors.sortCode}
                               </div>
                             )}
+                            <div className="text-end small text-muted">
+                              {data.sortCode.length}/60
+                            </div>
                           </div>
                         </div>
 
@@ -286,13 +321,18 @@ const AdminBank = () => {
                               name="accountNumber"
                               value={data.accountNumber}
                               onChange={handleChange}
+                              onKeyPress={handleKeyPress}
                               maxLength={20}
+                              placeholder="Enter account number"
                             />
                             {errors.accountNumber && (
                               <div className="text-danger small">
                                 {errors.accountNumber}
                               </div>
                             )}
+                            <div className="text-end small text-muted">
+                              {data.accountNumber.length}/20
+                            </div>
                           </div>
 
                           <div className="col-md-4 mb-3">
@@ -305,13 +345,18 @@ const AdminBank = () => {
                               name="holderName"
                               value={data.holderName}
                               onChange={handleChange}
-                              maxLength={255}
+                              onKeyPress={handleKeyPress}
+                              maxLength={60}
+                              placeholder="Enter holder name (max 60 characters)"
                             />
                             {errors.holderName && (
                               <div className="text-danger small">
                                 {errors.holderName}
                               </div>
                             )}
+                            <div className="text-end small text-muted">
+                              {data.holderName.length}/60
+                            </div>
                           </div>
 
                           <div className="col-md-4 mb-3">
@@ -322,13 +367,18 @@ const AdminBank = () => {
                               name="city"
                               value={data.city}
                               onChange={handleChange}
-                              maxLength={255}
+                              onKeyPress={handleKeyPress}
+                              maxLength={60}
+                              placeholder="Enter city (max 60 characters)"
                             />
                             {errors.city && (
                               <div className="text-danger small">
                                 {errors.city}
                               </div>
                             )}
+                            <div className="text-end small text-muted">
+                              {data.city.length}/60
+                            </div>
                           </div>
                         </div>
 
@@ -341,30 +391,42 @@ const AdminBank = () => {
                               name="address"
                               value={data.address}
                               onChange={handleChange}
-                              maxLength={255}
+                              onKeyPress={handleKeyPress}
+                              maxLength={60}
+                              placeholder="Enter address (max 60 characters)"
                             />
                             {errors.address && (
                               <div className="text-danger small">
                                 {errors.address}
                               </div>
                             )}
+                            <div className="text-end small text-muted">
+                              {data.address.length}/60
+                            </div>
                           </div>
 
                           <div className="col-md-6 mb-3">
-                            <label className="mb-1 fw-medium">Postal Code</label>
+                            <label className="mb-1 fw-medium">
+                              Postal Code
+                            </label>
                             <input
                               type="text"
                               className="form-control"
                               name="postalCode"
                               value={data.postalCode}
                               onChange={handleChange}
+                              onKeyPress={handleKeyPress}
                               maxLength={20}
+                              placeholder="Enter postal code"
                             />
                             {errors.postalCode && (
                               <div className="text-danger small">
                                 {errors.postalCode}
                               </div>
                             )}
+                            <div className="text-end small text-muted">
+                              {data.postalCode.length}/20
+                            </div>
                           </div>
                         </div>
 
