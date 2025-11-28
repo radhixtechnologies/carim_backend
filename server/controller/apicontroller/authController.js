@@ -395,7 +395,7 @@ module.exports = {
             const driver = await db.users.findOne({
                 where: {
                     id: driverId,
-                    role: 2,
+                    role:"2",
                     deletedAt: null
                 }
             });

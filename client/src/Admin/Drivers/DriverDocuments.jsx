@@ -519,100 +519,234 @@ const DriverDocuments = () => {
         <div className="offcanvas-body">
           {selectedUser ? (
             <>
-              {selectedUser.documents && selectedUser.documents.length > 0 ? (
-                <div className="row">
-                  {selectedUser.documents.map((document, index) => (
-                    <div
-                      key={document.id || index}
-                      className="col-12 col-md-6 mb-3"
-                    >
-                      <div className="card">
-                        <div className="card-body">
-                          <div className="d-flex justify-content-between align-items-center mb-2">
-                            <h6 className="card-title mb-0">
-                              Document {index + 1}
+              {/* Vehicle Details Section */}
+              <div className="card ">
+                <div className="card-body">
+                  <h5 className="card-title ">
+                    <i className="ri-car-line me-2"></i>
+                    Vehicle Details
+                  </h5>
+
+                  {selectedUser.vehicleDetail ? (
+                    <div className="row">
+                      <div className="col-12">
+                        <table className="table table-borderless">
+                          <tbody>
+                            <tr>
+                              <td
+                                className="fw-medium"
+                                style={{ width: "40%" }}
+                              >
+                                Brand:
+                              </td>
+                              <td className="text-end">
+                                {selectedUser.vehicleDetail.vehicleBrand ||
+                                  "N/A"}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="fw-medium">Model:</td>
+                              <td className="text-end">
+                                {selectedUser.vehicleDetail.vehicleModel ||
+                                  "N/A"}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="fw-medium">Year:</td>
+                              <td className="text-end">
+                                {selectedUser.vehicleDetail.vehicleYear ||
+                                  "N/A"}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="fw-medium">Vehicle Number:</td>
+                              <td className="text-end">
+                                {selectedUser.vehicleDetail.vehicleNumber ||
+                                  "N/A"}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="fw-medium">Color:</td>
+                              <td className="text-end">
+                                {selectedUser.vehicleDetail.vehicleColor ||
+                                  "N/A"}
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-3">
+                      <i className="ri-car-line font-size-48 text-muted"></i>
+                      <p className="mt-2 text-muted">
+                        No vehicle details available
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="card mb-4">
+                <div className="card-body">
+                  <h5 className="card-title mb-3">
+                    <i className="ri-file-text-line me-2"></i>
+                    Vehicle Documents
+                  </h5>
+
+                  {selectedUser.vehicleDetail ? (
+                    <div className="row">
+                      <div className="col-12 col-md-6 ">
+                        <div className="card">
+                          <div className="card-body">
+                            <h6 className="card-title mb-2">
+                              Vehicle Document
                             </h6>
-                            <small className="text-muted">
-                              {document.createdAt
-                                ? new Date(
-                                    document.createdAt
-                                  ).toLocaleDateString()
-                                : ""}
-                            </small>
-                          </div>
-                          {document.image ? (
-                            <div className="text-center">
-                              {/\.(jpg|jpeg|png|gif|bmp|tiff|webp)$/i.test(
-                                document.image
-                              ) ? (
-                                <img
-                                  src={`${BASE_URL}${document.image}`}
-                                  alt={`Document ${index + 1}`}
-                                  className="img-fluid rounded"
-                                  style={{
-                                    width: "100%",
-                                    maxHeight: "300px",
-                                    objectFit: "contain",
-                                    cursor: "pointer",
-                                  }}
-                                  onClick={() => {
-                                    if (window.$ && window.$.fancybox) {
-                                      window.$.fancybox.open([
-                                        {
-                                          src: `${BASE_URL}${document.image}`,
-                                          type: "image",
-                                        },
-                                      ]);
-                                    } else {
-                                      window.open(
-                                        `${BASE_URL}${document.image}`,
-                                        "_blank"
-                                      );
-                                    }
-                                  }}
-                                />
-                              ) : (
-                                <div
-                                  className="d-flex flex-column align-items-center justify-content-center bg-light rounded"
-                                  style={{
-                                    width: "100%",
-                                    height: "200px",
-                                  }}
-                                >
-                                  <i className="ri-file-text-line font-size-48 text-muted mb-2"></i>
-                                  <p className="text-muted mb-0 text-center">
-                                    Unsupported image format
-                                  </p>
-                                  <a
-                                    href={`${BASE_URL}${document.image}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="btn btn-sm btn-outline-primary mt-2"
+                            {selectedUser.vehicleDetail.vehicleDocument ? (
+                              <div className="text-center">
+                                {/\.(jpg|jpeg|png|gif|bmp|tiff|webp)$/i.test(
+                                  selectedUser.vehicleDetail.vehicleDocument
+                                ) ? (
+                                  <img
+                                    src={`${BASE_URL}${selectedUser.vehicleDetail.vehicleDocument}`}
+                                    alt="Vehicle Document"
+                                    className="img-fluid rounded"
+                                    style={{
+                                      width: "100%",
+                                      maxHeight: "200px",
+                                      objectFit: "contain",
+                                      cursor: "pointer",
+                                    }}
+                                    onClick={() => {
+                                      if (window.$ && window.$.fancybox) {
+                                        window.$.fancybox.open([
+                                          {
+                                            src: `${BASE_URL}${selectedUser.vehicleDetail.vehicleDocument}`,
+                                            type: "image",
+                                          },
+                                        ]);
+                                      } else {
+                                        window.open(
+                                          `${BASE_URL}${selectedUser.vehicleDetail.vehicleDocument}`,
+                                          "_blank"
+                                        );
+                                      }
+                                    }}
+                                  />
+                                ) : (
+                                  <div
+                                    className="d-flex flex-column align-items-center justify-content-center bg-light rounded"
+                                    style={{
+                                      width: "100%",
+                                      height: "150px",
+                                    }}
                                   >
-                                    View File
-                                  </a>
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="text-center py-3">
-                              <i className="ri-file-damage-line font-size-48 text-muted"></i>
-                              <p className="mt-2 text-muted">
-                                No image available
-                              </p>
-                            </div>
-                          )}
+                                    <i className="ri-file-text-line font-size-32 text-muted mb-2"></i>
+                                    <p className="text-muted mb-0 text-center small">
+                                      Unsupported image format
+                                    </p>
+                                    <a
+                                      href="assets/images/carim1.png"
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="btn btn-sm btn-outline-primary mt-2"
+                                    >
+                                      View File
+                                    </a>
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="text-center py-3">
+                                <i className="ri-file-damage-line font-size-32 text-muted"></i>
+                                <p className="mt-2 text-muted small">
+                                  No vehicle document available
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="col-12 col-md-6 ">
+                        <div className="card">
+                          <div className="card-body">
+                            <h6 className="card-title mb-2">Driving License</h6>
+                            {selectedUser.vehicleDetail.drivingLicence ? (
+                              <div className="text-center">
+                                {/\.(jpg|jpeg|png|gif|bmp|tiff|webp)$/i.test(
+                                  selectedUser.vehicleDetail.drivingLicence
+                                ) ? (
+                                  <img
+                                    src={`${BASE_URL}${selectedUser.vehicleDetail.drivingLicence}`}
+                                    alt="Driving License"
+                                    className="img-fluid rounded"
+                                    style={{
+                                      width: "100%",
+                                      maxHeight: "200px",
+                                      objectFit: "contain",
+                                      cursor: "pointer",
+                                    }}
+                                    onClick={() => {
+                                      if (window.$ && window.$.fancybox) {
+                                        window.$.fancybox.open([
+                                          {
+                                            src: `${BASE_URL}${selectedUser.vehicleDetail.drivingLicence}`,
+                                            type: "image",
+                                          },
+                                        ]);
+                                      } else {
+                                        window.open(
+                                          `${BASE_URL}${selectedUser.vehicleDetail.drivingLicence}`,
+                                          "_blank"
+                                        );
+                                      }
+                                    }}
+                                  />
+                                ) : (
+                                  <div
+                                    className="d-flex flex-column align-items-center justify-content-center bg-light rounded"
+                                    style={{
+                                      width: "100%",
+                                      height: "150px",
+                                    }}
+                                  >
+                                    <i className="ri-file-text-line font-size-32 text-muted mb-2"></i>
+                                    <p className="text-muted mb-0 text-center small">
+                                      Unsupported image format
+                                    </p>
+                                    <a
+                                      href="assets/images/carim1.png"
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="btn btn-sm btn-outline-primary mt-2"
+                                    >
+                                      View File
+                                    </a>
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="text-center py-3">
+                                <i className="ri-file-damage-line font-size-32 text-muted"></i>
+                                <p className="mt-2 text-muted small">
+                                  No driving license available
+                                </p>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  ))}
+                  ) : (
+                    <div className="text-center py-3">
+                      <i className="ri-file-text-line font-size-48 text-muted"></i>
+                      <p className="mt-2 text-muted">
+                        No vehicle documents available
+                      </p>
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div className="text-center py-5">
-                  <i className="ri-file-text-line font-size-48 text-muted"></i>
-                  <p className="mt-3 text-muted">No documents available</p>
-                </div>
-              )}
+              </div>
 
               {/* Document Verification Status */}
               <div className="card mb-4">
@@ -676,10 +810,9 @@ const DriverDocuments = () => {
                       </ul>
                     </div>
                     <div className="text-muted small">
-                      {selectedUser.documents &&
-                      selectedUser.documents.length > 0
-                        ? `${selectedUser.documents.length} document(s) uploaded`
-                        : "No documents"}
+                      {selectedUser.vehicleDetail
+                        ? "Vehicle documents available"
+                        : "No vehicle documents"}
                     </div>
                   </div>
                 </div>

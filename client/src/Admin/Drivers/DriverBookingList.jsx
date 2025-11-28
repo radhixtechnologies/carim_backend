@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import Swal from "sweetalert2";
 import { Link, useParams } from "react-router-dom";
 import "@fortawesome/fontawesome-free/css/all.min.css";
@@ -47,13 +47,7 @@ const DriverBookingList = () => {
     return statusMap[status] || { label: "Unknown", className: "bg-light" };
   };
 
-  useEffect(() => {
-    if (id) {
-      fetchData(currentPage, searchTerm, dateFilter);
-    }
-  }, [currentPage, searchTerm, dateFilter, id]);
-
-  const fetchData = async (page, search = "", filter = "all") => {
+  const fetchData = useCallback(async (page, search = "", filter = "all") => {
     try {
       const response = await axiosInstance.get(
         `/driverride/${id}?page=${page}&limit=${limit}&search=${encodeURIComponent(
@@ -84,7 +78,13 @@ const DriverBookingList = () => {
         "error"
       );
     }
-  };
+  }, [id, limit]);
+
+  useEffect(() => {
+    if (id) {
+      fetchData(currentPage, searchTerm, dateFilter);
+    }
+  }, [currentPage, searchTerm, dateFilter, id, fetchData]);
 
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
@@ -104,8 +104,6 @@ const DriverBookingList = () => {
     const filter = dateFilters.find((f) => f.value === dateFilter);
     return filter ? filter.label : "All Data";
   };
-
-  
 
   const handleViewDetails = (match) => {
     setSelectedMatch(match);

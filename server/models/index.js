@@ -76,9 +76,9 @@ db.transactions.belongsTo(db.users, { foreignKey: 'userId', as: 'usertransaction
 db.transactions.belongsTo(db.users, { foreignKey: 'driverId', as: 'drivertransaction' });
 db.transactions.belongsTo(db.bookings, { foreignKey: 'bookingId', as: 'transactionbooking' });
 
-//driver documents associations
-db.driverDocuments.belongsTo(db.users, { foreignKey: 'driverId', as: 'documents' });
-db.users.hasMany(db.driverDocuments, { foreignKey: 'driverId', as: 'documents' });
+//driver documents associationsp
+db.users.hasOne(db.vehicleDetails, { foreignKey: 'driverId', as: 'vehicleDetail' });
+db.vehicleDetails.belongsTo(db.users, { foreignKey: 'driverId', as: 'vehicleDetail' });
 
 //user banks associations
 db.userBanks.belongsTo(db.users, { foreignKey: 'userId', as: 'banks' });

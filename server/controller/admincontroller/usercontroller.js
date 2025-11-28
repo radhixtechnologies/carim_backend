@@ -223,6 +223,84 @@ module.exports = {
             return helper.error(res, error.message);
         }
     },
+    // doucmentList: async (req, res) => {
+    //     try {
+    //         let { page, limit, search, dateFilter, driverId } = req.query;
+    //         page = parseInt(page) || 1;
+    //         limit = parseInt(limit) || 10;
+    //         const offset = (page - 1) * limit;
+    //         dateFilter = dateFilter || "all";
+
+    //         const Op = db.Sequelize.Op;
+    //         const whereCondition = { role: "2" };
+
+    //         if (driverId && driverId.trim() !== "") {
+    //             whereCondition.id = driverId;
+    //         }
+
+    //         if (search && search.trim() !== "") {
+    //             whereCondition[Op.or] = [
+    //                 { name: { [Op.like]: `%${search}%` } },
+    //                 { email: { [Op.like]: `%${search}%` } },
+    //             ];
+    //         }
+
+    //         if (dateFilter !== 'all') {
+    //             const daysAgo = parseInt(dateFilter, 10);
+    //             if (!isNaN(daysAgo)) {
+    //                 const startDate = new Date();
+    //                 startDate.setDate(startDate.getDate() - daysAgo);
+
+    //                 whereCondition.createdAt = {
+    //                     [Op.gte]: startDate,
+    //                 };
+    //             }
+    //         }
+
+    //         const { count, rows } = await db.users.findAndCountAll({
+    //             where: whereCondition,
+    //             include: [
+    //                 {
+    //                     model: db.driverDocuments,
+    //                     as: 'documents',
+    //                 }
+    //             ],
+    //             offset,
+    //             limit,
+    //             order: [["id", "DESC"]],
+    //         });
+
+    //         return helper.success(res, "All driver Detail", {
+    //             data: rows,
+    //             currentPage: page,
+    //             totalPages: Math.ceil(count / limit),
+    //             totalUsers: count,
+    //         });
+    //     } catch (error) {
+    //         return helper.error(res, error.message);
+    //     }
+    // },
+    documentVerified: async (req, res) => {
+        try {
+            const { id, documentVerify } = req.body;
+            const driver = await db.users.findOne({ where: { id, role: '2' } });
+            if (!driver) {
+                return helper.error(res, "Driver not found");
+            }
+            if (!['0', '1', '2'].includes(documentVerify)) {
+                return helper.error(res, "Invalid document verification status");
+            }
+            await db.users.update({ documentVerify }, { where: { id } });
+            const updatedDriver = await db.users.findOne({ where: { id } });
+            return helper.success(res, "Driver document verification status updated successfully", {
+                id: updatedDriver.id,
+                documentVerify: updatedDriver.documentVerify,
+                success: true
+            });
+        } catch (error) {
+            return helper.error(res, error.message);
+        }
+    },
     doucmentList: async (req, res) => {
         try {
             let { page, limit, search, dateFilter, driverId } = req.query;
@@ -261,8 +339,9 @@ module.exports = {
                 where: whereCondition,
                 include: [
                     {
-                        model: db.driverDocuments,
-                        as: 'documents',
+                        model: db.vehicleDetails,
+                        as: 'vehicleDetail',
+                        required: false,
                     }
                 ],
                 offset,
@@ -275,27 +354,6 @@ module.exports = {
                 currentPage: page,
                 totalPages: Math.ceil(count / limit),
                 totalUsers: count,
-            });
-        } catch (error) {
-            return helper.error(res, error.message);
-        }
-    },
-    documentVerified: async (req, res) => {
-        try {
-            const { id, documentVerify } = req.body;
-            const driver = await db.users.findOne({ where: { id, role: '2' } });
-            if (!driver) {
-                return helper.error(res, "Driver not found");
-            }
-            if (!['0', '1', '2'].includes(documentVerify)) {
-                return helper.error(res, "Invalid document verification status");
-            }
-            await db.users.update({ documentVerify }, { where: { id } });
-            const updatedDriver = await db.users.findOne({ where: { id } });
-            return helper.success(res, "Driver document verification status updated successfully", {
-                id: updatedDriver.id,
-                documentVerify: updatedDriver.documentVerify,
-                success: true
             });
         } catch (error) {
             return helper.error(res, error.message);
