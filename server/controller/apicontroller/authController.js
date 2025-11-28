@@ -319,7 +319,7 @@ module.exports = {
             const msg = isNotificationOn === 1 ? "Notifications ON." : "Notifications OFF.";
 
             await db.users.update(
-                { isNotificationOn: isNotificationOn.toString() }, 
+                { isNotificationOn: isNotificationOn.toString() },
                 { where: { id: req.user.id } }
             );
 
@@ -363,6 +363,118 @@ module.exports = {
             return helper.failure(res, "Something went wrong. Please try again.");
         }
     },
+    vehicleAdd: async (req, res) => {
+        try {
+            const v = new Validator(req.body, {
+                vehicleBrand: "required",
+                vehicleModel: "required",
+                vehicleYear: "required",
+                vehicleNumber: "required",
+                vehicleColor: "required",
+                vehicleDocument: "required",
+                drivingLicence: "required"
+            });
+
+            const errorsResponse = await helper.checkValidation(v);
+            if (errorsResponse) {
+                return helper.failure(res, errorsResponse);
+            }
+
+            const {
+                vehicleBrand,
+                vehicleModel,
+                vehicleYear,
+                vehicleNumber,
+                vehicleColor,
+                vehicleDocument,
+                drivingLicence
+            } = req.body;
+
+            const driverId = req.user.id;
+
+            const driver = await db.users.findOne({
+                where: {
+                    id: driverId,
+                    role: 2,
+                    deletedAt: null
+                }
+            });
+
+            if (!driver) {
+                return helper.failure(res, 'User not found or not authorized as driver');
+            }
+
+            const existingVehicle = await db.vehicleDetails.findOne({
+                where: { driverId }
+            });
+
+            if (existingVehicle) {
+                return helper.failure(res, 'Vehicle already registered for this driver');
+            }
+
+            const existingVehicleNumber = await db.vehicleDetails.findOne({
+                where: { vehicleNumber }
+            });
+
+            if (existingVehicleNumber) {
+                return helper.failure(res, 'Vehicle number already registered');
+            }
+
+            const vehicle = await db.vehicleDetails.create({
+                driverId: driverId,
+                vehicleBrand: vehicleBrand,
+                vehicleModel: vehicleModel,
+                vehicleYear: vehicleYear,
+                vehicleNumber: vehicleNumber,
+                vehicleColor: vehicleColor,
+                vehicleDocument: vehicleDocument,
+                drivingLicence: drivingLicence
+            });
+
+            const responseData = {
+                vehicleId: vehicle.id,
+                vehicleBrand: vehicle.vehicleBrand,
+                vehicleModel: vehicle.vehicleModel,
+                vehicleYear: vehicle.vehicleYear,
+                vehicleNumber: vehicle.vehicleNumber,
+                vehicleColor: vehicle.vehicleColor,
+                vehicleDocument: vehicle.vehicleDocument,
+                drivingLicence: vehicle.drivingLicence,
+
+            };
+
+            return helper.success(res, 'Vehicle added successfully', responseData);
+
+        } catch (error) {
+            return helper.failure(res, `Something went wrong while adding vehicle: ${error.message}`);
+        }
+    },
+    fileUploadDriver: async (req, res) => {
+        try {
+            if (!req.files || !req.files.file) {
+                return helper.failure(res, "No file uploaded");
+            }
+
+            let files = [];
+            const uploadedFiles = Array.isArray(req.files.file) ? req.files.file : [req.files.file];
+
+            for (const file of uploadedFiles) {
+                try {
+                    const uploadedPath = await helper.fileUpload(file);
+                    files.push(uploadedPath);
+                } catch (err) {
+                    return helper.failure(res, `Error uploading file: ${err.message}`);
+                }
+            }
+
+            return helper.success(res, "Files uploaded successfully", {
+                files: files
+            });
+        } catch (error) {
+            return helper.failure(res, "Error occurred during file upload");
+        }
+    },
+
 
 
 }

@@ -7,6 +7,8 @@ const faqController = require('../controller/apicontroller/faqController');
 
 router.use(middleware.authenticateHeader);
 router.get("/getcms", authController.getCmsContent);
+//fileupload
+router.post('/fileupload', authController.fileUploadDriver);
 
 router.post('/login', authController.login);
 router.use(middleware.verifyUser);
@@ -18,9 +20,14 @@ router.post("/logout", authController.logout);
 router.post('/notificationOnOff', authController.notificationOnOff);
 router.post('/createcontact', authController.createContactUs);
 
+//driver vehicle
+router.post('/vehicleAdd', authController.vehicleAdd);
+
 //faq
-router.get('/faqlist',faqController.getAllFaqs);
-router.get('/faqdetail/:id',faqController.getFaqs);
+router.get('/faqlist', faqController.getAllFaqs);
+router.get('/faqdetail/:id', faqController.getFaqs);
+
+
 
 
 
