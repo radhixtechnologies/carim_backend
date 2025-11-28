@@ -699,6 +699,18 @@ const DriverList = () => {
                     </td>
                   </tr>
                   <tr>
+                    <td>Country Code :</td>
+                    <td className="text-end text-black fw-medium">
+                      {selectedUser.countryCode || ""}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Phone Number :</td>
+                    <td className="text-end text-black fw-medium">
+                      {selectedUser.phoneNumber || ""}
+                    </td>
+                  </tr>
+                  <tr>
                     <td>Gender:</td>
                     <td className="text-end text-black fw-medium">
                       {selectedUser.gender === "0"

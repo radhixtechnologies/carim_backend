@@ -98,7 +98,6 @@ const UserList = () => {
         );
       }
     } else {
-      
     }
   };
 
@@ -528,6 +527,18 @@ const UserList = () => {
                     <td>Email :</td>
                     <td className="text-end text-black fw-medium">
                       {selectedUser.email || ""}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Country Code :</td>
+                    <td className="text-end text-black fw-medium">
+                      {selectedUser.countryCode || ""}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Phone Number :</td>
+                    <td className="text-end text-black fw-medium">
+                      {selectedUser.phoneNumber || ""}
                     </td>
                   </tr>
                   <tr>
