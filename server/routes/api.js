@@ -22,10 +22,18 @@ router.post('/createcontact', authController.createContactUs);
 
 //driver vehicle
 router.post('/vehicleAdd', authController.vehicleAdd);
+router.post('/vehicleedit/:id', authController.vehicleEdit);
+router.get('/vehicleget/:id', authController.vehicleGet);
+
+//admin bank details
+router.get('/adminbankdetail',authController.bankDetail);
 
 //faq
 router.get('/faqlist', faqController.getAllFaqs);
 router.get('/faqdetail/:id', faqController.getFaqs);
+
+//home
+router.get('/home',authController.home);
 
 
 

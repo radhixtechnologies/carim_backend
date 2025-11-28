@@ -395,7 +395,7 @@ module.exports = {
             const driver = await db.users.findOne({
                 where: {
                     id: driverId,
-                    role:"2",
+                    role: "2",
                     deletedAt: null
                 }
             });
@@ -432,7 +432,7 @@ module.exports = {
             });
 
             const responseData = {
-                vehicleId: vehicle.id,
+                id: vehicle.id,
                 vehicleBrand: vehicle.vehicleBrand,
                 vehicleModel: vehicle.vehicleModel,
                 vehicleYear: vehicle.vehicleYear,
@@ -474,6 +474,168 @@ module.exports = {
             return helper.failure(res, "Error occurred during file upload");
         }
     },
+    home: async (req, res) => {
+        try {
+            const responseData = await db.banners.findAll();
+            return helper.success(res, 'All banner detail.', responseData);
+        } catch (error) {
+            return helper.failure(res, "Something went wrong.");
+
+        }
+    },
+    vehicleEdit: async (req, res) => {
+        try {
+            const v = new Validator(req.body, {
+                vehicleBrand: "required",
+                vehicleModel: "required",
+                vehicleYear: "required",
+                vehicleNumber: "required",
+                vehicleColor: "required",
+                vehicleDocument: "required",
+                drivingLicence: "required"
+            });
+
+            const errorsResponse = await helper.checkValidation(v);
+            if (errorsResponse) {
+                return helper.failure(res, errorsResponse);
+            }
+
+            const {
+                vehicleBrand,
+                vehicleModel,
+                vehicleYear,
+                vehicleNumber,
+                vehicleColor,
+                vehicleDocument,
+                drivingLicence
+            } = req.body;
+
+            const driverId = req.user.id;
+            const vehicleId = req.params.id;
+
+            const driver = await db.users.findOne({
+                where: {
+                    id: driverId,
+                    role: "2",
+                    deletedAt: null
+                }
+            });
+
+            if (!driver) {
+                return helper.failure(res, 'User not found or not authorized as driver');
+            }
+
+            const existingVehicle = await db.vehicleDetails.findOne({
+                where: {
+                    id: vehicleId,
+                    driverId: driverId
+                }
+            });
+
+            if (!existingVehicle) {
+                return helper.failure(res, 'Vehicle not found or not authorized to edit');
+            }
+
+            const existingVehicleNumber = await db.vehicleDetails.findOne({
+                where: {
+                    vehicleNumber: vehicleNumber,
+                    id: { [db.Sequelize.Op.ne]: vehicleId }
+                }
+            });
+
+            if (existingVehicleNumber) {
+                return helper.failure(res, 'Vehicle number already registered by another vehicle');
+            }
+
+            await db.vehicleDetails.update({
+                vehicleBrand: vehicleBrand,
+                vehicleModel: vehicleModel,
+                vehicleYear: vehicleYear,
+                vehicleNumber: vehicleNumber,
+                vehicleColor: vehicleColor,
+                vehicleDocument: vehicleDocument,
+                drivingLicence: drivingLicence,
+                updatedAt: new Date()
+            }, {
+                where: {
+                    id: vehicleId,
+                    driverId: driverId
+                }
+            });
+
+            const updatedVehicle = await db.vehicleDetails.findOne({
+                where: { id: vehicleId }
+            });
+
+            const responseData = {
+                id: updatedVehicle.id,
+                vehicleBrand: updatedVehicle.vehicleBrand,
+                vehicleModel: updatedVehicle.vehicleModel,
+                vehicleYear: updatedVehicle.vehicleYear,
+                vehicleNumber: updatedVehicle.vehicleNumber,
+                vehicleColor: updatedVehicle.vehicleColor,
+                vehicleDocument: updatedVehicle.vehicleDocument,
+                drivingLicence: updatedVehicle.drivingLicence,
+                updatedAt: updatedVehicle.updatedAt
+            };
+
+            return helper.success(res, 'Vehicle updated successfully', responseData);
+
+        } catch (error) {
+            return helper.failure(res, `Something went wrong while updating vehicle: ${error.message}`);
+        }
+    },
+    vehicleGet: async (req, res) => {
+        try {
+            const driverId = req.user.id;
+
+            const driver = await db.users.findOne({
+                where: {
+                    id: driverId,
+                    role: "2",
+                    deletedAt: null
+                }
+            });
+
+            if (!driver) {
+                return helper.failure(res, 'User not found or not authorized as driver');
+            }
+
+            const vehicle = await db.vehicleDetails.findOne({
+                where: { driverId },
+
+            });
+
+            if (!vehicle) {
+                return helper.failure(res, 'No vehicle found for this driver');
+            }
+
+            return helper.success(res, 'Vehicle details fetched successfully', vehicle);
+
+        } catch (error) {
+            return helper.failure(res, `Something went wrong while fetching vehicle: ${error.message}`);
+        }
+    },
+    bankDetail: async (req, res) => {
+        try {
+            const admin = await db.users.findOne({
+                where: { role: "0" },
+                include: [
+                    {
+                        model: db.userBanks,
+                        as: 'banks',
+                        required: false,
+                    },
+                ],
+            });
+
+       
+            return helper.success(res, 'Vehicle details fetched successfully', admin);
+        } catch (error) {
+            return helper.failure(res, `Something went wrong.`);
+
+        }
+    }
 
 
 
