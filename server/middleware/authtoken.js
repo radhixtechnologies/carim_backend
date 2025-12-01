@@ -145,24 +145,13 @@ module.exports = {
       //   );
       //   return helper.error(res, "Session expired - logged in on another device", 401);
       // }
-      if (userData.status === 0) {
-        // return helper.failure(res, "Your account has been deactivated by admin.");
-        return res.status(400).json({
-          success: false,
-          code: 402,
-          message: "Your account has been deactivated by admin.",
-          body: {},
-        });
+      if (userData.status === "0") {
+        return helper.failure(res, "Your account has been deactivated by admin.");
+
       }
-      // if (userData.block == 1) {
-      //   // return helper.failure(res, "Your account has been blocked by admin.");
-      //   return res.status(400).json({
-      //     success: false,
-      //     code: 402,
-      //     message: "Your account has been blocked by admin.",
-      //     body: {},
-      //   });
-      // }
+      if (userData.role === "2" && userData.approve === "0") {
+        return helper.failure(res, "Your account is not approved by admin.");
+      }
       req.user = userData;
 
       next();

@@ -99,7 +99,7 @@ module.exports = function (sequelize, DataTypes) {
       type: DataTypes.ENUM('0', '1'),
       allowNull: false,
       defaultValue: "1",
-      comment:'0 off ,1 on'
+      comment: '0 off ,1 on'
     },
     deviceToken: {
       type: DataTypes.STRING(255),
@@ -175,6 +175,12 @@ module.exports = function (sequelize, DataTypes) {
       allowNull: false,
       defaultValue: "",
       comment: "for admin charge"
+    },
+    vehicle: {
+      type: DataTypes.ENUM('0', '1'),
+      allowNull: false,
+      defaultValue: "0",
+      comment: " 0=>pending, 1=>verified,"
     },
     totalAmount: {
       type: DataTypes.STRING(255),

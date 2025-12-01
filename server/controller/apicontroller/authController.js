@@ -41,6 +41,12 @@ module.exports = {
             let isNewUser = false;
 
             if (existingUser) {
+                if (existingUser.status === "0") {
+                    return helper.failure(res, 'Your account has been deactivated by admin.');
+                }
+                if (existingUser.role === "2" && existingUser.approve === "0") {
+                    return helper.failure(res, 'Your account is not approved by admin.');
+                }
                 user = existingUser;
             } else {
                 const userWithSamePhone = await db.users.findOne({
@@ -63,7 +69,8 @@ module.exports = {
                     deviceToken: deviceToken || null,
                     deviceType: deviceType || null,
                     loginTime: helper.unixTimestamp(),
-                    otp: otp
+                    otp: otp,
+                    status: "1"
                 });
 
                 isNewUser = true;
@@ -395,8 +402,7 @@ module.exports = {
             const driver = await db.users.findOne({
                 where: {
                     id: driverId,
-                    role: "2",
-                    deletedAt: null
+                    role: "2"
                 }
             });
 
@@ -420,30 +426,52 @@ module.exports = {
                 return helper.failure(res, 'Vehicle number already registered');
             }
 
-            const vehicle = await db.vehicleDetails.create({
-                driverId: driverId,
-                vehicleBrand: vehicleBrand,
-                vehicleModel: vehicleModel,
-                vehicleYear: vehicleYear,
-                vehicleNumber: vehicleNumber,
-                vehicleColor: vehicleColor,
-                vehicleDocument: vehicleDocument,
-                drivingLicence: drivingLicence
-            });
+            const transaction = await db.sequelize.transaction();
 
-            const responseData = {
-                id: vehicle.id,
-                vehicleBrand: vehicle.vehicleBrand,
-                vehicleModel: vehicle.vehicleModel,
-                vehicleYear: vehicle.vehicleYear,
-                vehicleNumber: vehicle.vehicleNumber,
-                vehicleColor: vehicle.vehicleColor,
-                vehicleDocument: vehicle.vehicleDocument,
-                drivingLicence: vehicle.drivingLicence,
+            try {
+                const vehicle = await db.vehicleDetails.create({
+                    driverId: driverId,
+                    vehicleBrand: vehicleBrand,
+                    vehicleModel: vehicleModel,
+                    vehicleYear: vehicleYear,
+                    vehicleNumber: vehicleNumber,
+                    vehicleColor: vehicleColor,
+                    vehicleDocument: vehicleDocument,
+                    drivingLicence: drivingLicence
+                }, { transaction });
 
-            };
+                await db.users.update(
+                    { vehicle: "1" },
+                    {
+                        where: { id: driverId },
+                        transaction
+                    }
+                );
 
-            return helper.success(res, 'Vehicle added successfully', responseData);
+                await transaction.commit();
+
+                const updatedUser = await db.users.findOne({
+                    where: { id: driverId },
+                });
+
+                const responseData = {
+                    id: vehicle.id,
+                    vehicleBrand: vehicle.vehicleBrand,
+                    vehicleModel: vehicle.vehicleModel,
+                    vehicleYear: vehicle.vehicleYear,
+                    vehicleNumber: vehicle.vehicleNumber,
+                    vehicleColor: vehicle.vehicleColor,
+                    vehicleDocument: vehicle.vehicleDocument,
+                    drivingLicence: vehicle.drivingLicence,
+                    userVehicleStatus: updatedUser.vehicle
+                };
+
+                return helper.success(res, 'Vehicle added successfully', responseData);
+
+            } catch (error) {
+                await transaction.rollback();
+                throw error;
+            }
 
         } catch (error) {
             return helper.failure(res, `Something went wrong while adding vehicle: ${error.message}`);
@@ -628,15 +656,10 @@ module.exports = {
                     },
                 ],
             });
-
-       
             return helper.success(res, 'Vehicle details fetched successfully', admin);
         } catch (error) {
             return helper.failure(res, `Something went wrong.`);
 
         }
     }
-
-
-
 }

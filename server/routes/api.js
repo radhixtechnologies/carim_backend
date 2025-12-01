@@ -23,7 +23,7 @@ router.post('/createcontact', authController.createContactUs);
 //driver vehicle
 router.post('/vehicleAdd', authController.vehicleAdd);
 router.post('/vehicleedit/:id', authController.vehicleEdit);
-router.get('/vehicleget/:id', authController.vehicleGet);
+router.get('/vehicleget', authController.vehicleGet);
 
 //admin bank details
 router.get('/adminbankdetail',authController.bankDetail);
