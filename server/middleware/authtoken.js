@@ -149,9 +149,9 @@ module.exports = {
         return helper.failure(res, "Your account has been deactivated by admin.");
 
       }
-      if (userData.role === "2" && userData.approve === "0") {
-        return helper.failure(res, "Your account is not approved by admin.");
-      }
+      // if (userData.role === "2" && userData.approve === "0") {
+      //   return helper.failure(res, "Your account is not approved by admin.");
+      // }
       req.user = userData;
 
       next();

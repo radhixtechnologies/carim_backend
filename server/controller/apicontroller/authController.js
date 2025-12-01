@@ -44,9 +44,9 @@ module.exports = {
                 if (existingUser.status === "0") {
                     return helper.failure(res, 'Your account has been deactivated by admin.');
                 }
-                if (existingUser.role === "2" && existingUser.approve === "0") {
-                    return helper.failure(res, 'Your account is not approved by admin.');
-                }
+                // if (existingUser.role === "2" && existingUser.approve === "0") {
+                //     return helper.failure(res, 'Your account is not approved by admin.');
+                // }
                 user = existingUser;
             } else {
                 const userWithSamePhone = await db.users.findOne({
