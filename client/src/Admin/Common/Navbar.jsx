@@ -3,12 +3,13 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import { axiosInstance, BASE_URL } from "../../Config";
 import Swal from "sweetalert2";
-import {  CreditCard, Lock, LogOut } from "react-feather";
+import { CreditCard, Lock, LogOut } from "react-feather";
 
 function Navbar({ toggleSidebar }) {
   const location = useLocation();
   const [image, setImage] = useState("");
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const bodyRef = useRef(null);
   const dropdownRef = useRef(null);
@@ -27,13 +28,16 @@ function Navbar({ toggleSidebar }) {
             Authorization: `Bearer ${token}`,
           },
         });
+        console.log("Profile response:", response);
         if (response.data && response.data.body) {
-          const { image, name, email } = response.data.body;
+          const { image, firstName, lastName, email } = response.data.body;
           setImage(`${BASE_URL}/${image}`);
-          setName(name);
-          setEmail(email);
+          setFirstName(firstName || "");
+          setLastName(lastName || "");
+          setEmail(email || "");
         }
       } catch (error) {
+        console.error("Error fetching profile:", error);
       }
     };
 
@@ -43,6 +47,26 @@ function Navbar({ toggleSidebar }) {
       fetchProfile();
     }
   }, [location.state]);
+
+  const getFullName = () => {
+    return `${firstName || ""} ${lastName || ""}`.trim();
+  };
+
+  const getShortName = () => {
+    if (!firstName && !lastName) return "User";
+    return `${firstName || ""} ${lastName ? lastName.charAt(0) + "." : ""}`.trim();
+  };
+
+  const truncateText = (text, maxLength = 15) => {
+    if (!text) return "";
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + "...";
+  };
+
+  const getTruncatedFullName = (maxLength = 15) => {
+    const fullName = getFullName();
+    return truncateText(fullName, maxLength);
+  };
 
   const handleClick = () => {
     toggleSidebar();
@@ -98,7 +122,9 @@ function Navbar({ toggleSidebar }) {
         setTimeout(() => {
           navigate("/login");
         }, 1500);
-      } catch (error) {}
+      } catch (error) {
+        console.error("Logout error:", error);
+      }
     }
   };
 
@@ -122,102 +148,6 @@ function Navbar({ toggleSidebar }) {
             </div>
           </div>
           <div className="d-flex align-items-center">
-            <div className="dropdown d-inline-block d-lg-none ms-2 me-2">
-              <button
-                type="button"
-                className="btn header-item search-icon px-2"
-                id="page-header-search-dropdown"
-                data-bs-toggle="dropdown"
-                aria-haspopup="true"
-                aria-expanded="false"
-              >
-                <i className="uil-search" />
-              </button>
-              <div
-                className="dropdown-menu dropdown-menu-lg dropdown-menu-start search-dropdown p-0"
-                aria-labelledby="page-header-search-dropdown"
-              >
-                <form className="p-3">
-                  <div className="m-0">
-                    <div className="input-group nwoues">
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="infoeu"
-                        placeholder="Search name, phone number, email, ticket number..."
-                        aria-label="Recipient's username"
-                      />
-                      <div className="input-group-append">
-                        <button className="btn btn-primary" type="submit">
-                          <i className="mdi mdi-magnify" />
-                        </button>
-                      </div>
-                      <div className="opensrc">
-                        <i className="ri-search-line" />
-                      </div>
-                      <div className="opencls">
-                        <i className="ri-close-line" />
-                      </div>
-                    </div>
-                    <div className="serach-result mt-2 ps-1">
-                      <div className="srttl mb-2 font-size-12 text-muted">
-                        POPULAR SEARCHES
-                      </div>
-                      <Link to="/" className="sritm mb-1">
-                        <span className="text-lowdark">Name</span>
-                      </Link>
-                      <Link to="/" className="sritm mb-1">
-                        <span className="text-lowdark">Phone Number</span>
-                      </Link>
-                      <Link to="/" className="sritm mb-1">
-                        <span className="text-lowdark">Email</span>
-                      </Link>
-                      <Link to="/" className="sritm mb-1">
-                        <span className="text-lowdark">Ticket#</span>
-                      </Link>
-                      <div className="srttl mb-2 mt-3 font-size-12 text-muted">
-                        PAGES
-                      </div>
-                      <Link to="/" className="sritm mb-1">
-                        <i className="text-lowdark ri-calendar-line me-1" />{" "}
-                        <span className="text-lowdark">Calender</span>
-                      </Link>
-                      <Link to="/" className="sritm mb-1">
-                        <i className="text-lowdark ri-file-text-line me-1" />{" "}
-                        <span className="text-lowdark">Invoice List</span>
-                      </Link>
-                      <Link to="/" className="sritm mb-1">
-                        <i className="text-lowdark ri-settings-3-line me-1" />{" "}
-                        <span className="text-lowdark">Account Settings</span>
-                      </Link>
-                    </div>
-                    <div className="src-empty">
-                      <div className="text-center">
-                        <svg
-                          width={54}
-                          height={54}
-                          viewBox="0 0 54 54"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            d="M1 1.54083L53 53M12.8612 2.34155C18.0768 0.776507 33.0216 0.461939 41.8824 2.03478C44.0274 2.41694 46.0944 3.8 47.2228 5.63541C49.1104 8.7109 49.009 12.2907 49.009 15.8836L48.697 37.8643M6.2 6.64931C4.5568 12.5429 4.7778 23.3604 4.8844 39.328C4.9 41.3818 4.9962 43.4616 5.615 45.4244C6.5744 48.4661 8.1708 50.3119 11.6782 51.7937C13.1732 52.4281 14.8138 52.636 16.444 52.636H26.9558C36.8254 52.3969 40.8086 51.3674 45.1714 45.6739M23.0662 52.636C29.2568 49.4982 32.447 49.0614 31.6358 41.1686C31.4798 39.1252 32.6498 36.6841 34.7402 36.0289M48.853 27.117C48.2212 30.8503 47.7974 32.2385 45.278 34.3989"
-                            stroke="#212529"
-                            strokeWidth={2}
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                        <p className="mb-0 mt-3 font-size-15">
-                          No results found
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </form>
-              </div>
-            </div>
-
             {/* Profile */}
             <div className="dropdown d-inline-block">
               <button
@@ -236,10 +166,11 @@ function Navbar({ toggleSidebar }) {
                 />
                 <div className="text-start d-none d-xl-inline-block ms-2 me-2">
                   <span className="fw-medium font-size-15 nsuser">
-                    {name}
+                    <span className="text-truncate d-inline-block" style={{ maxWidth: "120px" }}>
+                      {getShortName()}
+                    </span>
                     <i className="uil-angle-down namearr" />
                   </span>
-                  <small className="text-muted d-block">Admin</small>
                 </div>
               </button>
               <div className="dropdown-menu pt-3 pb-2 dropdown-menu-end dropdown-profile">
@@ -264,7 +195,7 @@ function Navbar({ toggleSidebar }) {
                           textOverflow: "ellipsis",
                         }}
                       >
-                        {name}
+                        {getFullName()}
                       </small>
                     </div>
                     <div className="d-flex align-items-center">
@@ -288,8 +219,9 @@ function Navbar({ toggleSidebar }) {
                             whiteSpace: "nowrap",
                             textOverflow: "ellipsis",
                           }}
+                          title={getFullName()} // Shows full name on hover
                         >
-                          {name}
+                          {getTruncatedFullName(20)} {/* Adjust max length as needed */}
                         </div>
                         <div
                           className="text-lowdark pb-1 usprmail text-truncate"
@@ -299,8 +231,9 @@ function Navbar({ toggleSidebar }) {
                             whiteSpace: "nowrap",
                             textOverflow: "ellipsis",
                           }}
+                          title={email} // Shows full email on hover
                         >
-                          {email}
+                          {truncateText(email, 25)}
                         </div>
                         <Link
                           to="/profile"
@@ -363,4 +296,5 @@ function Navbar({ toggleSidebar }) {
     </>
   );
 }
+
 export default Navbar;

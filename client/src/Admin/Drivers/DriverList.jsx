@@ -264,7 +264,8 @@ const DriverList = () => {
                           <tr>
                             <th>Sr no.</th>
                             <th>Image</th>
-                            <th>Name</th>
+                            <th>First Name</th>
+                            <th>Last Name</th>
                             <th>Email Address</th>
                             <th>Location</th>
                             <th>Blocked</th>
@@ -295,7 +296,8 @@ const DriverList = () => {
                                     "No Image"
                                   )}
                                 </td>
-                                <td>{user.name || ""}</td>
+                                <td>{user.firstName || ""}</td>
+                                <td>{user.lastName || ""}</td>
                                 <td>{user.email || ""}</td>
                                 <td>
                                   {user.city && `${user.city} `}
@@ -501,9 +503,7 @@ const DriverList = () => {
                                 colSpan="12"
                                 style={{ textAlign: "center", padding: "20px" }}
                               >
-                                <p className="no-found">
-                                No drivers found
-                                </p>
+                                <p className="no-found">No drivers found</p>
                               </td>
                             </tr>
                           )}
@@ -687,9 +687,15 @@ const DriverList = () => {
                     </td>
                   </tr>
                   <tr>
-                    <td>Name :</td>
+                    <td>First Name :</td>
                     <td className="text-end text-black fw-medium">
-                      {selectedUser.name || ""}
+                      {selectedUser.firstName || ""}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Last Name :</td>
+                    <td className="text-end text-black fw-medium">
+                      {selectedUser.lastName || ""}
                     </td>
                   </tr>
                   <tr>

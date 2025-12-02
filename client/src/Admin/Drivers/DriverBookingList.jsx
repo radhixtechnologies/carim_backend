@@ -47,38 +47,41 @@ const DriverBookingList = () => {
     return statusMap[status] || { label: "Unknown", className: "bg-light" };
   };
 
-  const fetchData = useCallback(async (page, search = "", filter = "all") => {
-    try {
-      const response = await axiosInstance.get(
-        `/driverride/${id}?page=${page}&limit=${limit}&search=${encodeURIComponent(
-          search
-        )}&dateFilter=${filter}`
-      );
-      if (response.data.success) {
-        setMatches(response.data.body.data);
-        setTotalPages(response.data.body.totalPages);
+  const fetchData = useCallback(
+    async (page, search = "", filter = "all") => {
+      try {
+        const response = await axiosInstance.get(
+          `/driverride/${id}?page=${page}&limit=${limit}&search=${encodeURIComponent(
+            search
+          )}&dateFilter=${filter}`
+        );
+        if (response.data.success) {
+          setMatches(response.data.body.data);
+          setTotalPages(response.data.body.totalPages);
 
-        if (
-          response.data.body.data.length > 0 &&
-          response.data.body.data[0].driverbook
-        ) {
-          setDriverInfo(response.data.body.data[0].driverbook);
+          if (
+            response.data.body.data.length > 0 &&
+            response.data.body.data[0].driverbook
+          ) {
+            setDriverInfo(response.data.body.data[0].driverbook);
+          }
+        } else {
+          Swal.fire(
+            "Error",
+            response.data.message || "Failed to load bookings",
+            "error"
+          );
         }
-      } else {
+      } catch (error) {
         Swal.fire(
           "Error",
-          response.data.message || "Failed to load bookings",
+          "An error occurred while fetching the bookings list",
           "error"
         );
       }
-    } catch (error) {
-      Swal.fire(
-        "Error",
-        "An error occurred while fetching the bookings list",
-        "error"
-      );
-    }
-  }, [id, limit]);
+    },
+    [id, limit]
+  );
 
   useEffect(() => {
     if (id) {
@@ -118,7 +121,9 @@ const DriverBookingList = () => {
               <div className="d-flex justify-content-between align-items-center mb-3">
                 <div className="title-box">
                   <h4 className="mb-0 page-title">
-                    Ride History {driverInfo && `- ${driverInfo.name}`}
+                    Ride History{" "}
+                    {driverInfo &&
+                      `- ${driverInfo.firstName} ${driverInfo.lastName}`}
                   </h4>
                   <nav aria-label="breadcrumb" className="mt-1">
                     <ol className="breadcrumb mb-0">
@@ -223,8 +228,19 @@ const DriverBookingList = () => {
                                   <td>
                                     {(currentPage - 1) * limit + index + 1}
                                   </td>
-                                  <td>{match.userbook?.name || "N/A"}</td>
-                                  <td>{match.driverbook?.name || "N/A"}</td>
+                                  <td>
+                                    {match.userbook?.firstName &&
+                                    match.userbook?.lastName
+                                      ? `${match.userbook.firstName} ${match.userbook.lastName}`
+                                      : ""}
+                                  </td>
+                                  <td>
+                                    {match.driverbook?.firstName &&
+                                    match.driverbook?.lastName
+                                      ? `${match.driverbook.firstName} ${match.driverbook.lastName}`
+                                      : ""}
+                                  </td>
+
                                   <td>{getRideTypeLabel(match.rideType)}</td>
                                   <td>${match.bookingPrice || "0"}</td>
                                   <td>
@@ -338,15 +354,22 @@ const DriverBookingList = () => {
                   <tr>
                     <td>User Name :</td>
                     <td className="text-end text-black fw-medium">
-                      {selectedMatch.userbook?.name || "N/A"}
+                      {selectedMatch.userbook?.firstName &&
+                      selectedMatch.userbook?.lastName
+                        ? `${selectedMatch.userbook.firstName} ${selectedMatch.userbook.lastName}`
+                        : ""}
                     </td>
                   </tr>
                   <tr>
                     <td>Driver Name:</td>
                     <td className="text-end text-black fw-medium">
-                      {selectedMatch.driverbook?.name || "N/A"}
+                      {selectedMatch.driverbook?.firstName &&
+                      selectedMatch.driverbook?.lastName
+                        ? `${selectedMatch.driverbook.firstName} ${selectedMatch.driverbook.lastName}`
+                        : ""}
                     </td>
                   </tr>
+
                   <tr>
                     <td>Ride Type :</td>
                     <td className="text-end text-black fw-medium">
@@ -366,26 +389,26 @@ const DriverBookingList = () => {
                         ? new Date(
                             selectedMatch.bookingDate
                           ).toLocaleDateString()
-                        : "N/A"}
+                        : ""}
                     </td>
                   </tr>
 
                   <tr>
                     <td>Pickup Location:</td>
                     <td className="text-end text-black fw-medium">
-                      {selectedMatch.pickupLocation || "N/A"}
+                      {selectedMatch.pickupLocation || ""}
                     </td>
                   </tr>
                   <tr>
                     <td>Drop Location:</td>
                     <td className="text-end text-black fw-medium">
-                      {selectedMatch.dropLocation || "N/A"}
+                      {selectedMatch.dropLocation || ""}
                     </td>
                   </tr>
                   <tr>
                     <td>Number Of Passenger:</td>
                     <td className="text-end text-black fw-medium">
-                      {selectedMatch.numberOfPassenger || "N/A"}
+                      {selectedMatch.numberOfPassenger || ""}
                     </td>
                   </tr>
                   <tr>
@@ -395,7 +418,7 @@ const DriverBookingList = () => {
                         ? "Cash"
                         : selectedMatch.paymentMethod === "1"
                         ? "Online"
-                        : "N/A"}
+                        : ""}
                     </td>
                   </tr>
                   <tr>

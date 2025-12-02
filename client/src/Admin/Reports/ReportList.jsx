@@ -210,8 +210,9 @@ const ReportList = () => {
                                     {(currentPage - 1) * limit + index + 1}
                                   </td>
 
-                                  <td>{match.reportedby?.name || ""}</td>
-                                  <td>{match.reportedto?.name || ""}</td>
+                                  {/* Update to use firstName and lastName */}
+                                  <td>{`${match.reportedby?.firstName || ""} ${match.reportedby?.lastName || ""}`}</td>
+                                  <td>{`${match.reportedto?.firstName || ""} ${match.reportedto?.lastName || ""}`}</td>
                                   <td>{match.reportedbooking?.id || ""}</td>
                                   <td>
                                     <div className="d-flex justify-content-end">
@@ -319,14 +320,14 @@ const ReportList = () => {
                   <tr>
                     <td>Report By:</td>
                     <td className="text-end text-black fw-medium">
-                      {selectedMatch.reportedby?.name || ""}
+                      {`${selectedMatch.reportedby?.firstName || ""} ${selectedMatch.reportedby?.lastName || ""}`}
                     </td>
                   </tr>
 
                   <tr>
                     <td>Report To:</td>
                     <td className="text-end text-black fw-medium">
-                      {selectedMatch.reportedto?.name || ""}
+                      {`${selectedMatch.reportedto?.firstName || ""} ${selectedMatch.reportedto?.lastName || ""}`}
                     </td>
                   </tr>
                   <tr>
@@ -340,12 +341,12 @@ const ReportList = () => {
               <div className="mt-3">
                 <div className="font-size-16 fw-medium mb-2">Reason:</div>
                 <div className="bg-light">
-                  {selectedMatch.rason ? (
+                  {selectedMatch.reason ? (
                     <textarea
                       readOnly
                       className="form-control"
                       rows="14"
-                      value={selectedMatch.rason}
+                      value={selectedMatch.reason}
                       style={{
                         resize: "none",
                         backgroundColor: "#f8f9fa",

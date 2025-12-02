@@ -6,7 +6,8 @@ import { FaEdit } from "react-icons/fa";
 
 const Profile = () => {
   const [data, setData] = useState({
-    name: "",
+    firstName: "",
+    lastName: "",
     email: "",
     phoneNumber: "",
     image: "",
@@ -24,10 +25,25 @@ const Profile = () => {
         const response = await axiosInstance.get(`/profile`, {});
 
         if (response.data && response.data.body) {
-          setData(response.data.body);
-          const imageUrl = response.data.body.image.startsWith("http")
-            ? response.data.body.image
-            : `${BASE_URL}/${response.data.body.image}`;
+          const profileData = response.data.body;
+          
+          if (profileData.name) {
+            const nameParts = profileData.name.trim().split(' ');
+            const firstName = nameParts[0] || '';
+            const lastName = nameParts.slice(1).join(' ') || '';
+            
+            setData({
+              ...profileData,
+              firstName,
+              lastName
+            });
+          } else {
+            setData(profileData);
+          }
+          
+          const imageUrl = profileData.image && profileData.image.startsWith("http")
+            ? profileData.image
+            : `${BASE_URL}/${profileData.image}`;
           setImagePreview(imageUrl);
         }
       } catch (error) {
@@ -46,11 +62,24 @@ const Profile = () => {
     }
   };
 
-  const validateName = (name) => {
-    if (!name.trim()) return "Name is required";
-    if (name.startsWith(" ")) return "Name cannot start with a space";
-    if (name.length < 2 || name.length > 20)
-      return "Name must be between 2 and 20 characters";
+  const validateFirstName = (firstName) => {
+    if (!firstName.trim()) return "First name is required";
+    if (firstName.startsWith(" ")) return "First name cannot start with a space";
+    if (firstName.length < 2 || firstName.length > 20)
+      return "First name must be between 2 and 20 characters";
+    if (!/^[a-zA-Z\s'-]+$/.test(firstName)) 
+      return "First name can only contain letters, spaces, hyphens, and apostrophes";
+    return "";
+  };
+
+  const validateLastName = (lastName) => {
+    if (lastName.trim() === "") return ""; 
+    
+    if (lastName.startsWith(" ")) return "Last name cannot start with a space";
+    if (lastName.length > 20)
+      return "Last name must be less than 20 characters";
+    if (!/^[a-zA-Z\s'-]+$/.test(lastName)) 
+      return "Last name can only contain letters, spaces, hyphens, and apostrophes";
     return "";
   };
 
@@ -80,11 +109,18 @@ const Profile = () => {
     return "";
   };
 
-  const handleNameChange = (e) => {
+  const handleFirstNameChange = (e) => {
     const { value } = e.target;
-    setData((prevData) => ({ ...prevData, name: value }));
-    const nameError = validateName(value);
-    setErrors((prevErrors) => ({ ...prevErrors, name: nameError }));
+    setData((prevData) => ({ ...prevData, firstName: value }));
+    const firstNameError = validateFirstName(value);
+    setErrors((prevErrors) => ({ ...prevErrors, firstName: firstNameError }));
+  };
+
+  const handleLastNameChange = (e) => {
+    const { value } = e.target;
+    setData((prevData) => ({ ...prevData, lastName: value }));
+    const lastNameError = validateLastName(value);
+    setErrors((prevErrors) => ({ ...prevErrors, lastName: lastNameError }));
   };
 
   const handlePhoneChange = (e) => {
@@ -114,11 +150,13 @@ const Profile = () => {
 
     let formErrors = {};
 
-    const nameError = validateName(data.name);
+    const firstNameError = validateFirstName(data.firstName);
+    const lastNameError = validateLastName(data.lastName);
     const phoneError = validatePhone(data.phoneNumber);
     const commissionError = validateAdminCommission(data.adminCommission);
 
-    if (nameError) formErrors.name = nameError;
+    if (firstNameError) formErrors.firstName = firstNameError;
+    if (lastNameError) formErrors.lastName = lastNameError;
     if (phoneError) formErrors.phoneNumber = phoneError;
     if (commissionError) formErrors.adminCommission = commissionError;
 
@@ -133,8 +171,14 @@ const Profile = () => {
       return;
     }
 
+    const fullName = data.lastName.trim() === "" 
+      ? data.firstName.trim()
+      : `${data.firstName.trim()} ${data.lastName.trim()}`.trim();
+
     const formData = new FormData();
-    formData.append("name", data.name);
+    formData.append("name", fullName);
+    formData.append("firstName", data.firstName.trim());
+    formData.append("lastName", data.lastName.trim()); 
     formData.append("email", data.email);
     formData.append("phoneNumber", data.phoneNumber);
     formData.append("adminCommission", data.adminCommission);
@@ -151,7 +195,26 @@ const Profile = () => {
       });
 
       const updatedData = response.data.body;
-      setData(updatedData);
+      
+      if (updatedData.name) {
+        const nameParts = updatedData.name.trim().split(' ');
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+        
+        setData(prev => ({
+          ...prev,
+          ...updatedData,
+          firstName,
+          lastName
+        }));
+      } else {
+        setData(prev => ({
+          ...prev,
+          ...updatedData,
+          lastName: updatedData.lastName || "" 
+        }));
+      }
+      
       if (updatedData.image) {
         const imageUrl = updatedData.image.startsWith("http")
           ? updatedData.image
@@ -162,7 +225,19 @@ const Profile = () => {
       toast.success("Profile updated successfully");
       navigate("/profile", { state: { updated: true } });
     } catch (error) {
-      toast.error("Error updating profile");
+      console.error("Update error:", error);
+      
+      if (error.response) {
+        if (error.response.status === 400) {
+          toast.error("Invalid data. Please check your inputs.");
+        } else if (error.response.status === 401) {
+          toast.error("Session expired. Please log in again.");
+        } else {
+          toast.error(`Error updating profile: ${error.response.data?.message || 'Unknown error'}`);
+        }
+      } else {
+        toast.error("Network error. Please check your connection.");
+      }
     }
   };
 
@@ -212,30 +287,49 @@ const Profile = () => {
                       <form onSubmit={handleSubmit}>
                         <div className="row">
                           <div className="mb-3 col-6">
-                          <label className="mb-1 fw-medium">Name</label>
-                          <input
-                            type="text"
-                            className="form-control"
-                            name="name"
-                            value={data.name}
-                            onChange={handleNameChange}
-                            maxLength={50}
-                          />
-                          {errors.name && (
-                            <div className="text-danger">{errors.name}</div>
-                          )}
+                            <label className="mb-1 fw-medium">First Name*</label>
+                            <input
+                              type="text"
+                              className="form-control"
+                              name="firstName"
+                              value={data.firstName}
+                              onChange={handleFirstNameChange}
+                              maxLength={20}
+                              placeholder="Enter first name"
+                            />
+                            {errors.firstName && (
+                              <div className="text-danger">{errors.firstName}</div>
+                            )}
+                          </div>
+
+                          <div className="mb-3 col-6">
+                            <label className="mb-1 fw-medium">Last Name (Optional)*</label>
+                            <input
+                              type="text"
+                              className="form-control"
+                              name="lastName"
+                              value={data.lastName}
+                              onChange={handleLastNameChange}
+                              maxLength={20}
+                              placeholder="Enter last name (optional)"
+                            />
+                            {errors.lastName && (
+                              <div className="text-danger">{errors.lastName}</div>
+                            )}
+                          </div>
                         </div>
 
-                        <div className="mb-3 col-6">
-                          <label className="mb-1 fw-medium">Email</label>
-                          <input
-                            type="email"
-                            className="form-control"
-                            name="email"
-                            value={data.email}
-                            disabled
-                          />
-                        </div>
+                        <div className="row">
+                          <div className="mb-3 col-12">
+                            <label className="mb-1 fw-medium">Email</label>
+                            <input
+                              type="email"
+                              className="form-control"
+                              name="email"
+                              value={data.email}
+                              disabled
+                            />
+                          </div>
                         </div>
 
                         <div className="mb-3 row">
@@ -252,13 +346,14 @@ const Profile = () => {
                             />
                           </div>
                           <div className="col-10">
-                            <label className="mb-1 fw-medium">Phone</label>
+                            <label className="mb-1 fw-medium">Phone*</label>
                             <input
                               type="text"
                               className="form-control"
                               name="phoneNumber"
                               value={data.phoneNumber}
                               onChange={handlePhoneChange}
+                              placeholder="Enter phone number"
                             />
                             {errors.phoneNumber && (
                               <div className="text-danger">
@@ -267,6 +362,7 @@ const Profile = () => {
                             )}
                           </div>
                         </div>
+                        
                         <div style={{ marginBottom: "16px" }}>
                           <label htmlFor="adminCommission" className="mb-1 fw-medium">
                             Admin Commission*

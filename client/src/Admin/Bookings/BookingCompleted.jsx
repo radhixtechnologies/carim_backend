@@ -134,7 +134,6 @@ const BookingCompleted = () => {
     setSelectedMatch(match);
   };
 
-  // Format currency to 2 decimal places
   const formatCurrency = (amount) => {
     if (amount === null || amount === undefined) return "$0.00";
     return `$${parseFloat(amount).toFixed(2)}`;
@@ -233,8 +232,17 @@ const BookingCompleted = () => {
                                   <td>
                                     {(currentPage - 1) * limit + index + 1}
                                   </td>
-                                  <td>{match.userbook?.name || "N/A"}</td>
-                                  <td>{match.driverbook?.name || "N/A"}</td>
+                                  <td>
+                                    {`${match.userbook?.firstName || ""} ${
+                                      match.userbook?.lastName || ""
+                                    }`}
+                                  </td>
+                                  <td>
+                                    {`${match.driverbook?.firstName || ""} ${
+                                      match.driverbook?.lastName || ""
+                                    }`}
+                                  </td>
+
                                   <td>{formatCurrency(match.bookingPrice)}</td>
                                   <td>{formatCurrency(match.adminAmount)}</td>
                                   <td>
@@ -348,15 +356,20 @@ const BookingCompleted = () => {
                   <tr>
                     <td>User Name :</td>
                     <td className="text-end text-black fw-medium">
-                      {selectedMatch.userbook?.name || "N/A"}
+                      {`${selectedMatch.userbook?.firstName || ""} ${
+                        selectedMatch.userbook?.lastName || ""
+                      }`}
                     </td>
                   </tr>
                   <tr>
                     <td>Driver Name:</td>
                     <td className="text-end text-black fw-medium">
-                      {selectedMatch.driverbook?.name || "N/A"}
+                      {`${selectedMatch.driverbook?.firstName || ""} ${
+                        selectedMatch.driverbook?.lastName || ""
+                      }`}
                     </td>
                   </tr>
+
                   <tr>
                     <td>Price:</td>
                     <td className="text-end text-black fw-medium">
@@ -376,26 +389,26 @@ const BookingCompleted = () => {
                         ? new Date(
                             selectedMatch.bookingDate
                           ).toLocaleDateString()
-                        : "N/A"}
+                        : ""}
                     </td>
                   </tr>
 
                   <tr>
                     <td>Pickup Location:</td>
                     <td className="text-end text-black fw-medium">
-                      {selectedMatch.pickupLocation || "N/A"}
+                      {selectedMatch.pickupLocation || ""}
                     </td>
                   </tr>
                   <tr>
                     <td>Drop Location:</td>
                     <td className="text-end text-black fw-medium">
-                      {selectedMatch.dropLocation || "N/A"}
+                      {selectedMatch.dropLocation || ""}
                     </td>
                   </tr>
                   <tr>
                     <td>Number Of Passenger:</td>
                     <td className="text-end text-black fw-medium">
-                      {selectedMatch.numberOfPassenger || "N/A"}
+                      {selectedMatch.numberOfPassenger || ""}
                     </td>
                   </tr>
                   <tr>
@@ -405,7 +418,7 @@ const BookingCompleted = () => {
                         ? "Cash"
                         : selectedMatch.paymentMethod === "1"
                         ? "Online"
-                        : "N/A"}
+                        : ""}
                     </td>
                   </tr>
                   <tr>

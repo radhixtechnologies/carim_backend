@@ -26,7 +26,6 @@ const ActiveBookingList = () => {
     { value: "365", label: "Last Year" },
   ];
 
-  // Status filters for active bookings - only 1 and 2
   const statusFilters = [
     { value: "all", label: "All Active" },
     { value: "1", label: "Arrived" },
@@ -281,8 +280,13 @@ const ActiveBookingList = () => {
                                   <td>
                                     {(currentPage - 1) * limit + index + 1}
                                   </td>
-                                  <td>{match.userbook?.name || "N/A"}</td>
-                                  <td>{match.driverbook?.name || "N/A"}</td>
+                                  <td>{`${match.userbook?.firstName || ""} ${
+                                    match.userbook?.lastName || ""
+                                  }`}</td>
+                                  <td>{`${match.driverbook?.firstName || ""} ${
+                                    match.driverbook?.lastName || ""
+                                  }`}</td>
+
                                   <td>{getRideTypeLabel(match.rideType)}</td>
                                   <td>${match.bookingPrice || "0"}</td>
                                   <td>
@@ -396,15 +400,20 @@ const ActiveBookingList = () => {
                   <tr>
                     <td>User Name :</td>
                     <td className="text-end text-black fw-medium">
-                      {selectedMatch.userbook?.name || "N/A"}
+                      {`${selectedMatch.userbook?.firstName || ""} ${
+                        selectedMatch.userbook?.lastName || ""
+                      }`}
                     </td>
                   </tr>
                   <tr>
                     <td>Driver Name:</td>
                     <td className="text-end text-black fw-medium">
-                      {selectedMatch.driverbook?.name || "N/A"}
+                      {`${selectedMatch.driverbook?.firstName || ""} ${
+                        selectedMatch.driverbook?.lastName || ""
+                      }`}
                     </td>
                   </tr>
+
                   <tr>
                     <td>Ride Type :</td>
                     <td className="text-end text-black fw-medium">
@@ -424,26 +433,26 @@ const ActiveBookingList = () => {
                         ? new Date(
                             selectedMatch.bookingDate
                           ).toLocaleDateString()
-                        : "N/A"}
+                        : ""}
                     </td>
                   </tr>
 
                   <tr>
                     <td>Pickup Location:</td>
                     <td className="text-end text-black fw-medium">
-                      {selectedMatch.pickupLocation || "N/A"}
+                      {selectedMatch.pickupLocation || ""}
                     </td>
                   </tr>
                   <tr>
                     <td>Drop Location:</td>
                     <td className="text-end text-black fw-medium">
-                      {selectedMatch.dropLocation || "N/A"}
+                      {selectedMatch.dropLocation || ""}
                     </td>
                   </tr>
                   <tr>
                     <td>Number Of Passenger:</td>
                     <td className="text-end text-black fw-medium">
-                      {selectedMatch.numberOfPassenger || "N/A"}
+                      {selectedMatch.numberOfPassenger || ""}
                     </td>
                   </tr>
                   <tr>
@@ -453,7 +462,7 @@ const ActiveBookingList = () => {
                         ? "Cash"
                         : selectedMatch.paymentMethod === "1"
                         ? "Online"
-                        : "N/A"}
+                        : ""}
                     </td>
                   </tr>
                   <tr>

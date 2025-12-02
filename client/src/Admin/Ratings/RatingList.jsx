@@ -136,7 +136,6 @@ const RatingList = () => {
           "error"
         );
       }
-    } else {
     }
   };
 
@@ -231,8 +230,8 @@ const RatingList = () => {
                                   <td>
                                     {(currentPage - 1) * limit + index + 1}
                                   </td>
-                                  <td>{match.ratedby?.name || ""}</td>
-                                  <td>{match.ratedto?.name || ""}</td>
+                                  <td>{`${match.ratedby?.firstName || ""} ${match.ratedby?.lastName || ""}`}</td>
+                                  <td>{`${match.ratedto?.firstName || ""} ${match.ratedto?.lastName || ""}`}</td>
                                   <td>{renderStarRating(match.rating)}</td>
                                   <td>
                                     <div className="d-flex justify-content-end">
@@ -340,14 +339,14 @@ const RatingList = () => {
                   <tr>
                     <td>Rated By:</td>
                     <td className="text-end text-black fw-medium">
-                      {selectedMatch.ratedby?.name || ""}
+                      {`${selectedMatch.ratedby?.firstName || ""} ${selectedMatch.ratedby?.lastName || ""}`}
                     </td>
                   </tr>
 
                   <tr>
                     <td>Rated To:</td>
                     <td className="text-end text-black fw-medium">
-                      {selectedMatch.ratedto?.name || ""}
+                      {`${selectedMatch.ratedto?.firstName || ""} ${selectedMatch.ratedto?.lastName || ""}`}
                     </td>
                   </tr>
                   <tr>

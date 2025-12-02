@@ -234,8 +234,13 @@ const BookingList = () => {
                                   <td>
                                     {(currentPage - 1) * limit + index + 1}
                                   </td>
-                                  <td>{match.userbook?.name || "N/A"}</td>
-                                  <td>{match.driverbook?.name || "N/A"}</td>
+                                  <td>{`${match.userbook?.firstName || ""} ${
+                                    match.userbook?.lastName || ""
+                                  }`}</td>
+                                  <td>{`${match.driverbook?.firstName || ""} ${
+                                    match.driverbook?.lastName || ""
+                                  }`}</td>
+
                                   <td>{getRideTypeLabel(match.rideType)}</td>
                                   <td>${match.bookingPrice || "0"}</td>
                                   <td>
@@ -349,13 +354,17 @@ const BookingList = () => {
                   <tr>
                     <td>User Name :</td>
                     <td className="text-end text-black fw-medium">
-                      {selectedMatch.userbook?.name || "N/A"}
+                      {`${selectedMatch.userbook?.firstName || ""} ${
+                        selectedMatch.userbook?.lastName || ""
+                      }`}
                     </td>
                   </tr>
                   <tr>
                     <td>Driver Name:</td>
                     <td className="text-end text-black fw-medium">
-                      {selectedMatch.driverbook?.name || "N/A"}
+                      {`${selectedMatch.driverbook?.firstName || ""} ${
+                        selectedMatch.driverbook?.lastName || ""
+                      }`}
                     </td>
                   </tr>
                   <tr>

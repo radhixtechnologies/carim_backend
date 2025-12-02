@@ -332,7 +332,8 @@ const DriverDocuments = () => {
                           <tr>
                             <th>Sr no.</th>
                             <th>Image</th>
-                            <th>Name</th>
+                            <th>first Name</th>
+                            <th>Last Name</th>
                             <th>Email</th>
                             <th>Location</th>
                             <th>Verified Status</th>
@@ -365,7 +366,9 @@ const DriverDocuments = () => {
                                     </div>
                                   )}
                                 </td>
-                                <td>{user.name || ""}</td>
+                                <td>{user.firstName || ""}</td>
+                                <td>{user.lastName || ""}</td>
+
                                 <td>{user.email || ""}</td>
                                 <td>
                                   {`${user.city || ""}${
@@ -833,15 +836,33 @@ const DriverDocuments = () => {
                     </td>
                   </tr>
                   <tr>
-                    <td>Name:</td>
+                    <td>First Name:</td>
                     <td className="text-end text-black fw-medium">
-                      {selectedUser.name || ""}
+                      {selectedUser.firstName || ""}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Last Name:</td>
+                    <td className="text-end text-black fw-medium">
+                      {selectedUser.lastName || ""}
                     </td>
                   </tr>
                   <tr>
                     <td>Email:</td>
                     <td className="text-end text-black fw-medium">
                       {selectedUser.email || ""}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Country Code :</td>
+                    <td className="text-end text-black fw-medium">
+                      {selectedUser.countryCode || ""}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Phone Number :</td>
+                    <td className="text-end text-black fw-medium">
+                      {selectedUser.phoneNumber || ""}
                     </td>
                   </tr>
                   <tr>
