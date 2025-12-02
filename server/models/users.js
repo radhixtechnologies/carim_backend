@@ -13,7 +13,12 @@ module.exports = function (sequelize, DataTypes) {
       defaultValue: "1",
       comment: "o=>admin,1=>user,2=>driver,3=>employee"
     },
-    name: {
+    firstName: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      defaultValue: ""
+    },
+    lastName: {
       type: DataTypes.STRING(255),
       allowNull: false,
       defaultValue: ""
@@ -59,6 +64,12 @@ module.exports = function (sequelize, DataTypes) {
       allowNull: false,
       defaultValue: "1",
       comment: "0=>incative,1=>active"
+    },
+    isProfileComplete: {
+      type: DataTypes.ENUM('0', '1'),
+      allowNull: false,
+      defaultValue: "1",
+      comment: "0=>no,1=>yes"
     },
     loginTime: {
       type: DataTypes.INTEGER,

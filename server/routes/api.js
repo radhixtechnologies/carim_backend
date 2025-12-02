@@ -20,6 +20,10 @@ router.post("/logout", authController.logout);
 router.post('/notificationOnOff', authController.notificationOnOff);
 router.post('/createcontact', authController.createContactUs);
 
+//profile
+router.post('/profileedit', authController.editProfile);
+router.get('/profileget', authController.getProfile);
+
 //driver vehicle
 router.post('/vehicleAdd', authController.vehicleAdd);
 router.post('/vehicleedit/:id', authController.vehicleEdit);

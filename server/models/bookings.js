@@ -61,12 +61,22 @@ module.exports = function (sequelize, DataTypes) {
             allowNull: false,
             defaultValue: Sequelize.Sequelize.literal('CURRENT_TIMESTAMP')
         },
-        latitude: {
+        pickupLatitude: {
             type: DataTypes.STRING(255),
             allowNull: false,
             defaultValue: ""
         },
-        longitude: {
+        pickupLongitude: {
+            type: DataTypes.STRING(255),
+            allowNull: false,
+            defaultValue: ""
+        },
+        dropLatitude: {
+            type: DataTypes.STRING(255),
+            allowNull: false,
+            defaultValue: ""
+        },
+        dropLongitude: {
             type: DataTypes.STRING(255),
             allowNull: false,
             defaultValue: ""
