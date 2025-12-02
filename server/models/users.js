@@ -68,7 +68,7 @@ module.exports = function (sequelize, DataTypes) {
     isProfileComplete: {
       type: DataTypes.ENUM('0', '1'),
       allowNull: false,
-      defaultValue: "1",
+      defaultValue: "0",
       comment: "0=>no,1=>yes"
     },
     loginTime: {

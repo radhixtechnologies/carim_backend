@@ -21,6 +21,7 @@ router.post('/notificationOnOff', authController.notificationOnOff);
 router.post('/createcontact', authController.createContactUs);
 
 //profile
+router.post('/createAccount', authController.createAccount);
 router.post('/profileedit', authController.editProfile);
 router.get('/profileget', authController.getProfile);
 

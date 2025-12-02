@@ -26,9 +26,6 @@ module.exports = {
                 phoneNumber,
                 countryCode,
                 role,
-                firstName,
-                lastName,
-                bio
             } = req.body;
 
             const existingUser = await db.users.findOne({
@@ -65,8 +62,7 @@ module.exports = {
                 }
 
                 const otp = '1111';
-
-                const userData = {
+                user = await db.users.create({
                     countryCode: countryCode,
                     phoneNumber: phoneNumber,
                     role: role,
@@ -74,13 +70,8 @@ module.exports = {
                     deviceType: deviceType || null,
                     loginTime: helper.unixTimestamp(),
                     otp: otp,
-                    status: "1",
-                    firstName: firstName || "",
-                    lastName: lastName || "",
-                    bio: bio || "",
-                };
-
-                user = await db.users.create(userData);
+                    status: "1"
+                });
 
                 isNewUser = true;
             }
@@ -95,12 +86,6 @@ module.exports = {
                 loginTime: loginTime,
                 updatedAt: helper.unixTimestamp()
             };
-
-            if (!isNewUser) {
-                if (firstName !== undefined) updateData.firstName = firstName || "";
-                if (lastName !== undefined) updateData.lastName = lastName || "";
-                if (bio !== undefined) updateData.bio = bio || "";
-            }
 
             if (deviceToken) {
                 updateData.deviceToken = deviceToken;
@@ -173,8 +158,7 @@ module.exports = {
                     {
                         otpVerify: "1",
                         otp: 0,
-                        loginTime: loginTime,
-                        isProfileComplete: '1',
+                        loginTime: loginTime
                     },
                     { where: { id: user.id } }
                 );
@@ -242,6 +226,33 @@ module.exports = {
             return helper.success(res, "OTP Re-sent Successfully");
         } catch (error) {
             return helper.failure(res, "OTP Not Sent!");
+        }
+    },
+    createAccount: async (req, res) => {
+        try {
+            let profile = await db.users.findOne({
+                where: {
+                    id: req.user.id,
+                },
+            });
+
+            const updatedProfileData = {
+                ...req.body,
+            };
+            await db.users.update(updatedProfileData, {
+                where: {
+                    id: req.user.id,
+                },
+            });
+            profile = await db.users.findOne({
+                where: {
+                    id: req.user.id,
+                },
+                raw: true,
+            });
+            return helper.success(res, "Profile addeed successfully.", profile);
+        } catch (error) {
+            return helper.error(res, "An error occurred while added the profile.");
         }
     },
     getProfile: async (req, res) => {
@@ -506,7 +517,7 @@ module.exports = {
                 }, { transaction });
 
                 await db.users.update(
-                    { vehicle: "1" },
+                    { vehicle: "1" ,isProfileComplete:'1'},
                     {
                         where: { id: driverId },
                         transaction
