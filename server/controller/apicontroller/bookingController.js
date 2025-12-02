@@ -4,59 +4,44 @@ const helper = require('../../helper/helper');
 const { Validator } = require('node-input-validator');
 const jwt = require("jsonwebtoken");
 const { Op } = require("sequelize");
+const { Sequelize } = require('sequelize');
 
 module.exports = {
     findRide: async (req, res) => {
         try {
-            const { userId, pickupLocation, dropLocation } = req.body;
+            const userId = req.user.id;
+            const { pickupLatitude, pickupLongitude, dropLatitude, dropLongitude, pickupLocation, dropLocation } = req.body;
 
-            const v = new Validator(req.body, {
-                userId: 'required|integer',
-                pickupLocation: 'required|string',
-                dropLocation: 'required|string',
-            });
-
-            const matched = await v.check();
-            if (!matched) {
-                return res.status(422).json({ status: false, message: v.errors });
+            if (!pickupLatitude || !pickupLongitude || !dropLatitude || !dropLongitude) {
+                return helper.failure(res, 'Pickup and drop coordinates are required.',);
             }
-            const [pickupLat, pickupLng] = pickupLocation.split(',').map(coord => parseFloat(coord.trim()));
-            const [dropLat, dropLng] = dropLocation.split(',').map(coord => parseFloat(coord.trim()));
+
+            const pickupLat = parseFloat(pickupLatitude);
+            const pickupLng = parseFloat(pickupLongitude);
+            const dropLat = parseFloat(dropLatitude);
+            const dropLng = parseFloat(dropLongitude);
 
             if (isNaN(pickupLat) || isNaN(pickupLng) || isNaN(dropLat) || isNaN(dropLng)) {
-                return res.status(400).json({
-                    status: false,
-                    message: 'Invalid location coordinates format. Use "latitude,longitude"'
-                });
+                return helper.failure(res, 'Invalid coordinates provided.',);
             }
 
-            const radius = 5; 
+            console.log("Parsed Pickup Coordinates:", pickupLat, pickupLng);
+            console.log("Parsed Drop Coordinates:", dropLat, dropLng);
+            console.log("Pickup Address:", pickupLocation || 'Not provided');
+            console.log("Drop Address:", dropLocation || 'Not provided');
+
+            const maxRadius = 30;
 
             const nearbyDrivers = await db.users.findAll({
                 where: {
                     role: '2',
                 },
-          
+                include: [{
+                    model: db.vehicleDetails,
+                    as: 'vehicleDetail',
+                    required: true
+                }],
             });
-            const driversWithDistance = nearbyDrivers
-                .map(driver => {
-                    if (!driver.latitude || !driver.longitude) return null;
-
-                    const distance = calculateDistance(
-                        pickupLat,
-                        pickupLng,
-                        parseFloat(driver.latitude),
-                        parseFloat(driver.longitude)
-                    );
-
-                    return {
-                        ...driver.toJSON(),
-                        distance: distance.toFixed(2),
-                        distanceUnit: 'km'
-                    };
-                })
-                .filter(driver => driver !== null && driver.distance <= radius)
-                .sort((a, b) => a.distance - b.distance); 
 
             function calculateDistance(lat1, lon1, lat2, lon2) {
                 const R = 6371;
@@ -74,28 +59,214 @@ module.exports = {
                 return degrees * (Math.PI / 180);
             }
 
+            const driversWithDistance = nearbyDrivers
+                .map(driver => {
+                    if (!driver.latitude || !driver.longitude) {
+                        console.log(`Driver ${driver.id} has missing latitude/longitude`);
+                        return null;
+                    }
+
+                    const driverLat = parseFloat(driver.latitude);
+                    const driverLng = parseFloat(driver.longitude);
+
+                    if (isNaN(driverLat) || isNaN(driverLng)) {
+                        console.log(`Driver ${driver.id} has invalid coordinates`);
+                        return null;
+                    }
+
+                    console.log(`Driver ${driver.firstName} ${driver.lastName} Location:`, driverLat, driverLng);
+
+                    const distance = calculateDistance(
+                        pickupLat,
+                        pickupLng,
+                        driverLat,
+                        driverLng
+                    );
+
+                    console.log(`Distance from pickup to driver ${driver.firstName} ${driver.lastName}: ${distance} km`);
+
+                    if (distance >= 0 && distance <= maxRadius) {
+                        const fullName = `${driver.firstName || ''} ${driver.lastName || ''}`.trim();
+
+                        return {
+                            ...driver.toJSON(),
+                            fullName: fullName,
+                            distanceFromPickup: distance.toFixed(2),
+                            distanceUnit: 'km',
+                            vehicleDetails: driver.vehicleDetail
+                        };
+                    }
+                    return null;
+                })
+                .filter(driver => driver !== null)
+                .sort((a, b) => a.distanceFromPickup - b.distanceFromPickup);
+
+            console.log('Drivers within 0-30 km radius:', driversWithDistance.length);
+
             if (driversWithDistance.length === 0) {
-                return res.status(404).json({
-                    status: false,
-                    message: 'No drivers available near your location'
-                });
+                return helper.error(res, 'No drivers available within 30 km of your pickup location', 404);
             }
 
-            return res.status(200).json({
-                status: true,
-                message: 'Nearby drivers found',
-                data: {
-                    pickupLocation: { latitude: pickupLat, longitude: pickupLng },
-                    dropLocation: { latitude: dropLat, longitude: dropLng },
-                    totalDrivers: driversWithDistance.length,
-                    drivers: driversWithDistance
+            return helper.success(res, 'Nearby drivers found', {
+                userId: userId,
+                pickupLocation: {
+                    latitude: pickupLat,
+                    longitude: pickupLng,
+                    address: pickupLocation || null
+                },
+                dropLocation: {
+                    latitude: dropLat,
+                    longitude: dropLng,
+                    address: dropLocation || null
+                },
+                searchRadius: `0-${maxRadius} km`,
+                totalDriversNearPickup: driversWithDistance.length,
+                drivers: driversWithDistance.map(driver => ({
+                    id: driver.id,
+                    fullName: driver.fullName,
+                    firstName: driver.firstName,
+                    lastName: driver.lastName,
+                    phone: driver.phone,
+                    profileImage: driver.profileImage,
+                    vehicleDetails: driver.vehicleDetails,
+                    latitude: driver.latitude,
+                    longitude: driver.longitude,
+                    distanceFromPickup: driver.distanceFromPickup,
+                    distanceUnit: driver.distanceUnit
+                }))
+            });
+
+        } catch (error) {
+            return helper.failure(res, "Something went wrong.");
+        }
+    },
+    bookRide: async (req, res) => {
+        try {
+            const userId = req.user.id;
+            const {
+                driverId,
+                pickupLocation,
+                dropLocation,
+                pickupLatitude,
+                pickupLongitude,
+                dropLatitude,
+                dropLongitude,
+            } = req.body;
+
+            if (!driverId) {
+                return helper.failure(res, 'Driver ID is required.',);
+            }
+
+            if (!pickupLocation || !dropLocation) {
+                return helper.failure(res, 'Pickup and drop locations are required.',);
+            }
+
+            if (!pickupLatitude || !pickupLongitude || !dropLatitude || !dropLongitude) {
+                return helper.failure(res, 'All coordinates are required.',);
+            }
+
+            const pickupLat = parseFloat(pickupLatitude);
+            const pickupLng = parseFloat(pickupLongitude);
+            const dropLat = parseFloat(dropLatitude);
+            const dropLng = parseFloat(dropLongitude);
+
+            if (isNaN(pickupLat) || isNaN(pickupLng) || isNaN(dropLat) || isNaN(dropLng)) {
+                return helper.failure(res, 'Invalid coordinates provided.',);
+            }
+
+            const driver = await db.users.findOne({
+                where: {
+                    id: driverId,
+                    role: '2'
+                },
+                include: [{
+                    model: db.vehicleDetails,
+                    as: 'vehicleDetail',
+                    required: true
+                }]
+            });
+
+            if (!driver) {
+                return helper.error(res, 'Driver not found or not available', 404);
+            }
+
+            const existingBooking = await db.bookings.findOne({
+                where: {
+                    userId: userId,
+                    status: { [Sequelize.Op.in]: ['0', '1', '2'] },
+                    request: '0'
                 }
             });
+
+            if (existingBooking) {
+                return helper.error(res, 'You already have an active ride request',);
+            }
+
+            const driverActiveBooking = await db.bookings.findOne({
+                where: {
+                    driverId: driverId,
+                    status: { [Sequelize.Op.in]: ['0', '1', '2'] },
+                    request: '0'
+                }
+            });
+
+            if (driverActiveBooking) {
+                return helper.error(res, 'Driver is currently busy with another ride',);
+            }
+
+            const newBooking = await db.bookings.create({
+                userId: userId,
+                driverId: driverId,
+                status: '0',
+                pickupLocation: pickupLocation,
+                dropLocation: dropLocation,
+                pickupLatitude: pickupLatitude.toString(),
+                pickupLongitude: pickupLongitude.toString(),
+                dropLatitude: dropLatitude.toString(),
+                dropLongitude: dropLongitude.toString(),
+                request: '0'
+            });
+
+            console.log(`Booking created for user ${userId} with driver ${driverId}`);
+
+
+
+            return helper.success(res, 'Ride booking request sent successfully', {
+                bookingId: newBooking.id,
+                userId: userId,
+                driverId: driverId,
+                status: newBooking.status,
+                request: newBooking.request,
+                pickupLocation: newBooking.pickupLocation,
+                dropLocation: newBooking.dropLocation,
+                coordinates: {
+                    pickup: {
+                        latitude: newBooking.pickupLatitude,
+                        longitude: newBooking.pickupLongitude
+                    },
+                    drop: {
+                        latitude: newBooking.dropLatitude,
+                        longitude: newBooking.dropLongitude
+                    }
+                },
+                driverDetails: {
+                    id: driver.id,
+                    fullName: `${driver.firstName} ${driver.lastName}`,
+                    phone: driver.phone,
+                    profileImage: driver.profileImage,
+                    vehicleDetails: driver.vehicleDetail
+                },
+                message: 'Waiting for driver to accept your request'
+            });
+
         } catch (error) {
-            console.error('Error in findRide:', error);
-            return res.status(500).json({ status: false, message: 'Internal Server Error' });
+            console.error('Booking error:', error);
+            return helper.failure(res, "Something went wrong while booking the ride.");
         }
-    }
+    },
+
+
+
 
 
 }

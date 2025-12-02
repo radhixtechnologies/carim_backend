@@ -17,8 +17,8 @@ const transactionController = require('../controller/admincontroller/transaction
 router.post('/login',auth.login);
 router.use(authtoken.verifyToken);  
 router.get('/profile',auth.profile);
-router.post('/updateprofile',auth.edit_profile);
-router.post('/updatepassword',auth.reset_password);
+router.post('/updateprofile',auth.editProfile);
+router.post('/updatepassword',auth.resetPassword);
 router.post('/logout',auth.logout);
 router.get('/dashboard',auth.dashboard);
 router.post('/chartdata',auth.chartData);

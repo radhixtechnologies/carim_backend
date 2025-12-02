@@ -66,37 +66,40 @@ module.exports = {
             return helper.error(res, error.message);
         }
     },
-    edit_profile: async (req, res) => {
+    editProfile: async (req, res) => {
         try {
             const userId = req.admin.id;
             const find_user = await db.users.findByPk(userId);
             if (!find_user) {
                 return helper.error(res, "User not found", 403);
             }
+
             let imagePath = find_user.image;
             if (req.files && req.files.image) {
                 imagePath = await helper.fileUpload(req.files.image);
             }
+
             await db.users.update(
                 {
-                    name: req.body.name || find_user.name,
+                    firstName: req.body.firstName || find_user.firstName,
+                    lastName: req.body.lastName || "",
                     location: req.body.location || find_user.location,
                     phoneNumber: req.body.phoneNumber || find_user.phoneNumber,
                     countryCode: req.body.countryCode || find_user.countryCode,
                     image: imagePath,
                     adminCommission: req.body.adminCommission || find_user.adminCommission
-
                 },
                 { where: { id: userId } }
             );
-            const updatedProfile = await db.users.findByPk(userId, {});
 
+            const updatedProfile = await db.users.findByPk(userId, {});
             return helper.success(res, "Profile updated successfully", updatedProfile);
+
         } catch (error) {
             return helper.error(res, error.message);
         }
     },
-    reset_password: async (req, res) => {
+    resetPassword: async (req, res) => {
         try {
             const { password, newPassword } = req.body;
             const token = req.headers.authorization?.split(' ')[1];

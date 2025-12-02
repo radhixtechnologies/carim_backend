@@ -3,6 +3,7 @@ var router = express.Router();
 const middleware = require('../middleware/authtoken');
 const authController = require('../controller/apicontroller/authController');
 const faqController = require('../controller/apicontroller/faqController');
+const bookingController = require('../controller/apicontroller/bookingController');
 
 
 router.use(middleware.authenticateHeader);
@@ -40,6 +41,10 @@ router.get('/faqdetail/:id', faqController.getFaqs);
 //home
 router.get('/home',authController.home);
 
+
+//ride search
+router.post('/findride',bookingController.findRide);
+router.post('/bookride',bookingController.bookRide);
 
 
 

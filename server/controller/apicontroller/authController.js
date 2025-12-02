@@ -252,7 +252,7 @@ module.exports = {
             });
             return helper.success(res, "Profile addeed successfully.", profile);
         } catch (error) {
-            return helper.error(res, "An error occurred while added the profile.");
+            return helper.failure(res, "An error occurred while added the profile.");
         }
     },
     getProfile: async (req, res) => {
@@ -274,7 +274,7 @@ module.exports = {
                 get_user_details
             );
         } catch (error) {
-            return helper.failed(res, "Something went wrong.");
+            return helper.failure(res, "Something went wrong.");
         }
     },
     editProfile: async (req, res) => {
@@ -301,7 +301,7 @@ module.exports = {
             });
             return helper.success(res, "Profile updated successfully.", profile);
         } catch (error) {
-            return helper.error(res, "An error occurred while updating the profile.");
+            return helper.failure(res, "An error occurred while updating the profile.");
         }
     },
     deleteAccount: async (req, res) => {
