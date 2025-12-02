@@ -59,6 +59,11 @@ module.exports = function (sequelize, DataTypes) {
       defaultValue: "0",
       comment: "0=>not verify,1=>verify"
     },
+    rideOtp: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      defaultValue: ""
+    },
     status: {
       type: DataTypes.ENUM('0', '1'),
       allowNull: false,

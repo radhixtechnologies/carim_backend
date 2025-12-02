@@ -48,6 +48,7 @@ router.post('/bookride', bookingController.bookRide);
 
 router.post('/accpetreject', bookingController.driverAccptReject);
 router.get('/requestList', bookingController.requestList);
+router.post('/locationupdate', bookingController.updatedPickupLocation);
 
 
 module.exports = router;

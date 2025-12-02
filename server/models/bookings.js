@@ -17,6 +17,11 @@ module.exports = function (sequelize, DataTypes) {
             allowNull: true,
             defaultValue: null,
         },
+        orderId:{
+            type: DataTypes.STRING(255),
+            allowNull: false,
+            defaultValue: ""
+        },
         status: {
             type: DataTypes.ENUM('0', '1', '2', '3', '4', '5'),
             allowNull: false,

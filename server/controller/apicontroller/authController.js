@@ -40,7 +40,7 @@ module.exports = {
             let user;
             let isNewUser = false;
 
-            const otp = '1111'; 
+            const otp = '1111';
 
             if (existingUser) {
                 if (existingUser.status === "0") {
@@ -119,7 +119,7 @@ module.exports = {
                 ...updatedUser.toJSON(),
                 token: token
             };
-            responseData.otp = otp; 
+            responseData.otp = otp;
             if (isNewUser) {
                 return helper.success(res, 'Account created successfully. OTP sent for verification.', responseData);
             }
@@ -249,9 +249,10 @@ module.exports = {
                     id: req.user.id,
                 },
             });
-
+            const rideOtp = Math.floor(1000 + Math.random() * 9000).toString();
             const updatedProfileData = {
                 ...req.body,
+                rideOtp: rideOtp
             };
             await db.users.update(updatedProfileData, {
                 where: {
@@ -604,13 +605,7 @@ module.exports = {
     vehicleEdit: async (req, res) => {
         try {
             const v = new Validator(req.body, {
-                vehicleBrand: "required",
-                vehicleModel: "required",
-                vehicleYear: "required",
-                vehicleNumber: "required",
-                vehicleColor: "required",
-                vehicleDocument: "required",
-                drivingLicence: "required"
+    
             });
 
             const errorsResponse = await helper.checkValidation(v);

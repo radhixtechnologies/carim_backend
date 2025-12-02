@@ -154,15 +154,15 @@ module.exports = {
             } = req.body;
 
             if (!driverId) {
-                return helper.failure(res, 'Driver ID is required.',);
+                return helper.failure(res, 'Driver ID is required.');
             }
 
             if (!pickupLocation || !dropLocation) {
-                return helper.failure(res, 'Pickup and drop locations are required.',);
+                return helper.failure(res, 'Pickup and drop locations are required.');
             }
 
             if (!pickupLatitude || !pickupLongitude || !dropLatitude || !dropLongitude) {
-                return helper.failure(res, 'All coordinates are required.',);
+                return helper.failure(res, 'All coordinates are required.');
             }
 
             const pickupLat = parseFloat(pickupLatitude);
@@ -171,7 +171,7 @@ module.exports = {
             const dropLng = parseFloat(dropLongitude);
 
             if (isNaN(pickupLat) || isNaN(pickupLng) || isNaN(dropLat) || isNaN(dropLng)) {
-                return helper.failure(res, 'Invalid coordinates provided.',);
+                return helper.failure(res, 'Invalid coordinates provided.');
             }
 
             const driver = await db.users.findOne({
@@ -199,7 +199,7 @@ module.exports = {
             });
 
             if (existingBooking) {
-                return helper.error(res, 'You already have an active ride request',);
+                return helper.error(res, 'You already have an active ride request');
             }
 
             const driverActiveBooking = await db.bookings.findOne({
@@ -211,12 +211,30 @@ module.exports = {
             });
 
             if (driverActiveBooking) {
-                return helper.error(res, 'Driver is currently busy with another ride',);
+                return helper.error(res, 'Driver is currently busy with another ride');
+            }
+
+            const generateOrderId = () => {
+                return Math.floor(100000 + Math.random() * 900000).toString();
+            };
+
+            let orderId;
+            let isUnique = false;
+
+            while (!isUnique) {
+                orderId = generateOrderId();
+                const existingOrder = await db.bookings.findOne({
+                    where: { orderId: orderId }
+                });
+                if (!existingOrder) {
+                    isUnique = true;
+                }
             }
 
             const newBooking = await db.bookings.create({
                 userId: userId,
                 driverId: driverId,
+                orderId: orderId, 
                 status: '0',
                 pickupLocation: pickupLocation,
                 dropLocation: dropLocation,
@@ -227,12 +245,11 @@ module.exports = {
                 request: '0'
             });
 
-            console.log(`Booking created for user ${userId} with driver ${driverId}`);
-
-
+            console.log(`Booking created for user ${userId} with driver ${driverId}, Order ID: ${orderId}`);
 
             return helper.success(res, 'Ride booking request sent successfully', {
                 bookingId: newBooking.id,
+                orderId: newBooking.orderId, 
                 userId: userId,
                 driverId: driverId,
                 status: newBooking.status,
@@ -252,8 +269,8 @@ module.exports = {
                 driverDetails: {
                     id: driver.id,
                     fullName: `${driver.firstName} ${driver.lastName}`,
-                    phone: driver.phone,
-                    profileImage: driver.profileImage,
+                    phone: driver.phoneNumber,
+                    profileImage: driver.image,
                     vehicleDetails: driver.vehicleDetail
                 },
                 message: 'Waiting for driver to accept your request'
@@ -347,7 +364,46 @@ module.exports = {
         } catch (error) {
             return helper.failure(res, "Something went wrong while fetching requests.");
         }
-    }
+    },
+    updatedPickupLocation: async (req, res) => {
+        try {
+            const userId = req.user.id;
+            const { bookingId, pickupLocation, pickupLatitude, pickupLongitude } = req.body;
+
+            // if (!bookingId || !pickupLocation || !pickupLatitude || !pickupLongitude) {
+            //     return helper.failure(res, 'Booking ID, pickup location, and coordinates are required.');
+            // }
+
+            const booking = await db.bookings.findOne({
+                where: {
+                    id: bookingId,
+                    userId: userId,
+                    status: '0',
+                    request: '1'
+                }
+            });
+
+            if (!booking) {
+                return helper.error(res, 'Booking not found or cannot be updated', 404);
+            }
+
+            await booking.update({
+                pickupLocation: pickupLocation,
+                pickupLatitude: pickupLatitude.toString(),
+                pickupLongitude: pickupLongitude.toString()
+            });
+
+            return helper.success(res, 'Pickup location updated successfully', {
+                bookingId: booking.id,
+                pickupLocation: booking.pickupLocation,
+                pickupLatitude: booking.pickupLatitude,
+                pickupLongitude: booking.pickupLongitude
+            });
+
+        } catch (error) {
+            return helper.failure(res, "Something went wrong while updating pickup location.");
+        }
+    },
 
 
 
