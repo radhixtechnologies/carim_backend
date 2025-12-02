@@ -40,6 +40,8 @@ module.exports = {
             let user;
             let isNewUser = false;
 
+            const otp = '1111'; 
+
             if (existingUser) {
                 if (existingUser.status === "0") {
                     return helper.failure(res, 'Your account has been deactivated by admin.');
@@ -47,7 +49,20 @@ module.exports = {
                 // if (existingUser.role === "2" && existingUser.approve === "0") {
                 //     return helper.failure(res, 'Your account is not approved by admin.');
                 // }
+
                 user = existingUser;
+
+                await db.users.update(
+                    {
+                        otp: otp,
+                        updatedAt: helper.unixTimestamp()
+                    },
+                    { where: { id: user.id } }
+                );
+
+                user = await db.users.findOne({
+                    where: { id: user.id, deletedAt: null }
+                });
             } else {
                 const userWithSamePhone = await db.users.findOne({
                     where: {
@@ -61,7 +76,6 @@ module.exports = {
                     return helper.failure(res, 'Phone number already registered with a different role');
                 }
 
-                const otp = '1111';
                 user = await db.users.create({
                     countryCode: countryCode,
                     phoneNumber: phoneNumber,
@@ -105,15 +119,15 @@ module.exports = {
                 ...updatedUser.toJSON(),
                 token: token
             };
-
+            responseData.otp = otp; 
             if (isNewUser) {
-                responseData.otp = user.otp;
                 return helper.success(res, 'Account created successfully. OTP sent for verification.', responseData);
             }
 
-            return helper.success(res, 'Login successfully', responseData);
+            return helper.success(res, 'OTP sent successfully for verification', responseData);
 
         } catch (error) {
+            console.error('Login error:', error);
             return helper.failure(res, 'Something went wrong');
         }
     },
@@ -517,7 +531,7 @@ module.exports = {
                 }, { transaction });
 
                 await db.users.update(
-                    { vehicle: "1" ,isProfileComplete:'1'},
+                    { vehicle: "1", isProfileComplete: '1' },
                     {
                         where: { id: driverId },
                         transaction

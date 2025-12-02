@@ -32,21 +32,22 @@ router.post('/vehicleedit/:id', authController.vehicleEdit);
 router.get('/vehicleget', authController.vehicleGet);
 
 //admin bank details
-router.get('/adminbankdetail',authController.bankDetail);
+router.get('/adminbankdetail', authController.bankDetail);
 
 //faq
 router.get('/faqlist', faqController.getAllFaqs);
 router.get('/faqdetail/:id', faqController.getFaqs);
 
 //home
-router.get('/home',authController.home);
+router.get('/home', authController.home);
 
 
 //ride search
-router.post('/findride',bookingController.findRide);
-router.post('/bookride',bookingController.bookRide);
+router.post('/findride', bookingController.findRide);
+router.post('/bookride', bookingController.bookRide);
 
-
+router.post('/accpetreject', bookingController.driverAccptReject);
+router.get('/requestList', bookingController.requestList);
 
 
 module.exports = router;

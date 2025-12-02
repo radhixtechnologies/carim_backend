@@ -82,14 +82,11 @@ module.exports = function (sequelize, DataTypes) {
             defaultValue: ""
         },
         request:{
-            type: DataTypes.ENUM('0', '1'),
+            type: DataTypes.ENUM('0', '1','2'),
             allowNull: false,
             defaultValue: "0",
-            comment: "0=>pending,1=>accepted"
+            comment: "0=>pending,1=>accepted,2=>rejected"
         }
-
-
-
     }, {
         sequelize,
         tableName: 'bookings',
