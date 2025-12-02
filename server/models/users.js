@@ -127,7 +127,7 @@ module.exports = function (sequelize, DataTypes) {
       allowNull: true,
       defaultValue: ""
     },
-    socket_id: {
+    socketId: {
       type: DataTypes.STRING(255),
       allowNull: false,
       defaultValue: ""
@@ -135,22 +135,22 @@ module.exports = function (sequelize, DataTypes) {
     online: {
       type: DataTypes.ENUM('0', '1'),
       allowNull: false,
-      defaultValue: "0",
+      defaultValue: "1",
       comment: "for chat 1=>online, 0=>offline"
     },
-    customer_id: {
+    customerId: {
       type: DataTypes.STRING(255),
       allowNull: false,
       defaultValue: "",
       comment: "for Stripe Payment "
     },
-    account_id: {
+    accountId: {
       type: DataTypes.STRING(255),
       allowNull: false,
       defaultValue: "",
       comment: "for Stripe Payment "
     },
-    hash_account: {
+    hashAccount: {
       type: DataTypes.ENUM('0', '1'),
       allowNull: false,
       defaultValue: "0",

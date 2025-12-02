@@ -1,35 +1,37 @@
 require('dotenv').config();
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
+const createError = require('http-errors');
+const express = require('express');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
 const fileupload = require('express-fileupload');
-var bcrypt = require('bcryptjs');
-var jwt = require('jsonwebtoken');
-var cors = require('cors');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const http = require('http');
+const socketIO = require('socket.io');
+const cors = require('cors');
 
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
-var adminRouter = require('./routes/admin');
-var apiRouter = require('./routes/api');
+const indexRouter = require('./routes/index');
+const usersRouter = require('./routes/users');
+const adminRouter = require('./routes/admin');
+const apiRouter = require('./routes/api');
 
-var app = express();
+const app = express();
 const PORT = process.env.PORT || 4800;
 
-
-
+// Middleware setup
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-const buildpath = path.resolve(__dirname, "../client/build");
-
-app.use(express.static(buildpath));
 app.use(cookieParser());
-app.use('/admin', express.static(path.join(__dirname, 'public')));
 app.use(fileupload());
 app.use(cors());
+
+// Static file serving for React client
+const buildpath = path.resolve(__dirname, "../client/build");
+app.use(express.static(buildpath));
+
+// Prevent caching for specific routes
 app.use((req, res, next) => {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Pragma', 'no-cache');
@@ -37,31 +39,49 @@ app.use((req, res, next) => {
   next();
 });
 
+// Socket.io setup
+const server = http.createServer(app);
+const io = socketIO(server, {
+  cors: {
+    origin: "http://localhost:6546",  
+    methods: ["GET", "POST"]
+  }
+});
 
+// Import socket-related logic
+try {
+  require("./socket/socket")(io);
+} catch (error) {
+  console.error("Socket initialization failed:", error);
+}
+
+// Routes
+app.use('/admin', express.static(path.join(__dirname, 'public')));
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/admin', adminRouter);
-app.use('/api',apiRouter);
+app.use('/api', apiRouter);
 
-
+// Catch-all for frontend routing (for Single Page Apps)
 app.get('*', (req, res) => {
   res.sendFile(path.join(buildpath, "index.html"));
 });
 
-
-app.use(function(req, res, next) {
+// 404 Error handling
+app.use((req, res, next) => {
   next(createError(404));
 });
 
-app.use(function(err, req, res, next) {
+// General Error handler
+app.use((err, req, res, next) => {
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
-
   res.status(err.status || 500);
   res.render('error');
 });
 
-app.listen(PORT, () => {
+// Start the server
+server.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
 

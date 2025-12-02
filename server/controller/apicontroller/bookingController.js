@@ -234,7 +234,7 @@ module.exports = {
             const newBooking = await db.bookings.create({
                 userId: userId,
                 driverId: driverId,
-                orderId: orderId, 
+                orderId: orderId,
                 status: '0',
                 pickupLocation: pickupLocation,
                 dropLocation: dropLocation,
@@ -249,7 +249,7 @@ module.exports = {
 
             return helper.success(res, 'Ride booking request sent successfully', {
                 bookingId: newBooking.id,
-                orderId: newBooking.orderId, 
+                orderId: newBooking.orderId,
                 userId: userId,
                 driverId: driverId,
                 status: newBooking.status,
@@ -404,7 +404,76 @@ module.exports = {
             return helper.failure(res, "Something went wrong while updating pickup location.");
         }
     },
+    bookingHistory: async (req, res) => {
+        try {
+            const userId = req.user.id;
+            const { status } = req.query;
 
+            let statusCondition = {};
+
+            if (status) {
+                if (['0', '1', '2'].includes(status)) {
+                    statusCondition = { [Sequelize.Op.in]: ['0', '1', '2'] };  
+                } else if (status === '3') {
+                    statusCondition = '3';
+                } else if (status === '4') {
+                    statusCondition = '4';
+                }
+            } else {
+                statusCondition = { [Sequelize.Op.in]: ['0','1', '2'] };
+            }
+
+            const bookings = await db.bookings.findAll({
+                where: {
+                    [Sequelize.Op.or]: [
+                        { driverId: userId },
+                        { userId: userId }
+                    ],
+                    status: statusCondition
+                },
+                include: [
+                    {
+                        model: db.users,
+                        as: 'driverbook',
+                        include: [{
+                            model: db.vehicleDetails,
+                            as: 'vehicleDetail',
+                            required: false
+                        }]
+                    },
+                    {
+                        model: db.users,
+                        as: 'userbook',
+                    }
+                ]
+            });
+
+            return helper.success(res, 'Booking history fetched successfully', {
+                totalBookings: bookings.length,
+                bookings: bookings.map(booking => ({
+                    bookingId: booking.id,
+                    orderId: booking.orderId,
+                    driverId: booking.driverId,
+                    driverDetails: booking.driverbook,
+                    vehicleDetail: booking.driverbook?.vehicleDetail,
+                    userDetails: booking.userbook,
+                    pickupLocation: booking.pickupLocation,
+                    dropLocation: booking.dropLocation,
+                    pickupLatitude: booking.pickupLatitude,
+                    pickupLongitude: booking.pickupLongitude,
+                    dropLatitude: booking.dropLatitude,
+                    dropLongitude: booking.dropLongitude,
+                    status: booking.status,
+                    request: booking.request,
+                    bookingDate: booking.bookingDate
+                }))
+            });
+
+        } catch (error) {
+            console.error('Booking history error:', error);
+            return helper.failure(res, "Something went wrong while fetching booking history.");
+        }
+    }
 
 
 
