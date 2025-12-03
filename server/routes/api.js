@@ -28,7 +28,7 @@ router.get('/profileget', authController.getProfile);
 
 //driver vehicle
 router.post('/vehicleAdd', authController.vehicleAdd);
-router.post('/vehicleedit/:id', authController.vehicleEdit);
+router.post('/vehicleedit', authController.vehicleEdit);
 router.get('/vehicleget', authController.vehicleGet);
 
 //admin bank details

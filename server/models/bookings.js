@@ -91,7 +91,12 @@ module.exports = function (sequelize, DataTypes) {
             allowNull: false,
             defaultValue: "0",
             comment: "0=>pending,1=>accepted,2=>rejected"
-        }
+        },
+        otpbooking: {
+            type: DataTypes.STRING(255),
+            allowNull: false,
+            defaultValue: ""
+        },
     }, {
         sequelize,
         tableName: 'bookings',

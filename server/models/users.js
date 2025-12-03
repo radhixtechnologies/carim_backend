@@ -101,6 +101,11 @@ module.exports = function (sequelize, DataTypes) {
       allowNull: false,
       defaultValue: ""
     },
+    location: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      defaultValue: ""
+    },
     latitude: {
       type: DataTypes.STRING(255),
       allowNull: false,

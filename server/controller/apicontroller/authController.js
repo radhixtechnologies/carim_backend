@@ -602,7 +602,7 @@ module.exports = {
 
         }
     },
-    vehicleEdit: async (req, res) => {
+    vehicleEdit: async (req, res) => {``
         try {
             const v = new Validator(req.body, {
     
@@ -615,6 +615,7 @@ module.exports = {
 
             const {
                 vehicleBrand,
+                vehicleId,
                 vehicleModel,
                 vehicleYear,
                 vehicleNumber,
@@ -624,7 +625,6 @@ module.exports = {
             } = req.body;
 
             const driverId = req.user.id;
-            const vehicleId = req.params.id;
 
             const driver = await db.users.findOne({
                 where: {

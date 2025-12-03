@@ -413,14 +413,14 @@ module.exports = {
 
             if (status) {
                 if (['0', '1', '2'].includes(status)) {
-                    statusCondition = { [Sequelize.Op.in]: ['0', '1', '2'] };  
+                    statusCondition = { [Sequelize.Op.in]: ['0', '1', '2'] };
                 } else if (status === '3') {
                     statusCondition = '3';
                 } else if (status === '4') {
                     statusCondition = '4';
                 }
             } else {
-                statusCondition = { [Sequelize.Op.in]: ['0','1', '2'] };
+                statusCondition = { [Sequelize.Op.in]: ['0', '1', '2'] };
             }
 
             const bookings = await db.bookings.findAll({
@@ -473,7 +473,10 @@ module.exports = {
             console.error('Booking history error:', error);
             return helper.failure(res, "Something went wrong while fetching booking history.");
         }
-    }
+    },
+    
+
+
 
 
 
