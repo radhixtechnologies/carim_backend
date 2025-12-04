@@ -458,276 +458,276 @@ module.exports = function (io) {
       }
     });
 
-    socket.on("user_constant_list", async (get_data) => {
-      try {
-        var query = [
-          Sequelize.literal(
-            "(SELECT CONCAT(firstName,lastName) FROM users WHERE users.id  = Receiver_user_id)"
-          ),
-          "ReceiverName",
-        ];
-        var imgquery = [
-          Sequelize.literal(
-            "(SELECT image FROM users WHERE users.id  = Receiver_user_id)"
-          ),
-          "Receiverimage",
-        ];
+    // socket.on("user_constant_list1", async (get_data) => {
+    //   try {
+    //     var query = [
+    //       Sequelize.literal(
+    //         "(SELECT CONCAT(firstName,lastName) FROM users WHERE users.id  = Receiver_user_id)"
+    //       ),
+    //       "ReceiverName",
+    //     ];
+    //     var imgquery = [
+    //       Sequelize.literal(
+    //         "(SELECT image FROM users WHERE users.id  = Receiver_user_id)"
+    //       ),
+    //       "Receiverimage",
+    //     ];
 
-        var query = [
-          Sequelize.literal(
-            "(SELECT CONCAT(firstName,lastName) FROM users WHERE users.id  = Receiver_user_id)"
-          ),
-          "ReceiverName",
-        ];
-        var imgquery = [
-          Sequelize.literal(
-            "(SELECT image FROM users WHERE users.id  = Receiver_user_id)"
-          ),
-          "Receiverimage",
-        ];
-        var onlineStatus = [
-          Sequelize.literal(
-            "(SELECT online FROM users WHERE users.id  = Receiver_user_id)"
-          ),
-          "online",
-        ];
-
-
-        let constantList = await db.chat_constant.findAll({
-          attributes: {
-            include: [
-              [
-                Sequelize.literal(
-                  `CASE WHEN chat_constant.reciever_id = ${get_data.sender_id} THEN chat_constant.sender_id ELSE chat_constant.reciever_id END`
-                ),
-                "Receiver_user_id",
-              ],
-
-              [
-                Sequelize.literal(
-                  `IFNULL((SELECT message FROM message WHERE message.id = chat_constant.lastMessage_id	AND deletedId != ${get_data.sender_id}  ),"")`
-                ),
-                "last_msg",
-              ],
-
-              [
-                Sequelize.literal(
-                  `(SELECT createdAt FROM message where message.reciever_id = chat_constant.reciever_id AND message.sender_id= chat_constant.sender_id ORDER BY id DESC limit 1)`
-                ),
-                "CreatedAt",
-              ],
-
-              [
-                Sequelize.literal(
-                  `(SELECT COUNT(*) FROM message 
-                    WHERE message.reciever_id = ${get_data.sender_id} 
-                    AND message.sender_id = Receiver_user_id 
-                    AND message.readStatus = 0 )`
-                ),
-                "unread_msg"
-              ],
+    //     var query = [
+    //       Sequelize.literal(
+    //         "(SELECT CONCAT(firstName,lastName) FROM users WHERE users.id  = Receiver_user_id)"
+    //       ),
+    //       "ReceiverName",
+    //     ];
+    //     var imgquery = [
+    //       Sequelize.literal(
+    //         "(SELECT image FROM users WHERE users.id  = Receiver_user_id)"
+    //       ),
+    //       "Receiverimage",
+    //     ];
+    //     var onlineStatus = [
+    //       Sequelize.literal(
+    //         "(SELECT online FROM users WHERE users.id  = Receiver_user_id)"
+    //       ),
+    //       "online",
+    //     ];
 
 
-              query,
-              imgquery,
-              onlineStatus,
+    //     let constantList = await db.chat_constant.findAll({
+    //       attributes: {
+    //         include: [
+    //           [
+    //             Sequelize.literal(
+    //               `CASE WHEN chat_constant.reciever_id = ${get_data.sender_id} THEN chat_constant.sender_id ELSE chat_constant.reciever_id END`
+    //             ),
+    //             "Receiver_user_id",
+    //           ],
 
-            ],
-          },
-          where: {
-            [Op.or]: [
-              { sender_id: get_data.sender_id },
-              { reciever_id: get_data.sender_id },
-            ],
-            deletedId: {
-              [Op.not]: get_data.sender_id,
-            },
-          },
-          order: [
-            [
-              Sequelize.literal(
-                `(SELECT createdAt FROM message WHERE message.reciever_id = chat_constant.reciever_id AND message.sender_id = chat_constant.sender_id ORDER BY id DESC LIMIT 1)`
-              ),
-              'DESC',
-            ],
-          ],
-        });
+    //           [
+    //             Sequelize.literal(
+    //               `IFNULL((SELECT message FROM message WHERE message.id = chat_constant.lastMessage_id	AND deletedId != ${get_data.sender_id}  ),"")`
+    //             ),
+    //             "last_msg",
+    //           ],
 
+    //           [
+    //             Sequelize.literal(
+    //               `(SELECT createdAt FROM message where message.reciever_id = chat_constant.reciever_id AND message.sender_id= chat_constant.sender_id ORDER BY id DESC limit 1)`
+    //             ),
+    //             "CreatedAt",
+    //           ],
 
-
-        socket.emit("user_constant_list", constantList);
-      } catch (error) {
-        console.log(error);
-      }
-    });
-
-    socket.on("send_message", async (get_data) => {
-      try {
-        // Find if there's an existing chat constant
-        var findConstant = await db.chat_constant.findOne({
-          where: {
-            [Op.or]: [
-              { sender_id: get_data.sender_id, reciever_id: get_data.reciever_id },
-              { sender_id: get_data.reciever_id, reciever_id: get_data.sender_id },
-            ],
-          },
-          raw: true,
-        });
-
-        let chatConstantId;
-
-        // If no chat constant found, create one
-        if (!findConstant) {
-          var createConstant = await db.chat_constant.create({
-            sender_id: get_data.sender_id,
-            reciever_id: get_data.reciever_id,
-          });
-          chatConstantId = createConstant.id;
-        } else {
-          chatConstantId = findConstant.id;
-        }
-
-        // Create a new message
-        var createMessage = await db.message.create({
-          sender_id: get_data.sender_id,
-          reciever_id: get_data.reciever_id,
-          message: get_data.message,
-          msgType: get_data.msgType,
-          chatConstant_id: chatConstantId,
-        });
-
-        // Update chat constant with the last message
-        await db.chat_constant.update(
-          {
-            lastMessage_id: createMessage.id,
-            deletedId: 0,
-          },
-          {
-            where: {
-              id: chatConstantId,
-            },
-          }
-        );
-        //////////// Push Notification //////////
-
-        ///////////////////////push end //////////////////
-
-        // Retrieve message data with user details
-        var getMsgData = await db.message.findOne({
-          attributes: {
-            include: [
-              [
-                Sequelize.literal(
-                  "(SELECT CONCAT(firstName,lastName) FROM users WHERE users.id  = message.sender_id)"
-                ),
-                "SenderName",
-              ],
-              [
-                Sequelize.literal(
-                  "(SELECT image FROM users WHERE users.id  = message.sender_id)"
-                ),
-                "Senderimage",
-              ],
-              [
-                Sequelize.literal(
-                  "(SELECT CONCAT(firstName,lastName) FROM users WHERE users.id  = message.reciever_id)"
-                ),
-                "ReceiverName",
-              ],
-              [
-                Sequelize.literal(
-                  "(SELECT image FROM users WHERE users.id  = message.reciever_id)"
-                ),
-                "Receiverimage",
-              ],
-            ],
-          },
-          where: {
-            id: createMessage.id,
-          },
-          raw: true,
-        });
-
-        // Send message to receiver via socket
-        let socketUser = await db.users.findOne({
-          where: {
-            id: get_data.reciever_id,
-          },
-          raw: true,
-        });
+    //           [
+    //             Sequelize.literal(
+    //               `(SELECT COUNT(*) FROM message 
+    //                 WHERE message.reciever_id = ${get_data.sender_id} 
+    //                 AND message.sender_id = Receiver_user_id 
+    //                 AND message.readStatus = 0 )`
+    //             ),
+    //             "unread_msg"
+    //           ],
 
 
-        if (socketUser) {
-          io.to(socketUser.socket_id).emit("user_constant_list", null);
-          io.to(socketUser.socket_id).emit("send_message", getMsgData);
+    //           query,
+    //           imgquery,
+    //           onlineStatus,
 
-        }
-
-        // Acknowledge sender
-        socket.emit("send_message", getMsgData);
-      } catch (error) {
-        console.error("Error in send_message:", error);
-      }
-    });
-
-
-    socket.on("get_message_list", async (get_data) => {
-      try {
-        const query = [
-
-          Sequelize.literal(
-            `(SELECT CONCAT(firstName,lastName) FROM users WHERE users.id  = message.reciever_id)`
-          ),
-          "ReceiverName",
-        ];
-
-        const imgquery = [
-          Sequelize.literal(
-            "(SELECT image FROM users WHERE users.id = message.reciever_id)"
-          ),
-          "Receiverimage",
-        ];
-
-        const querys = [
-          Sequelize.literal(
-            "(SELECT CONCAT(firstName,lastName) FROM users WHERE users.id = message.sender_id)"
-          ),
-          "SenderName",
-        ];
-        const imgquerys = [
-          Sequelize.literal(
-            "(SELECT image FROM users WHERE users.id = message.sender_id)"
-          ),
-          "Senderimage",
-        ];
-
-        const allMsg = await db.message.findAll({
-          where: {
-            [Op.or]: [
-              { sender_id: get_data.sender_id, reciever_id: get_data.reciever_id },
-              { sender_id: get_data.reciever_id, reciever_id: get_data.sender_id },
-            ],
-            deletedId: {
-              [Op.not]: get_data.sender_id,
-            },
-          },
-          attributes: {
-            include: [querys, imgquerys, query, imgquery],
-          },
-        });
+    //         ],
+    //       },
+    //       where: {
+    //         [Op.or]: [
+    //           { sender_id: get_data.sender_id },
+    //           { reciever_id: get_data.sender_id },
+    //         ],
+    //         deletedId: {
+    //           [Op.not]: get_data.sender_id,
+    //         },
+    //       },
+    //       order: [
+    //         [
+    //           Sequelize.literal(
+    //             `(SELECT createdAt FROM message WHERE message.reciever_id = chat_constant.reciever_id AND message.sender_id = chat_constant.sender_id ORDER BY id DESC LIMIT 1)`
+    //           ),
+    //           'DESC',
+    //         ],
+    //       ],
+    //     });
 
 
 
-        const allMsg1 = {
-          messageList: allMsg,
+    //     socket.emit("user_constant_list", constantList);
+    //   } catch (error) {
+    //     console.log(error);
+    //   }
+    // });
 
-        };
+    // socket.on("send_message1", async (get_data) => {
+    //   try {
+    //     // Find if there's an existing chat constant
+    //     var findConstant = await db.chat_constant.findOne({
+    //       where: {
+    //         [Op.or]: [
+    //           { sender_id: get_data.sender_id, reciever_id: get_data.reciever_id },
+    //           { sender_id: get_data.reciever_id, reciever_id: get_data.sender_id },
+    //         ],
+    //       },
+    //       raw: true,
+    //     });
 
-        socket.emit("get_message_list", allMsg1);
-      } catch (error) {
-        console.log(error);
-      }
-    });
+    //     let chatConstantId;
+
+    //     // If no chat constant found, create one
+    //     if (!findConstant) {
+    //       var createConstant = await db.chat_constant.create({
+    //         sender_id: get_data.sender_id,
+    //         reciever_id: get_data.reciever_id,
+    //       });
+    //       chatConstantId = createConstant.id;
+    //     } else {
+    //       chatConstantId = findConstant.id;
+    //     }
+
+    //     // Create a new message
+    //     var createMessage = await db.message.create({
+    //       sender_id: get_data.sender_id,
+    //       reciever_id: get_data.reciever_id,
+    //       message: get_data.message,
+    //       msgType: get_data.msgType,
+    //       chatConstant_id: chatConstantId,
+    //     });
+
+    //     // Update chat constant with the last message
+    //     await db.chat_constant.update(
+    //       {
+    //         lastMessage_id: createMessage.id,
+    //         deletedId: 0,
+    //       },
+    //       {
+    //         where: {
+    //           id: chatConstantId,
+    //         },
+    //       }
+    //     );
+    //     //////////// Push Notification //////////
+
+    //     ///////////////////////push end //////////////////
+
+    //     // Retrieve message data with user details
+    //     var getMsgData = await db.message.findOne({
+    //       attributes: {
+    //         include: [
+    //           [
+    //             Sequelize.literal(
+    //               "(SELECT CONCAT(firstName,lastName) FROM users WHERE users.id  = message.sender_id)"
+    //             ),
+    //             "SenderName",
+    //           ],
+    //           [
+    //             Sequelize.literal(
+    //               "(SELECT image FROM users WHERE users.id  = message.sender_id)"
+    //             ),
+    //             "Senderimage",
+    //           ],
+    //           [
+    //             Sequelize.literal(
+    //               "(SELECT CONCAT(firstName,lastName) FROM users WHERE users.id  = message.reciever_id)"
+    //             ),
+    //             "ReceiverName",
+    //           ],
+    //           [
+    //             Sequelize.literal(
+    //               "(SELECT image FROM users WHERE users.id  = message.reciever_id)"
+    //             ),
+    //             "Receiverimage",
+    //           ],
+    //         ],
+    //       },
+    //       where: {
+    //         id: createMessage.id,
+    //       },
+    //       raw: true,
+    //     });
+
+    //     // Send message to receiver via socket
+    //     let socketUser = await db.users.findOne({
+    //       where: {
+    //         id: get_data.reciever_id,
+    //       },
+    //       raw: true,
+    //     });
+
+
+    //     if (socketUser) {
+    //       io.to(socketUser.socket_id).emit("user_constant_list", null);
+    //       io.to(socketUser.socket_id).emit("send_message", getMsgData);
+
+    //     }
+
+    //     // Acknowledge sender
+    //     socket.emit("send_message", getMsgData);
+    //   } catch (error) {
+    //     console.error("Error in send_message:", error);
+    //   }
+    // });
+
+
+    // socket.on("get_message_list1", async (get_data) => {
+    //   try {
+    //     const query = [
+
+    //       Sequelize.literal(
+    //         `(SELECT CONCAT(firstName,lastName) FROM users WHERE users.id  = message.reciever_id)`
+    //       ),
+    //       "ReceiverName",
+    //     ];
+
+    //     const imgquery = [
+    //       Sequelize.literal(
+    //         "(SELECT image FROM users WHERE users.id = message.reciever_id)"
+    //       ),
+    //       "Receiverimage",
+    //     ];
+
+    //     const querys = [
+    //       Sequelize.literal(
+    //         "(SELECT CONCAT(firstName,lastName) FROM users WHERE users.id = message.sender_id)"
+    //       ),
+    //       "SenderName",
+    //     ];
+    //     const imgquerys = [
+    //       Sequelize.literal(
+    //         "(SELECT image FROM users WHERE users.id = message.sender_id)"
+    //       ),
+    //       "Senderimage",
+    //     ];
+
+    //     const allMsg = await db.message.findAll({
+    //       where: {
+    //         [Op.or]: [
+    //           { sender_id: get_data.sender_id, reciever_id: get_data.reciever_id },
+    //           { sender_id: get_data.reciever_id, reciever_id: get_data.sender_id },
+    //         ],
+    //         deletedId: {
+    //           [Op.not]: get_data.sender_id,
+    //         },
+    //       },
+    //       attributes: {
+    //         include: [querys, imgquerys, query, imgquery],
+    //       },
+    //     });
+
+
+
+    //     const allMsg1 = {
+    //       messageList: allMsg,
+
+    //     };
+
+    //     socket.emit("get_message_list", allMsg1);
+    //   } catch (error) {
+    //     console.log(error);
+    //   }
+    // });
 
     socket.on('cont_unread_msg', async (get_data) => {
       try {
@@ -762,6 +762,239 @@ module.exports = function (io) {
         socket.emit("cont_unread_msg", { success_message: "Read Status changed successfully" });
       } catch (error) {
         console.error("Error updating read status:", error);
+      }
+    });
+    socket.on("user_constant_list", async (get_data) => {
+      try {
+
+        let whereCondition = {
+          [Op.or]: [
+            { sender_id: get_data.sender_id },
+            { reciever_id: get_data.sender_id },
+          ],
+          deletedId: {
+            [Op.not]: get_data.sender_id,
+          },
+        };
+
+        if (get_data.bookingId) {
+          whereCondition.bookingId = get_data.bookingId;
+        }
+
+        let constantList = await db.chat_constant.findAll({
+          attributes: {
+            include: [
+              [
+                Sequelize.literal(
+                  `CASE WHEN chat_constant.reciever_id = ${get_data.sender_id} THEN chat_constant.sender_id ELSE chat_constant.reciever_id END`
+                ),
+                "Receiver_user_id",
+              ],
+              [
+                Sequelize.literal(
+                  `IFNULL((SELECT message FROM message WHERE message.id = chat_constant.lastMessage_id AND deletedId != ${get_data.sender_id}),"")`
+                ),
+                "last_msg",
+              ],
+              [
+                Sequelize.literal(
+                  `(SELECT createdAt FROM message where message.reciever_id = chat_constant.reciever_id AND message.sender_id= chat_constant.sender_id ORDER BY id DESC limit 1)`
+                ),
+                "CreatedAt",
+              ],
+              [
+                Sequelize.literal(
+                  `(SELECT COUNT(*) FROM message 
+                    WHERE message.reciever_id = ${get_data.sender_id} 
+                    AND message.sender_id = Receiver_user_id 
+                    AND message.readStatus = 0 )`
+                ),
+                "unread_msg"
+              ],
+
+              // Existing
+              [
+                Sequelize.literal(
+                  "(SELECT CONCAT(firstName,lastName) FROM users WHERE users.id  = Receiver_user_id)"
+                ),
+                "ReceiverName",
+              ],
+              [
+                Sequelize.literal(
+                  "(SELECT image FROM users WHERE users.id  = Receiver_user_id)"
+                ),
+                "Receiverimage",
+              ],
+              [
+                Sequelize.literal(
+                  "(SELECT online FROM users WHERE users.id  = Receiver_user_id)"
+                ),
+                "online",
+              ],
+            ],
+          },
+          where: whereCondition,
+          order: [
+            [
+              Sequelize.literal(
+                `(SELECT createdAt FROM message WHERE message.reciever_id = chat_constant.reciever_id AND message.sender_id = chat_constant.sender_id ORDER BY id DESC LIMIT 1)`
+              ),
+              "DESC",
+            ],
+          ],
+        });
+
+        socket.emit("user_constant_list", constantList);
+      } catch (error) {
+        console.log(error);
+      }
+    });
+    socket.on("send_message", async (get_data) => {
+      try {
+
+        let findConstant = await db.chat_constant.findOne({
+          where: {
+            [Op.or]: [
+              { sender_id: get_data.sender_id, reciever_id: get_data.reciever_id },
+              { sender_id: get_data.reciever_id, reciever_id: get_data.sender_id },
+            ],
+            ...(get_data.bookingId && { bookingId: get_data.bookingId }),
+          },
+          raw: true,
+        });
+
+        let chatConstantId;
+
+        if (!findConstant) {
+          let createConstant = await db.chat_constant.create({
+            sender_id: get_data.sender_id,
+            reciever_id: get_data.reciever_id,
+            bookingId: get_data.bookingId || null,
+          });
+          chatConstantId = createConstant.id;
+        } else {
+          chatConstantId = findConstant.id;
+        }
+
+        let createMessage = await db.message.create({
+          sender_id: get_data.sender_id,
+          reciever_id: get_data.reciever_id,
+          message: get_data.message,
+          msgType: get_data.msgType,
+          chatConstant_id: chatConstantId,
+          bookingId: get_data.bookingId || null,
+        });
+
+        await db.chat_constant.update(
+          {
+            lastMessage_id: createMessage.id,
+            deletedId: 0,
+          },
+          { where: { id: chatConstantId } }
+        );
+
+        var getMsgData = await db.message.findOne({
+          attributes: {
+            include: [
+              [
+                Sequelize.literal(
+                  "(SELECT CONCAT(firstName,lastName) FROM users WHERE users.id  = message.sender_id)"
+                ),
+                "SenderName",
+              ],
+              [
+                Sequelize.literal(
+                  "(SELECT image FROM users WHERE users.id = message.sender_id)"
+                ),
+                "Senderimage",
+              ],
+              [
+                Sequelize.literal(
+                  "(SELECT CONCAT(firstName,lastName) FROM users WHERE users.id = message.reciever_id)"
+                ),
+                "ReceiverName",
+              ],
+              [
+                Sequelize.literal(
+                  "(SELECT image FROM users WHERE users.id = message.reciever_id)"
+                ),
+                "Receiverimage",
+              ],
+            ],
+          },
+          where: { id: createMessage.id },
+          raw: true,
+        });
+
+        let socketUser = await db.users.findOne({
+          where: { id: get_data.reciever_id },
+          raw: true,
+        });
+
+        if (socketUser) {
+          io.to(socketUser.socket_id).emit("user_constant_list", null);
+          io.to(socketUser.socket_id).emit("send_message", getMsgData);
+        }
+
+        socket.emit("send_message", getMsgData);
+
+      } catch (error) {
+        console.error(error);
+      }
+    });
+    socket.on("get_message_list", async (get_data) => {
+      try {
+
+        let whereCondition = {
+          [Op.or]: [
+            { sender_id: get_data.sender_id, reciever_id: get_data.reciever_id },
+            { sender_id: get_data.reciever_id, reciever_id: get_data.sender_id },
+          ],
+          deletedId: {
+            [Op.not]: get_data.sender_id,
+          },
+        };
+
+        if (get_data.bookingId) {
+          whereCondition.bookingId = get_data.bookingId;
+        }
+
+        const allMsg = await db.message.findAll({
+          where: whereCondition,
+          attributes: {
+            include: [
+              [
+                Sequelize.literal(
+                  "(SELECT CONCAT(firstName,lastName) FROM users WHERE users.id = message.sender_id)"
+                ),
+                "SenderName",
+              ],
+              [
+                Sequelize.literal(
+                  "(SELECT image FROM users WHERE users.id = message.sender_id)"
+                ),
+                "Senderimage",
+              ],
+              [
+                Sequelize.literal(
+                  "(SELECT CONCAT(firstName,lastName) FROM users WHERE users.id = message.reciever_id)"
+                ),
+                "ReceiverName",
+              ],
+              [
+                Sequelize.literal(
+                  "(SELECT image FROM users WHERE users.id = message.reciever_id)"
+                ),
+                "Receiverimage",
+              ],
+            ],
+          },
+        });
+
+        socket.emit("get_message_list", { messageList: allMsg });
+
+      } catch (error) {
+        console.log(error);
       }
     });
 

@@ -22,6 +22,11 @@ module.exports = function(sequelize, DataTypes) {
       allowNull: false,
       defaultValue: 0
     },
+    bookingId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0
+    },
     message: {
       type: DataTypes.STRING(255),
       allowNull: false,
