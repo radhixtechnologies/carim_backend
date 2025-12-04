@@ -211,7 +211,7 @@ module.exports = {
             });
 
             if (driverActiveBooking) {
-                return helper.error(res, 'Driver is currently busy with another ride');
+                return helper.error(res, 'Driver is currently busy with another ride',400);
             }
 
             const generateOrderId = () => {
@@ -304,7 +304,7 @@ module.exports = {
             });
 
             if (!booking) {
-                return helper.error(res, 'Booking not found or already processed', 404);
+                return helper.error(res, 'Booking already processed');
             }
 
             await booking.update({ request: request });
