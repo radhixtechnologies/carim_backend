@@ -9,10 +9,10 @@ const bookingController = require('../controller/apicontroller/bookingController
 router.use(middleware.authenticateHeader);
 router.get("/getcms", authController.getCmsContent);
 //fileupload
-router.post('/fileupload', authController.fileUploadDriver);
-
-
+router.post('/fileupload', authController.fileUploadDriver)
 router.post('/login', authController.login);
+
+
 router.use(middleware.verifyUser);
 
 router.post("/verifyOtp", authController.verifyOtp);
@@ -53,6 +53,7 @@ router.post('/locationupdate', bookingController.updatedPickupLocation);
 router.get('/bookingHistory', bookingController.bookingHistory);
 
 router.get('/bookingdetail/:id', bookingController.bookingDetail);
+router.post("/transactionSsHistory",authController.transactionSsHistory);
 
 
 module.exports = router;

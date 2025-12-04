@@ -602,10 +602,11 @@ module.exports = {
 
         }
     },
-    vehicleEdit: async (req, res) => {``
+    vehicleEdit: async (req, res) => {
+        ``
         try {
             const v = new Validator(req.body, {
-    
+
             });
 
             const errorsResponse = await helper.checkValidation(v);
@@ -746,5 +747,42 @@ module.exports = {
             return helper.failure(res, `Something went wrong.`);
 
         }
-    }
+    },
+
+    transactionSsHistory: async (req, res) => {
+        try {
+            const driverId = req.user.id;
+            const { status } = req.body;
+            const driver = await db.users.findOne({
+                where: { id: driverId },
+                attributes: ["totalAmount"]
+            });
+            const currentBalance = driver?.totalAmount || "0.00";
+            let whereCondition = { driverId };
+
+            if (status !== undefined && status !== "") {
+                whereCondition.status = status;
+            }
+            const history = await db.transferscreenshot.findAll({
+                where: whereCondition,
+                order: [["createdAt", "DESC"]],
+            });
+
+            return res.status(200).json({
+                status: true,
+                message: "Transaction history fetched successfully",
+                currentBalance: currentBalance,
+                history: history
+            });
+
+        } catch (error) {
+            console.log(error);
+            return res.status(500).json({
+                status: false,
+                message: "Something went wrong",
+                error: error.message
+            });
+        }
+    },
+
 }
