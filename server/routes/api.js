@@ -11,6 +11,7 @@ router.get("/getcms", authController.getCmsContent);
 //fileupload
 router.post('/fileupload', authController.fileUploadDriver);
 
+
 router.post('/login', authController.login);
 router.use(middleware.verifyUser);
 

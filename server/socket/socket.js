@@ -421,5 +421,42 @@ module.exports = function (io) {
         });
       }
     });
+
+    socket.on("onlineStatusUpdate", async (data) => {
+      try {
+        const { userId, status } = data;
+        // status = '1' => online, status = '0' => offline
+
+        const [updated] = await db.users.update(
+          { online: status },
+          {
+            where: {
+              id: userId
+            }
+          }
+        );
+
+        socket.emit("onlineStatusUpdate", {
+          successMessage: "Online status updated successfully",
+          updated: updated,
+          status: status
+        });
+
+        // broadcast to others also
+        socket.broadcast.emit("userOnlineStatus", {
+          userId: userId,
+          status: status
+        });
+
+      } catch (error) {
+        console.error("Error updating online status:", error);
+        socket.emit("onlineStatusUpdate", {
+          error_message: "Failed to update online status",
+          code: 500,
+          error: error.message
+        });
+      }
+    });
+
   });
 };
