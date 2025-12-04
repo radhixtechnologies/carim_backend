@@ -457,11 +457,12 @@ module.exports = function (io) {
         });
       }
     });
+
     socket.on("user_constant_list", async (get_data) => {
       try {
         var query = [
           Sequelize.literal(
-            "(SELECT CONCAT(firstName,'lastName') FROM users WHERE users.id  = Receiver_user_id)"
+            "(SELECT CONCAT(firstName,lastName) FROM users WHERE users.id  = Receiver_user_id)"
           ),
           "ReceiverName",
         ];
@@ -474,7 +475,7 @@ module.exports = function (io) {
 
         var query = [
           Sequelize.literal(
-            "(SELECT CONCAT(firstName,'lastName') FROM users WHERE users.id  = Receiver_user_id)"
+            "(SELECT CONCAT(firstName,lastName) FROM users WHERE users.id  = Receiver_user_id)"
           ),
           "ReceiverName",
         ];
@@ -552,7 +553,7 @@ module.exports = function (io) {
           ],
         });
 
-      
+
 
         socket.emit("user_constant_list", constantList);
       } catch (error) {
@@ -608,7 +609,7 @@ module.exports = function (io) {
           }
         );
         //////////// Push Notification //////////
-     
+
         ///////////////////////push end //////////////////
 
         // Retrieve message data with user details
@@ -617,7 +618,7 @@ module.exports = function (io) {
             include: [
               [
                 Sequelize.literal(
-                  "(SELECT CONCAT(firstName,'lastName') FROM users WHERE users.id  = message.sender_id)"
+                  "(SELECT CONCAT(firstName,lastName) FROM users WHERE users.id  = message.sender_id)"
                 ),
                 "SenderName",
               ],
@@ -629,7 +630,7 @@ module.exports = function (io) {
               ],
               [
                 Sequelize.literal(
-                  "(SELECT CONCAT(firstName,'lastName') FROM users WHERE users.id  = message.reciever_id)"
+                  "(SELECT CONCAT(firstName,lastName) FROM users WHERE users.id  = message.reciever_id)"
                 ),
                 "ReceiverName",
               ],
@@ -675,7 +676,7 @@ module.exports = function (io) {
         const query = [
 
           Sequelize.literal(
-            `(SELECT CONCAT(firstName,'lastName') FROM users WHERE users.id  = message.reciever_id)`
+            `(SELECT CONCAT(firstName,lastName) FROM users WHERE users.id  = message.reciever_id)`
           ),
           "ReceiverName",
         ];
@@ -689,7 +690,7 @@ module.exports = function (io) {
 
         const querys = [
           Sequelize.literal(
-            "(SELECT CONCAT(firstName,'lastName') FROM users WHERE users.id = message.sender_id)"
+            "(SELECT CONCAT(firstName,lastName) FROM users WHERE users.id = message.sender_id)"
           ),
           "SenderName",
         ];
@@ -715,16 +716,52 @@ module.exports = function (io) {
           },
         });
 
-       
+
 
         const allMsg1 = {
           messageList: allMsg,
-         
+
         };
 
         socket.emit("get_message_list", allMsg1);
       } catch (error) {
         console.log(error);
+      }
+    });
+
+    socket.on('cont_unread_msg', async (get_data) => {
+      try {
+
+        if (!get_data.reciever_id || !get_data.sender_id) {
+          console.error("Invalid sender_id or reciever_id:", get_data);
+          return;
+        }
+
+        const senderId = Number(get_data.sender_id);
+        const receiverId = Number(get_data.reciever_id);
+
+        if (isNaN(senderId) || isNaN(receiverId)) {
+          console.error("Invalid sender or receiver ID:", get_data);
+          return;
+        }
+
+        await db.message.update(
+          {
+            readStatus: 1,
+          },
+          {
+            where: {
+              sender_id: senderId,
+              reciever_id: receiverId,
+              deletedAt: null,
+              readStatus: 0
+            },
+          }
+        );
+
+        socket.emit("cont_unread_msg", { success_message: "Read Status changed successfully" });
+      } catch (error) {
+        console.error("Error updating read status:", error);
       }
     });
 
