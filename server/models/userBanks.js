@@ -1,5 +1,5 @@
 const Sequelize = require('sequelize');
-module.exports = function (sequelize, DataTypes) {
+module.exports = function(sequelize, DataTypes) {
   return sequelize.define('userBanks', {
     id: {
       autoIncrement: true,
@@ -10,10 +10,14 @@ module.exports = function (sequelize, DataTypes) {
     userId: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      defaultValue: 0
+      defaultValue: 0,
+      references: {
+        model: 'users',
+        key: 'id'
+      }
     },
     accountType: {
-      type: DataTypes.ENUM('0', '1'),
+      type: DataTypes.ENUM('0','1'),
       allowNull: false,
       defaultValue: "1",
       comment: "0=>current, 1=>saving"
@@ -54,7 +58,7 @@ module.exports = function (sequelize, DataTypes) {
       defaultValue: ""
     },
     accountOwnerInfo: {
-      type: DataTypes.ENUM('0', '1', '2'),
+      type: DataTypes.ENUM('0','1','2'),
       allowNull: false,
       defaultValue: "1",
       comment: "1=>personal,2=>company"
@@ -80,7 +84,7 @@ module.exports = function (sequelize, DataTypes) {
       defaultValue: ""
     },
     isDefault: {
-      type: DataTypes.ENUM('0', '1'),
+      type: DataTypes.ENUM('0','1'),
       allowNull: false,
       defaultValue: "0",
       comment: "0=>no, 1=>yes default"
@@ -89,6 +93,22 @@ module.exports = function (sequelize, DataTypes) {
     sequelize,
     tableName: 'userBanks',
     timestamps: true,
-    
+    indexes: [
+      {
+        name: "PRIMARY",
+        unique: true,
+        using: "BTREE",
+        fields: [
+          { name: "id" },
+        ]
+      },
+      {
+        name: "userId",
+        using: "BTREE",
+        fields: [
+          { name: "userId" },
+        ]
+      },
+    ]
   });
 };

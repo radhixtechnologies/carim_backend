@@ -10,7 +10,11 @@ module.exports = function(sequelize, DataTypes) {
     driverId: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      defaultValue: 0
+      defaultValue: 0,
+      references: {
+        model: 'users',
+        key: 'id'
+      }
     },
     amount: {
       type: DataTypes.DOUBLE(10,2),
@@ -33,13 +37,28 @@ module.exports = function(sequelize, DataTypes) {
       allowNull: false,
       defaultValue: "0",
       comment: "0=>pending,1=>success,2=>failed"
-    },
-    
+    }
   }, {
     sequelize,
     tableName: 'transferscreenshot',
     timestamps: true,
     paranoid: true,
-    
+    indexes: [
+      {
+        name: "PRIMARY",
+        unique: true,
+        using: "BTREE",
+        fields: [
+          { name: "id" },
+        ]
+      },
+      {
+        name: "driverId",
+        using: "BTREE",
+        fields: [
+          { name: "driverId" },
+        ]
+      },
+    ]
   });
 };

@@ -14,12 +14,21 @@ module.exports = function(sequelize, DataTypes) {
     image: {
       type: DataTypes.STRING(255),
       allowNull: false
-    },
+    }
   }, {
     sequelize,
     tableName: 'banners',
     timestamps: true,
     paranoid: true,
-    
+    indexes: [
+      {
+        name: "PRIMARY",
+        unique: true,
+        using: "BTREE",
+        fields: [
+          { name: "id" },
+        ]
+      },
+    ]
   });
 };

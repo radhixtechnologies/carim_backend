@@ -29,8 +29,7 @@ module.exports = function(sequelize, DataTypes) {
     },
     message: {
       type: DataTypes.TEXT,
-      allowNull: false,
-      defaultValue: ""
+      allowNull: false
     }
   }, {
     sequelize,

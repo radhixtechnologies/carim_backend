@@ -10,17 +10,29 @@ module.exports = function(sequelize, DataTypes) {
     userId: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      defaultValue: 0
+      defaultValue: 0,
+      references: {
+        model: 'users',
+        key: 'id'
+      }
     },
     driverId: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      defaultValue: 0
+      defaultValue: 0,
+      references: {
+        model: 'users',
+        key: 'id'
+      }
     },
     bookingId: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      defaultValue: 0
+      defaultValue: 0,
+      references: {
+        model: 'bookings',
+        key: 'id'
+      }
     },
     totalAmount: {
       type: DataTypes.DOUBLE(10,2),
@@ -54,6 +66,36 @@ module.exports = function(sequelize, DataTypes) {
     tableName: 'transactions',
     timestamps: true,
     paranoid: true,
-    
+    indexes: [
+      {
+        name: "PRIMARY",
+        unique: true,
+        using: "BTREE",
+        fields: [
+          { name: "id" },
+        ]
+      },
+      {
+        name: "userId",
+        using: "BTREE",
+        fields: [
+          { name: "userId" },
+        ]
+      },
+      {
+        name: "driverId",
+        using: "BTREE",
+        fields: [
+          { name: "driverId" },
+        ]
+      },
+      {
+        name: "bookingId",
+        using: "BTREE",
+        fields: [
+          { name: "bookingId" },
+        ]
+      },
+    ]
   });
 };
