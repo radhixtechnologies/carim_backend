@@ -474,6 +474,67 @@ module.exports = {
             return helper.failure(res, "Something went wrong while fetching booking history.");
         }
     },
+    bookingDetail:async (req, res) => {
+        try {
+            const userId = req.user.id;
+            const { id } = req.params;
+
+            if (!id) {
+                return helper.failure(res, 'Booking ID is required.');
+            }
+
+            const booking = await db.bookings.findOne({
+                where: {
+                    id: id,
+                    [Sequelize.Op.or]: [
+                        { driverId: userId },
+                        { userId: userId }
+                    ]
+                },
+                include: [
+                    {
+                        model: db.users,
+                        as: 'driverbook',
+                        include: [{
+                            model: db.vehicleDetails,
+                            as: 'vehicleDetail',
+                            required: false
+                        }]
+                    },
+                    {
+                        model: db.users,
+                        as: 'userbook',
+                    }
+                ]
+            });
+
+            if (!booking) {
+                return helper.error(res, 'Booking not found', 404);
+            }
+
+            return helper.success(res, 'Booking details fetched successfully', {
+                bookingId: booking.id,
+                orderId: booking.orderId,
+                driverId: booking.driverId,
+                driverDetails: booking.driverbook,
+                vehicleDetail: booking.driverbook?.vehicleDetail,
+                userDetails: booking.userbook,
+                pickupLocation: booking.pickupLocation,                 
+                dropLocation: booking.dropLocation,
+                pickupLatitude: booking.pickupLatitude,
+                pickupLongitude: booking.pickupLongitude,
+                dropLatitude: booking.dropLatitude,
+                dropLongitude: booking.dropLongitude,
+                status: booking.status,
+                request: booking.request,
+                bookingDate: booking.bookingDate
+            });
+
+        } catch (error) {
+            console.error('Ride details error:', error);
+            return helper.failure(res, "Something went wrong while fetching ride details.");
+        }
+    }
     
 
 

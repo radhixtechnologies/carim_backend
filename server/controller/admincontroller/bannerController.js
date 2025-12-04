@@ -19,7 +19,6 @@ module.exports = {
             return helper.error(res, error.message);
         }
     },
-
     bannerList: async (req, res) => {
         try {
             const page = parseInt(req.query.page) || 1;

@@ -51,5 +51,7 @@ router.get('/requestList', bookingController.requestList);
 router.post('/locationupdate', bookingController.updatedPickupLocation);
 router.get('/bookingHistory', bookingController.bookingHistory);
 
+router.get('/bookingdetail/:id', bookingController.bookingDetail);
+
 
 module.exports = router;
