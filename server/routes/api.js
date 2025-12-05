@@ -54,6 +54,8 @@ router.get('/bookingHistory', bookingController.bookingHistory);
 
 router.get('/bookingdetail/:id', bookingController.bookingDetail);
 router.post("/transactionSsHistory",authController.transactionSsHistory);
+router.get("/userActiveRide",authController.userActiveRide);
+
 
 
 module.exports = router;

@@ -4,7 +4,7 @@ const helper = require('../../helper/helper');
 const { Validator } = require('node-input-validator');
 const jwt = require("jsonwebtoken");
 const { Op } = require("sequelize");
-
+const { Sequelize } = require('sequelize');
 
 module.exports = {
     login: async (req, res) => {
@@ -784,5 +784,73 @@ module.exports = {
             });
         }
     },
+
+    userActiveRide: async (req, res) => {
+        try {
+            const userId = req.user.id;
+
+            // Find if user has any active ride
+            const activeRide = await db.bookings.findOne({
+                where: {
+                    userId: userId,
+                    status: { [Sequelize.Op.in]: ['0', '1', '2'] },
+                    request: '0'
+                },
+                include: [
+                    {
+                        model: db.users,
+                        as: 'driverbook',
+                    },
+                ],
+                order: [['id', 'DESC']]
+            });
+
+            // If no ride active
+            if (!activeRide) {
+                return helper.success(res, "No active ride", {
+                    hasActiveRide: false,
+                    ride: null
+                });
+            }
+
+            // If active ride exists
+            const driver = activeRide.driver;
+
+            return helper.success(res, "Active ride found", {
+                hasActiveRide: true,
+                ride: {
+                    id: activeRide.id,
+                    orderId: activeRide.orderId,
+                    status: activeRide.status,
+                    request: activeRide.request,
+                    pickupLocation: activeRide.pickupLocation,
+                    dropLocation: activeRide.dropLocation,
+                    coordinates: {
+                        pickup: {
+                            latitude: activeRide.pickupLatitude,
+                            longitude: activeRide.pickupLongitude
+                        },
+                        drop: {
+                            latitude: activeRide.dropLatitude,
+                            longitude: activeRide.dropLongitude
+                        }
+                    },
+                    driver: driver ? {
+                        id: driver.id,
+                        fullName: `${driver.firstName} ${driver.lastName}`,
+                        phone: driver.phoneNumber,
+                        image: driver.image,
+                        latitude: driver.latitude,
+                        longitude: driver.longitude
+                    } : null
+                }
+            });
+
+        } catch (error) {
+            console.log("Error in userActiveRide:", error);
+            return helper.failure(res, "Something went wrong.");
+        }
+    }
+
 
 }
