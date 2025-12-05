@@ -41,6 +41,7 @@ module.exports = {
             let isNewUser = false;
 
             const otp = '1111';
+            const rideOtp = '1111'
 
             if (existingUser) {
                 if (existingUser.status === "0") {
@@ -55,6 +56,7 @@ module.exports = {
                 await db.users.update(
                     {
                         otp: otp,
+                        rideOtp:rideOtp,
                         updatedAt: helper.unixTimestamp()
                     },
                     { where: { id: user.id } }
@@ -84,6 +86,7 @@ module.exports = {
                     deviceType: deviceType || null,
                     loginTime: helper.unixTimestamp(),
                     otp: otp,
+                    rideOtp:rideOtp,
                     status: "1"
                 });
 
