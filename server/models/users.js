@@ -81,8 +81,9 @@ module.exports = function(sequelize, DataTypes) {
       defaultValue: 0
     },
     bio: {
-      type: DataTypes.TEXT,
-      allowNull: false
+    type: DataTypes.STRING(900),
+      allowNull: false,
+      defaultValue: ""
     },
     location: {
       type: DataTypes.STRING(255),
