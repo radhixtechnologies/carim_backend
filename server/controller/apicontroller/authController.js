@@ -853,7 +853,9 @@ module.exports = {
             console.log("Error in userActiveRide:", error);
             return helper.failure(res, "Something went wrong.");
         }
-    }
+    },
+
+    
 
 
 }

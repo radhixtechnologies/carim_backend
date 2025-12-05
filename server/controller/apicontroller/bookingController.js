@@ -686,7 +686,64 @@ module.exports = {
             console.error('Ride details error:', error);
             return helper.failure(res, "Something went wrong while fetching ride details.");
         }
+    },
+
+    cancelRide: async (req, res) => {
+        try {
+            const loggedInUserId = req.user.id;
+            const loggedInUserRole = req.user.role; // 1=user, 2=driver
+
+            const { bookingId } = req.body;
+
+            if (!bookingId) {
+                return helper.failure(res, "Booking ID is required.");
+            }
+
+            // Only status 0 or 1 can be cancelled
+            const cancellableStatus = ["0", "1"];
+
+            const whereCond = {
+                id: bookingId,
+                status: { [Op.in]: cancellableStatus }
+            };
+
+            // Role-based check
+            if (loggedInUserRole === "1") {
+                whereCond.userId = loggedInUserId;
+            }
+            else if (loggedInUserRole === "2") {
+                whereCond.driverId = loggedInUserId;
+            }
+            else {
+                return helper.failure(res, "Only users or drivers can cancel a ride.");
+            }
+
+            const booking = await db.bookings.findOne({ where: whereCond });
+
+            if (!booking) {
+                return helper.failure(res, "Ride cannot be cancelled or already processed.");
+            }
+
+            // Update status → 4 = cancelled
+            await booking.update({ status: "4" });
+
+            const msg = loggedInUserRole === "1"
+                ? "Ride cancelled by user successfully."
+                : "Ride cancelled by driver successfully.";
+
+            return helper.success(res, msg, {
+                bookingId: booking.id,
+                cancelledBy: loggedInUserRole === "1" ? "user" : "driver",
+                status: "4",
+                message: "Ride has been cancelled."
+            });
+
+        } catch (error) {
+            console.log(error);
+            return helper.failure(res, "Something went wrong while cancelling the ride.");
+        }
     }
+
 
 
 

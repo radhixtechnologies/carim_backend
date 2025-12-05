@@ -53,9 +53,10 @@ router.post('/locationupdate', bookingController.updatedPickupLocation);
 router.get('/bookingHistory', bookingController.bookingHistory);
 
 router.get('/bookingdetail/:id', bookingController.bookingDetail);
-router.post("/transactionSsHistory",authController.transactionSsHistory);
-router.get("/userActiveRide",authController.userActiveRide);
+router.post("/transactionSsHistory", authController.transactionSsHistory);
+router.get("/userActiveRide", authController.userActiveRide);
 
+router.post("/cancelRide", bookingController.cancelRide);
 
 
 module.exports = router;
