@@ -179,7 +179,7 @@ module.exports = {
             const nearbyDrivers = await db.users.findAll({
                 where: {
                     role: '2',
-                    id: { [Sequelize.Op.notIn]: busyDriverIds }  
+                    id: { [Sequelize.Op.notIn]: busyDriverIds }
                 },
                 include: [{
                     model: db.vehicleDetails,
@@ -454,8 +454,13 @@ module.exports = {
                 return helper.error(res, 'Booking already processed');
             }
 
-            await booking.update({ request: request });
-
+            if (request === '1') {
+                // Accept → ONLY update request
+                await booking.update({ request: request });
+            } else {
+                // Reject → update request + status = 4
+                await booking.update({ request: request, status: 4 });
+            }
             const message = request === '1'
                 ? 'Booking accepted successfully'
                 : 'Booking rejected successfully';

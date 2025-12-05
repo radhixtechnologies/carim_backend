@@ -355,9 +355,7 @@ module.exports = function (io) {
           if (['0', '1', '2'].includes(status)) {
             statusCondition = { [Op.in]: ['0', '1', '2'] };
           } else if (status === '3') {
-            statusCondition = '3';
-          } else if (status === '4') {
-            statusCondition = '4';
+            statusCondition = { [Op.in]: ['3', "4"] };
           }
         } else {
           statusCondition = { [Op.in]: ['0', '1', '2'] };
