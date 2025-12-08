@@ -507,7 +507,7 @@ module.exports = {
 
             if (request === '1') {
                 // ACCEPT → update request + status
-                await booking.update({ request: '1', status: '1' });
+                await booking.update({ request: '1', status: '0' });
 
                 // SOCKET EMIT → REFRESH USER
                 const user = await db.users.findOne({
@@ -520,7 +520,7 @@ module.exports = {
                         success: true,
                         message: "Driver accepted the ride",
                         bookingId: bookingId,
-                        status: '1'
+                        status: '0'
                     });
                 }
 
