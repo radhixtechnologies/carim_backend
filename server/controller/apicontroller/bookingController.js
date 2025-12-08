@@ -428,6 +428,57 @@ module.exports = {
             return helper.failure(res, "Something went wrong while booking the ride.");
         }
     },
+    // driverAccptReject: async (req, res) => {
+    //     try {
+    //         const driverId = req.user.id;
+    //         const { bookingId, request } = req.body;
+
+    //         if (!bookingId || !request) {
+    //             return helper.failure(res, 'Booking ID and request value are required.');
+    //         }
+
+    //         if (!['1', '2'].includes(request)) {
+    //             return helper.failure(res, 'Invalid request value. Must be "1" (accept) or "2" (reject).');
+    //         }
+
+    //         const booking = await db.bookings.findOne({
+    //             where: {
+    //                 id: bookingId,
+    //                 driverId: driverId,
+    //                 status: '0',
+    //                 request: '0'
+    //             }
+    //         });
+
+    //         if (!booking) {
+    //             return helper.error(res, 'Booking already processed');
+    //         }
+
+    //         if (request === '1') {
+    //             // Accept → ONLY update request
+    //             await booking.update({ request: request });
+    //         } else {
+    //             // Reject → update request + status = 4
+    //             await booking.update({ request: request, status: 4 });
+    //         }
+    //         const message = request === '1'
+    //             ? 'Booking accepted successfully'
+    //             : 'Booking rejected successfully';
+
+    //         const actionMessage = request === '1'
+    //             ? 'You have accepted the ride request'
+    //             : 'You have rejected the ride request';
+
+    //         return helper.success(res, message, {
+    //             bookingId: booking.id,
+    //             request: request,
+    //             message: actionMessage
+    //         });
+
+    //     } catch (error) {
+    //         return helper.failure(res, "Something went wrong while processing the booking.");
+    //     }
+    // },
     driverAccptReject: async (req, res) => {
         try {
             const driverId = req.user.id;
@@ -455,12 +506,29 @@ module.exports = {
             }
 
             if (request === '1') {
-                // Accept → ONLY update request
-                await booking.update({ request: request });
+                // ACCEPT → update request + status
+                await booking.update({ request: '1', status: '1' });
+
+                // SOCKET EMIT → REFRESH USER
+                const user = await db.users.findOne({
+                    where: { id: booking.userId },
+                    attributes: ['socketId']
+                });
+
+                if (user && user.socketId) {
+                    io.to(user.socketId).emit("rideStatusUpdated", {
+                        success: true,
+                        message: "Driver accepted the ride",
+                        bookingId: bookingId,
+                        status: '1'
+                    });
+                }
+
             } else {
-                // Reject → update request + status = 4
-                await booking.update({ request: request, status: 4 });
+                // REJECT → update request + status
+                await booking.update({ request: '2', status: '4' });
             }
+
             const message = request === '1'
                 ? 'Booking accepted successfully'
                 : 'Booking rejected successfully';
@@ -479,6 +547,8 @@ module.exports = {
             return helper.failure(res, "Something went wrong while processing the booking.");
         }
     },
+
+
     requestList: async (req, res) => {
         try {
             const driverId = req.user.id;
