@@ -6,6 +6,8 @@ const faqController = require('../controller/apicontroller/faqController');
 const bookingController = require('../controller/apicontroller/bookingController');
 
 
+module.exports = (io) => {
+    
 router.use(middleware.authenticateHeader);
 router.get("/getcms", authController.getCmsContent);
 //fileupload
@@ -47,7 +49,7 @@ router.get('/home', authController.home);
 router.post('/findride', bookingController.findRide);
 router.post('/bookride', bookingController.bookRide);
 
-router.post('/accpetreject', bookingController.driverAccptReject);
+router.post('/accpetreject', bookingController.driverAccptReject(io));
 router.get('/requestList', bookingController.requestList);
 router.post('/locationupdate', bookingController.updatedPickupLocation);
 router.get('/bookingHistory', bookingController.bookingHistory);
@@ -58,5 +60,6 @@ router.get("/userActiveRide", authController.userActiveRide);
 
 router.post("/cancelRide", bookingController.cancelRide);
 
-
-module.exports = router;
+return router
+}
+// module.exports = router;

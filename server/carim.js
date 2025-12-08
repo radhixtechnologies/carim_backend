@@ -14,7 +14,7 @@ const cors = require('cors');
 const indexRouter = require('./routes/index');
 const usersRouter = require('./routes/users');
 const adminRouter = require('./routes/admin');
-const apiRouter = require('./routes/api');
+// const apiRouter = require('./routes/api'); <- DO NOT USE THIS
 
 const app = express();
 const PORT = process.env.PORT || 4800;
@@ -27,11 +27,11 @@ app.use(cookieParser());
 app.use(fileupload());
 app.use(cors());
 
-// Static file serving for React client
+// Static files
 const buildpath = path.resolve(__dirname, "../client/build");
 app.use(express.static(buildpath));
 
-// Prevent caching for specific routes
+// Prevent caching
 app.use((req, res, next) => {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Pragma', 'no-cache');
@@ -39,40 +39,42 @@ app.use((req, res, next) => {
   next();
 });
 
-// Socket.io setup
+// ------------------------
+// Create HTTP server & Socket.io
+// ------------------------
 const server = http.createServer(app);
 const io = socketIO(server, {
-  cors: {
-    origin: "http://localhost:6546",  
-    methods: ["GET", "POST"]
-  }
+  cors: { origin: "http://localhost:6546", methods: ["GET", "POST"] }
 });
 
-// Import socket-related logic
+// Socket logic
 try {
   require("./socket/socket")(io);
 } catch (error) {
   console.error("Socket initialization failed:", error);
 }
 
+// ------------------------
 // Routes
+// ------------------------
 app.use('/admin', express.static(path.join(__dirname, 'public')));
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/admin', adminRouter);
+
+// Pass `io` to API router
+const apiRouter = require('./routes/api')(io);
 app.use('/api', apiRouter);
 
-// Catch-all for frontend routing (for Single Page Apps)
+// SPA catch-all
 app.get('*', (req, res) => {
   res.sendFile(path.join(buildpath, "index.html"));
 });
 
-// 404 Error handling
-app.use((req, res, next) => {
-  next(createError(404));
-});
+// 404 handler
+app.use((req, res, next) => next(createError(404)));
 
-// General Error handler
+// General error handler
 app.use((err, req, res, next) => {
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
@@ -80,7 +82,7 @@ app.use((err, req, res, next) => {
   res.render('error');
 });
 
-// Start the server
+// Start server
 server.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
