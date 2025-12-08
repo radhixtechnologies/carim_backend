@@ -44,7 +44,8 @@ app.use((req, res, next) => {
 // ------------------------
 const server = http.createServer(app);
 const io = socketIO(server, {
-  cors: { origin: "http://localhost:6546", methods: ["GET", "POST"] }
+  cors: { origin: "http://localhost:6546", 
+    methods: ["GET", "POST"] }
 });
 
 // Socket logic

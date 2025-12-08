@@ -490,7 +490,6 @@ module.exports = {
                 if (!bookingId || !request) {
                     return helper.failure(res, 'Booking ID and request value are required.');
                 }
-
                 if (!['1', '2'].includes(request)) {
                     return helper.failure(res, 'Invalid request value. Must be "1" (accept) or "2" (reject).');
                 }
@@ -512,34 +511,30 @@ module.exports = {
                 if (!booking) {
                     return helper.error(res, 'Booking already processed');
                 }
-
                 // Accept or reject
                 if (request === '1') {
-                    await booking.update({ request: request });   // Accept
+                    await booking.update({ request: request, status: '0' });   // Accept
                 } else {
-                    await booking.update({ request: request, status: 4 }); // Reject
+                    await booking.update({ request: request, status: '4' }); // Reject
                 }
-
                 // Notify user
-                if (booking.userbook && booking.userbook.socketId) {                    
+                if (booking.userbook && booking.userbook.socketId) {
                     io.to(booking.userbook.socketId).emit("rideStatusUpdate", {
                         bookingId: booking.id,
                         driverId: driverId,
                         request: request,
-                        status: request === "1" ? "accepted" : "rejected",
+                        status: request === "1" ? "Driver on the way" : "Booking rejected",
                         message: request === "1"
-                            ? "Driver accepted your booking"
+                            ? "Driver accepted your booking and is on the way"
                             : "Driver rejected your booking"
                     });
                 }
-
-
                 const message = request === '1'
-                    ? 'Booking accepted successfully'
+                    ? 'Booking accepted successfully. Driver on the way.'
                     : 'Booking rejected successfully';
 
                 const actionMessage = request === '1'
-                    ? 'You have accepted the ride request'
+                    ? 'You have accepted the ride request. Driver on the way.'
                     : 'You have rejected the ride request';
 
                 return helper.success(res, message, {
@@ -547,15 +542,11 @@ module.exports = {
                     request: request,
                     message: actionMessage
                 });
-
             } catch (error) {
                 return helper.failure(res, "Something went wrong while processing the booking.");
             }
         };
     },
-
-
-
 
 
     requestList: async (req, res) => {

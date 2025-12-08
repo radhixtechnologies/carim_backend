@@ -338,6 +338,212 @@ module.exports = function (io) {
     //     });
     //   }
     // });
+    // 1socket.on("rideStatusUpdate", async (data) => {
+    //   try {
+    //     const { bookingId, status, otp, driverId } = data;
+
+    //     if (!bookingId || !status || !driverId) {
+    //       return socket.emit("rideStatusUpdate", {
+    //         success: false,
+    //         message: "Booking ID, status, and driver ID are required."
+    //       });
+    //     }
+
+    //     if (!['0', '1', '2', '3', '4'].includes(status)) {
+    //       return socket.emit("rideStatusUpdate", {
+    //         success: false,
+    //         message: "Invalid status value."
+    //       });
+    //     }
+
+    //     const booking = await db.bookings.findOne({
+    //       where: {
+    //         id: bookingId,
+    //         driverId: driverId,
+    //       },
+    //       include: [{
+    //         model: db.users,
+    //         as: 'userbook',
+    //         attributes: ['id', 'rideOtp', 'socketId']
+    //       }]
+    //     });
+
+    //     if (!booking) {
+    //       return socket.emit("rideStatusUpdate", {
+    //         success: false,
+    //         message: "Booking not found",
+    //         code: 404
+    //       });
+    //     }
+
+    //     const currentStatus = booking.status;
+
+    //     //  STATUS 1 → DRIVER ARRIVED AT PICKUP
+    //     if (status === "1") {
+    //       if (currentStatus !== "0") {
+    //         return socket.emit("rideStatusUpdate", {
+    //           success: false,
+    //           message: "Driver can mark arrived only when status is 0."
+    //         });
+    //       }
+
+    //       await booking.update({ status: "1" });
+
+    //       // Notify user
+    //       if (booking.userbook && booking.userbook.socketId) {
+    //         io.to(booking.userbook.socketId).emit("rideStatusUpdated", {
+    //           success: true,
+    //           message: "Driver arrived",
+    //           bookingId: booking.id,
+    //           status: "1"
+    //         });
+    //       }
+
+    //       return socket.emit("rideStatusUpdate", {
+    //         success: true,
+    //         message: "Driver arrived successfully",
+    //         data: {
+    //           bookingId: booking.id,
+    //           status: "1"
+    //         }
+    //       });
+    //     }
+
+    //     // STATUS 2 → START RIDE (OTP VERIFY)
+    //     if (status === '2') {
+    //       if (currentStatus === '2') {
+    //         return socket.emit("rideStatusUpdate", {
+    //           success: false,
+    //           message: "Ride already started."
+    //         });
+    //       }
+
+    //       if (!otp) {
+    //         return socket.emit("rideStatusUpdate", {
+    //           success: false,
+    //           message: "OTP is required to start the ride."
+    //         });
+    //       }
+
+    //       if (!booking.userbook) {
+    //         return socket.emit("rideStatusUpdate", {
+    //           success: false,
+    //           message: "User not found for this booking."
+    //         });
+    //       }
+
+    //       if (booking.userbook.rideOtp !== otp) {
+    //         return socket.emit("rideStatusUpdate", {
+    //           success: false,
+    //           message: "OTP does not match. Please enter correct OTP."
+    //         });
+    //       }
+
+    //       await db.bookings.update({
+    //         status: status,
+    //         otpbooking: otp
+    //       }, {
+    //         where: { id: bookingId }
+    //       });
+
+    //       if (booking.userbook && booking.userbook.socketId) {
+    //         io.to(booking.userbook.socketId).emit("rideStatusUpdated", {
+    //           success: true,
+    //           message: "Ride has started",
+    //           bookingId: booking.id,
+    //           status: status
+    //         });
+    //       }
+
+    //       return socket.emit("rideStatusUpdate", {
+    //         success: true,
+    //         message: "Ride started successfully",
+    //         data: {
+    //           bookingId: booking.id,
+    //           status: status,
+    //           otpVerified: true
+    //         }
+    //       });
+    //     }
+
+    //     //  STATUS 3 → FINISHED
+    //     //  STATUS 4 → CANCELLED
+    //     if (status === '3' || status === '4') {
+    //       if (currentStatus !== '2') {
+    //         const action = status === '3' ? 'finish' : 'cancel';
+    //         return socket.emit("rideStatusUpdate", {
+    //           success: false,
+    //           message: `Cannot ${action} ride. Ride must be started first (status 2).`
+    //         });
+    //       }
+
+    //       await booking.update({ status: status });
+
+    //       if (booking.userbook && booking.userbook.socketId) {
+    //         io.to(booking.userbook.socketId).emit("rideStatusUpdated", {
+    //           success: true,
+    //           message: `Ride ${status === '3' ? 'finished' : 'cancelled'} successfully`,
+    //           bookingId: booking.id,
+    //           status: status
+    //         });
+    //       }
+
+    //       return socket.emit("rideStatusUpdate", {
+    //         success: true,
+    //         message: `Ride ${status === '3' ? 'finished' : 'cancelled'} successfully`,
+    //         data: {
+    //           bookingId: booking.id,
+    //           status: status
+    //         }
+    //       });
+    //     }
+
+    //     // -------------------------------------------------------
+    //     // 📍 STATUS 0 → DRIVER ON THE WAY
+    //     // -------------------------------------------------------
+    //     if (status === "0") {
+    //       if (currentStatus >= "2") {
+    //         return socket.emit("rideStatusUpdate", {
+    //           success: false,
+    //           message: "Cannot change status to 0 after ride has started."
+    //         });
+    //       }
+
+    //       await booking.update({ status: "0" });
+
+    //       if (booking.userbook && booking.userbook.socketId) {
+    //         io.to(booking.userbook.socketId).emit("rideStatusUpdated", {
+    //           success: true,
+    //           message: "Driver on the way",
+    //           bookingId: booking.id,
+    //           status: "0"
+    //         });
+    //       }
+
+    //       return socket.emit("rideStatusUpdate", {
+    //         success: true,
+    //         message: "Driver on the way",
+    //         data: {
+    //           bookingId: booking.id,
+    //           status: "0"
+    //         }
+    //       });
+    //     }
+
+    //     return socket.emit("rideStatusUpdate", {
+    //       success: false,
+    //       message: "Invalid status operation."
+    //     });
+
+    //   } catch (error) {
+    //     console.error("Error updating ride status:", error);
+    //     return socket.emit("rideStatusUpdate", {
+    //       success: false,
+    //       message: "Something went wrong while updating ride status.",
+    //       error: error.message
+    //     });
+    //   }
+    // });
     socket.on("rideStatusUpdate", async (data) => {
       try {
         const { bookingId, status, otp, driverId } = data;
@@ -378,7 +584,32 @@ module.exports = function (io) {
 
         const currentStatus = booking.status;
 
-        // STATUS 1 → DRIVER ARRIVED AT PICKUP
+        // Function to emit to both driver and user
+        const emitToBoth = (message, statusData, otpVerified = false) => {
+          // Emit to user
+          if (booking.userbook && booking.userbook.socketId) {
+            io.to(booking.userbook.socketId).emit("rideStatusUpdated", {
+              success: true,
+              message,
+              bookingId: booking.id,
+              status: statusData,
+              otpVerified
+            });
+          }
+
+          // Emit to driver
+          if (driverId && socket.id) { // socket.id is the current driver socket
+            socket.emit("rideStatusUpdated", {
+              success: true,
+              message,
+              bookingId: booking.id,
+              status: statusData,
+              otpVerified
+            });
+          }
+        };
+
+        //  STATUS 1 → DRIVER ARRIVED AT PICKUP
         if (status === "1") {
           if (currentStatus !== "0") {
             return socket.emit("rideStatusUpdate", {
@@ -389,23 +620,12 @@ module.exports = function (io) {
 
           await booking.update({ status: "1" });
 
-          // Notify user
-          if (booking.userbook && booking.userbook.socketId) {
-            io.to(booking.userbook.socketId).emit("rideStatusUpdated", {
-              success: true,
-              message: "Driver arrived",
-              bookingId: booking.id,
-              status: "1"
-            });
-          }
+          emitToBoth("Driver arrived", "1");
 
           return socket.emit("rideStatusUpdate", {
             success: true,
             message: "Driver arrived successfully",
-            data: {
-              bookingId: booking.id,
-              status: "1"
-            }
+            data: { bookingId: booking.id, status: "1" }
           });
         }
 
@@ -446,28 +666,16 @@ module.exports = function (io) {
             where: { id: bookingId }
           });
 
-          if (booking.userbook && booking.userbook.socketId) {
-            io.to(booking.userbook.socketId).emit("rideStatusUpdated", {
-              success: true,
-              message: "Ride has started",
-              bookingId: booking.id,
-              status: status
-            });
-          }
+          emitToBoth("Ride has started", status, true);
 
           return socket.emit("rideStatusUpdate", {
             success: true,
             message: "Ride started successfully",
-            data: {
-              bookingId: booking.id,
-              status: status,
-              otpVerified: true
-            }
+            data: { bookingId: booking.id, status: status, otpVerified: true }
           });
         }
 
-        //  STATUS 3 → FINISHED
-        //  STATUS 4 → CANCELLED
+        // STATUS 3 → FINISHED, STATUS 4 → CANCELLED
         if (status === '3' || status === '4') {
           if (currentStatus !== '2') {
             const action = status === '3' ? 'finish' : 'cancel';
@@ -479,28 +687,16 @@ module.exports = function (io) {
 
           await booking.update({ status: status });
 
-          if (booking.userbook && booking.userbook.socketId) {
-            io.to(booking.userbook.socketId).emit("rideStatusUpdated", {
-              success: true,
-              message: `Ride ${status === '3' ? 'finished' : 'cancelled'} successfully`,
-              bookingId: booking.id,
-              status: status
-            });
-          }
+          emitToBoth(`Ride ${status === '3' ? 'finished' : 'cancelled'} successfully`, status);
 
           return socket.emit("rideStatusUpdate", {
             success: true,
             message: `Ride ${status === '3' ? 'finished' : 'cancelled'} successfully`,
-            data: {
-              bookingId: booking.id,
-              status: status
-            }
+            data: { bookingId: booking.id, status: status }
           });
         }
 
-        // -------------------------------------------------------
-        // 📍 STATUS 0 → DRIVER ON THE WAY
-        // -------------------------------------------------------
+        // STATUS 0 → DRIVER ON THE WAY
         if (status === "0") {
           if (currentStatus >= "2") {
             return socket.emit("rideStatusUpdate", {
@@ -511,22 +707,12 @@ module.exports = function (io) {
 
           await booking.update({ status: "0" });
 
-          if (booking.userbook && booking.userbook.socketId) {
-            io.to(booking.userbook.socketId).emit("rideStatusUpdated", {
-              success: true,
-              message: "Driver on the way",
-              bookingId: booking.id,
-              status: "0"
-            });
-          }
+          emitToBoth("Driver on the way", "0");
 
           return socket.emit("rideStatusUpdate", {
             success: true,
             message: "Driver on the way",
-            data: {
-              bookingId: booking.id,
-              status: "0"
-            }
+            data: { bookingId: booking.id, status: "0" }
           });
         }
 
@@ -544,6 +730,7 @@ module.exports = function (io) {
         });
       }
     });
+
 
 
     socket.on("bookingHistory", async (data) => {
