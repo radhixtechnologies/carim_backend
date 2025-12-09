@@ -61,6 +61,8 @@ router.get("/userActiveRide", authController.userActiveRide);
 router.post("/cancelRide", bookingController.cancelRide);
 router.post("/report", bookingController.report);
 router.post("/blockUser", bookingController.blockUser);
+router.post("/driverWaletRecharge", bookingController.driverWaletRecharge);
+
 
 
 
