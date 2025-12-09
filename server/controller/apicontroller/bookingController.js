@@ -287,7 +287,6 @@ module.exports = {
         }
     },
 
-
     bookRide: async (req, res) => {
         try {
             const userId = req.user.id;
@@ -758,9 +757,9 @@ module.exports = {
             });
 
             return helper.success(res, 'Booking history fetched successfully', {
-                totalBookings: totalBookings,        
-                currentPage: page,                   
-                totalPages: Math.ceil(totalBookings / limit), 
+                totalBookings: totalBookings,
+                currentPage: page,
+                totalPages: Math.ceil(totalBookings / limit),
                 bookings: bookings.map(booking => ({
                     bookingId: booking.id,
                     orderId: booking.orderId,
@@ -902,6 +901,78 @@ module.exports = {
         } catch (error) {
             console.log(error);
             return helper.failure(res, "Something went wrong while cancelling the ride.");
+        }
+    },
+
+    report: async (req, res) => {
+        try {
+            const v = new Validator(req.body, {
+                reportTo: "required",
+            });
+            const errorResponse = await helper.checkValidation(v);
+            if (errorResponse) {
+                return helper.error(res, errorResponse);
+            }
+            req.body.reportBy = req.user.id;
+            // Check if the report already exists
+            const existingReport = await db.reports.findOne({
+                where: {
+                    reportTo: req.body.reportTo,
+                    reportBy: req.body.reportBy,
+                },
+                raw: true
+            });
+
+            if (existingReport) {
+                return helper.error(res, "You have already reported this user.");
+            }
+
+            // Create a new report if it doesn't exist
+            const newReport = await db.reports.create({
+                ...req.body,
+            });
+
+            return helper.success(res, "Report added successfully", newReport);
+
+        } catch (error) {
+            console.error("Error:", error);
+            return helper.error(res, "Something went wrong.", error);
+        }
+    },
+
+    blockUser: async (req, res) => {
+        try {
+            const v = new Validator(req.body, {
+                userId: "required",
+                block: "required|in:0,1"   // 0 = unblock, 1 = block
+            });
+            const errorResponse = await helper.checkValidation(v);
+            if (errorResponse) {
+                return helper.error(res, errorResponse);
+            }
+
+            const blockBy = req.user.id;
+            const blockTo = req.body.userId;
+
+            if (blockBy == blockTo) {
+                return helper.error(res, "You cannot block yourself.");
+            }
+
+            // Update block status
+            await db.users.update(
+                { block: req.body.block },
+                { where: { id: blockTo } }
+            );
+
+            const message = req.body.block === "1"
+                ? "User blocked successfully"
+                : "User unblocked successfully";
+
+            return helper.success(res, message);
+
+        } catch (error) {
+            console.error("Error:", error);
+            return helper.error(res, "Something went wrong.", error);
         }
     }
 

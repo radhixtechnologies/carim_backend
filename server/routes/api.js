@@ -59,6 +59,10 @@ router.post("/transactionSsHistory", authController.transactionSsHistory);
 router.get("/userActiveRide", authController.userActiveRide);
 
 router.post("/cancelRide", bookingController.cancelRide);
+router.post("/report", bookingController.report);
+router.post("/blockUser", bookingController.blockUser);
+
+
 
 return router
 }
