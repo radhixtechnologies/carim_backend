@@ -893,19 +893,32 @@ module.exports = function (io) {
 
         let statusCondition = {};
 
+        // UPDATED STATUS LOGIC
         if (status) {
+
+          // Pending / Searching / Accepted
           if (['0', '1', '2'].includes(status)) {
             statusCondition = { [Op.in]: ['0', '1', '2'] };
-          } else if (status === '3') {
-            statusCondition = { [Op.in]: ['3', "4"] };
           }
+
+          // Completed rides
+          else if (status === '3') {
+            statusCondition = { [Op.in]: ['3'] };
+          }
+
+          // Cancelled rides (Driver = 4, User = 5)
+          else if (status === '4') {
+            statusCondition = { [Op.in]: ['4', '5'] };
+          }
+
         } else {
+          // Default list → Active rides
           statusCondition = { [Op.in]: ['0', '1', '2'] };
         }
 
         const offset = (page - 1) * limit;
 
-        //  First get total count (without pagination)
+        //  Count total
         const totalBookings = await db.bookings.count({
           where: {
             [Op.or]: [
@@ -916,7 +929,7 @@ module.exports = function (io) {
           }
         });
 
-        // Then get paginated data
+        //  Get paginated data
         const bookings = await db.bookings.findAll({
           where: {
             [Op.or]: [
@@ -949,9 +962,9 @@ module.exports = function (io) {
           success: true,
           message: "Booking history fetched successfully",
           data: {
-            totalBookings,               //  total without pagination
-            currentPage: page,           //  added
-            totalPages: Math.ceil(totalBookings / limit), //  added
+            totalBookings,
+            currentPage: page,
+            totalPages: Math.ceil(totalBookings / limit),
             bookings: bookings.map(booking => ({
               bookingId: booking.id,
               orderId: booking.orderId,
@@ -980,6 +993,7 @@ module.exports = function (io) {
         });
       }
     });
+
 
 
     socket.on("onlineStatusUpdate", async (data) => {
