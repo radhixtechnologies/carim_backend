@@ -55,6 +55,7 @@ module.exports = {
 
                 await db.users.update(
                     {
+                        online:'1',
                         otp: otp,
                         rideOtp:rideOtp,
                         updatedAt: helper.unixTimestamp()

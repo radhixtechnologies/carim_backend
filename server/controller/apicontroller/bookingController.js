@@ -191,7 +191,8 @@ module.exports = {
             const driver = await db.users.findOne({
                 where: {
                     id: driverId,
-                    role: '2'
+                    role: '2',
+                    online:'0'
                 },
                 include: [{
                     model: db.vehicleDetails,
