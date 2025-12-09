@@ -2,23 +2,66 @@ let db = require("../models");
 const Sequelize = require("sequelize");
 const Op = Sequelize.Op;
 
-
+global.onlineUsers = {};
 
 module.exports = function (io) {
   io.on("connection", function (socket) {
-    socket.on("connectUser", async (connectListener) => {
-      try {
-        const { userId } = connectListener;
+    // socket.on("connectUser", async (connectListener) => {
+    //   try {
+    //     const { userId } = connectListener;
 
+    //     if (!userId) {
+    //       return socket.emit("connectUser", {
+    //         success: false,
+    //         message: "User ID is required",
+    //       });
+    //     }
+    //     const user = await db.users.findOne({
+    //       where: { id: userId },
+    //       raw: true,
+    //     });
+
+    //     if (!user) {
+    //       return socket.emit("connectUser", {
+    //         success: false,
+    //         message: "User not found",
+    //       });
+    //     }
+
+    //     await db.users.update(
+    //       {
+    //         socketId: socket.id,
+    //         online: 1,
+    //       },
+    //       {
+    //         where: { id: userId },
+    //       }
+    //     );
+
+    //     socket.emit("connectUser", {
+    //       success: true,
+    //       message: "Connected successfully",
+    //       socketId: socket.id,
+    //     });
+    //   } catch (error) {
+    //     console.error("Error in connectUser:", error);
+    //     socket.emit("connectUser", {
+    //       success: false,
+    //       message: "Internal server error",
+    //     });
+    //   }
+    // });
+    socket.on("connectUser", async ({ userId }) => {
+      try {
         if (!userId) {
           return socket.emit("connectUser", {
             success: false,
             message: "User ID is required",
           });
         }
+
         const user = await db.users.findOne({
-          where: { id: userId },
-          raw: true,
+          where: { id: userId }
         });
 
         if (!user) {
@@ -28,20 +71,34 @@ module.exports = function (io) {
           });
         }
 
+        //  Store socket in global map (multiple sockets allowed)
+        if (!onlineUsers[userId]) onlineUsers[userId] = [];
+        onlineUsers[userId].push(socket.id);
+
+        // OPTIONAL: still update DB, but DB socketId will always be outdated
         await db.users.update(
           {
             socketId: socket.id,
             online: 1,
           },
-          {
-            where: { id: userId },
-          }
+          { where: { id: userId } }
         );
 
         socket.emit("connectUser", {
           success: true,
           message: "Connected successfully",
           socketId: socket.id,
+        });
+
+        // Remove socket on disconnect
+        socket.on("disconnect", () => {
+          if (onlineUsers[userId]) {
+            onlineUsers[userId] = onlineUsers[userId].filter(
+              (id) => id !== socket.id
+            );
+
+            if (onlineUsers[userId].length === 0) delete onlineUsers[userId];
+          }
         });
       } catch (error) {
         console.error("Error in connectUser:", error);
@@ -51,6 +108,7 @@ module.exports = function (io) {
         });
       }
     });
+
     socket.on("unreadNotificationCount", async (data) => {
       try {
         const { receiverId } = data;
@@ -586,28 +644,35 @@ module.exports = function (io) {
 
         // Function to emit to both driver and user
         const emitToBoth = (message, statusData, otpVerified = false) => {
-          // Emit to user
-          if (booking.userbook && booking.userbook.socketId) {
-            io.to(booking.userbook.socketId).emit("rideStatusUpdated", {
-              success: true,
-              message,
-              bookingId: booking.id,
-              status: statusData,
-              otpVerified
+
+          //  Emit to user (multiple sockets)
+          const userId = booking.userbook?.id;
+          if (userId && onlineUsers[userId]) {
+            onlineUsers[userId].forEach(sid => {
+              io.to(sid).emit("rideStatusUpdated", {
+                success: true,
+                message,
+                bookingId: booking.id,
+                status: statusData,
+                otpVerified
+              });
             });
           }
 
-          // Emit to driver
-          if (driverId && socket.id) { // socket.id is the current driver socket
-            socket.emit("rideStatusUpdated", {
-              success: true,
-              message,
-              bookingId: booking.id,
-              status: statusData,
-              otpVerified
+          //  Emit to driver (current socket)
+          if (driverId && onlineUsers[driverId]) {
+            onlineUsers[driverId].forEach(sid => {
+              io.to(sid).emit("rideStatusUpdated", {
+                success: true,
+                message,
+                bookingId: booking.id,
+                status: statusData,
+                otpVerified
+              });
             });
           }
         };
+
 
         //  STATUS 1 → DRIVER ARRIVED AT PICKUP
         if (status === "1") {
@@ -733,9 +798,91 @@ module.exports = function (io) {
 
 
 
+    // socket.on("bookingHistory", async (data) => {
+    //   try {
+    //     const { userId, status } = data;
+
+    //     if (!userId) {
+    //       return socket.emit("bookingHistory", {
+    //         success: false,
+    //         message: "User ID is required"
+    //       });
+    //     }
+
+    //     let statusCondition = {};
+
+    //     if (status) {
+    //       if (['0', '1', '2'].includes(status)) {
+    //         statusCondition = { [Op.in]: ['0', '1', '2'] };
+    //       } else if (status === '3') {
+    //         statusCondition = { [Op.in]: ['3', "4"] };
+    //       }
+    //     } else {
+    //       statusCondition = { [Op.in]: ['0', '1', '2'] };
+    //     }
+
+    //     const bookings = await db.bookings.findAll({
+    //       where: {
+    //         [Op.or]: [
+    //           { driverId: userId },
+    //           { userId: userId }
+    //         ],
+    //         status: statusCondition
+    //       },
+    //       include: [
+    //         {
+    //           model: db.users,
+    //           as: 'driverbook',
+    //           include: [{
+    //             model: db.vehicleDetails,
+    //             as: 'vehicleDetail',
+    //             required: false
+    //           }]
+    //         },
+    //         {
+    //           model: db.users,
+    //           as: 'userbook',
+    //         }
+    //       ]
+    //     });
+
+    //     socket.emit("bookingHistory", {
+    //       success: true,
+    //       message: "Booking history fetched successfully",
+    //       data: {
+    //         totalBookings: bookings.length,
+    //         bookings: bookings.map(booking => ({
+    //           bookingId: booking.id,
+    //           orderId: booking.orderId,
+    //           driverId: booking.driverId,
+    //           driverDetails: booking.driverbook,
+    //           vehicleDetail: booking.driverbook?.vehicleDetail,
+    //           userDetails: booking.userbook,
+    //           pickupLocation: booking.pickupLocation,
+    //           dropLocation: booking.dropLocation,
+    //           pickupLatitude: booking.pickupLatitude,
+    //           pickupLongitude: booking.pickupLongitude,
+    //           dropLatitude: booking.dropLatitude,
+    //           dropLongitude: booking.dropLongitude,
+    //           status: booking.status,
+    //           request: booking.request,
+    //           bookingDate: booking.bookingDate
+    //         }))
+    //       }
+    //     });
+
+    //   } catch (error) {
+    //     socket.emit("bookingHistory", {
+    //       success: false,
+    //       message: "Something went wrong while fetching booking history.",
+    //       error: error.message
+    //     });
+    //   }
+    // });
+
     socket.on("bookingHistory", async (data) => {
       try {
-        const { userId, status } = data;
+        const { userId, status, page = 1, limit = 10 } = data;
 
         if (!userId) {
           return socket.emit("bookingHistory", {
@@ -756,6 +903,20 @@ module.exports = function (io) {
           statusCondition = { [Op.in]: ['0', '1', '2'] };
         }
 
+        const offset = (page - 1) * limit;
+
+        //  First get total count (without pagination)
+        const totalBookings = await db.bookings.count({
+          where: {
+            [Op.or]: [
+              { driverId: userId },
+              { userId: userId }
+            ],
+            status: statusCondition
+          }
+        });
+
+        // Then get paginated data
         const bookings = await db.bookings.findAll({
           where: {
             [Op.or]: [
@@ -778,14 +939,19 @@ module.exports = function (io) {
               model: db.users,
               as: 'userbook',
             }
-          ]
+          ],
+          limit: parseInt(limit),
+          offset: offset,
+          order: [['id', 'DESC']]
         });
 
         socket.emit("bookingHistory", {
           success: true,
           message: "Booking history fetched successfully",
           data: {
-            totalBookings: bookings.length,
+            totalBookings,               //  total without pagination
+            currentPage: page,           //  added
+            totalPages: Math.ceil(totalBookings / limit), //  added
             bookings: bookings.map(booking => ({
               bookingId: booking.id,
               orderId: booking.orderId,
@@ -814,6 +980,7 @@ module.exports = function (io) {
         });
       }
     });
+
 
     socket.on("onlineStatusUpdate", async (data) => {
       try {
