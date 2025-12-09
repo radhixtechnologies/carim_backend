@@ -745,27 +745,11 @@ module.exports = {
 
     driverWaletRecharge: async (req, res) => {
         try {
-            if (!req.files || !req.files.file) {
-                return helper.failure(res, "No file uploaded");
-            }
-
-            const file = req.files.file;
-
-            let imagePath;
-            try {
-                // Use SAME upload function & same folder logic
-                imagePath = await helper.fileUpload(file);
-            } catch (err) {
-                return helper.failure(res, `Error uploading file: ${err.message}`);
-            }
-
             await db.transferscreenshot.create({
                 driverId: req.user.id,
-                image: imagePath   // this will be /uploads/xxxx.jpg
+                image: req.body.image   
             });
-
             return helper.success(res, "Driver Wallet Recharge created successfully");
-
         } catch (error) {
             console.log(error);
             return helper.failure(res, "Something went wrong");
