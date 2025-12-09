@@ -192,7 +192,7 @@ module.exports = {
                 where: {
                     id: driverId,
                     role: '2',
-                    online:'0'
+                    online: '0'
                 },
                 include: [{
                     model: db.vehicleDetails,
@@ -296,7 +296,7 @@ module.exports = {
             return helper.failure(res, "Something went wrong while booking the ride.");
         }
     },
-  
+
 
     driverAccptReject: (io) => {
         return async (req, res) => {
@@ -411,7 +411,8 @@ module.exports = {
                     dropLongitude: booking.dropLongitude,
                     status: booking.status,
                     request: booking.request,
-                    bookingDate: booking.bookingDate
+                    bookingDate: booking.bookingDate,
+                    orderId: booking.orderId
                 }))
             });
 
@@ -458,7 +459,7 @@ module.exports = {
             return helper.failure(res, "Something went wrong while updating pickup location.");
         }
     },
-    
+
     bookingHistory: async (req, res) => {
         try {
             const userId = req.user.id;
@@ -612,7 +613,7 @@ module.exports = {
         }
     },
 
-    
+
 
 
     cancelRide: async (req, res) => {
@@ -748,7 +749,7 @@ module.exports = {
         try {
             await db.transferscreenshot.create({
                 driverId: req.user.id,
-                image: req.body.image   
+                image: req.body.image
             });
             return helper.success(res, "Driver Wallet Recharge created successfully");
         } catch (error) {
