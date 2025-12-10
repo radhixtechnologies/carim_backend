@@ -1389,31 +1389,48 @@ module.exports = function (io) {
 
     socket.on('user_blocked_status', async (data) => {
       try {
-        const { userId } = data;
-        if (!userId) {
+        const { constantId } = data;
+
+        if (!constantId) {
           return socket.emit("user_blocked_status", {
             success: false,
-            message: "User ID is required"
+            message: "Constant ID is required"
           });
         }
-        const user = await db.users.findOne({
-          where: { id: userId },
+
+        const chatConst = await db.chat_constant.findOne({
+          where: { id: constantId },
+          attributes: ["id", "sender_id", "reciever_id"]
+        });
+
+        if (!chatConst) {
+          return socket.emit("user_blocked_status", {
+            success: false,
+            message: "Chat constant not found"
+          });
+        }
+
+        const userIds = [chatConst.sender_id, chatConst.reciever_id];
+
+        const users = await db.users.findAll({
+          where: { id: userIds },
           attributes: ["id", "block"]
         });
 
-        if (!user) {
-          return socket.emit("user_blocked_status", {
-            success: false,
-            message: "User not found"
-          });
-        }
+        let statusMap = {};
+        users.forEach(u => {
+          statusMap[u.id] = u.block === "1" ? true : false;
+        });
 
         socket.emit("user_blocked_status", {
           success: true,
-          message: "User block status fetched successfully",
+          message: "Users block status fetched successfully",
           data: {
-            userId: user.id,
-            isBlocked: user.block === "1" ? true : false
+            constantId: chatConst.id,
+            senderId: chatConst.sender_id,
+            receiverId: chatConst.reciever_id,
+            senderBlocked: statusMap[chatConst.sender_id] || false,
+            receiverBlocked: statusMap[chatConst.reciever_id] || false
           }
         });
 
@@ -1425,6 +1442,7 @@ module.exports = function (io) {
         });
       }
     });
+
 
 
 
