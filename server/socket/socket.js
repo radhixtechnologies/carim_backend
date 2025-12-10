@@ -926,7 +926,7 @@ module.exports = function (io) {
               { userId: userId }
             ],
             status: statusCondition,
-            request: 1
+            request: '1'
           }
         });
 
@@ -938,7 +938,7 @@ module.exports = function (io) {
               { userId: userId }
             ],
             status: statusCondition,
-            request: 1
+            request: '1'
           },
           include: [
             {
