@@ -925,7 +925,8 @@ module.exports = function (io) {
               { driverId: userId },
               { userId: userId }
             ],
-            status: statusCondition
+            status: statusCondition,
+            request: 1
           }
         });
 
@@ -936,7 +937,8 @@ module.exports = function (io) {
               { driverId: userId },
               { userId: userId }
             ],
-            status: statusCondition
+            status: statusCondition,
+            request: 1
           },
           include: [
             {
@@ -1030,7 +1032,7 @@ module.exports = function (io) {
       }
     });
 
-   
+
 
     // socket.on("send_message", async (get_data) => {
     //   try {
