@@ -489,7 +489,8 @@ module.exports = {
                         { driverId: userId },
                         { userId: userId }
                     ],
-                    status: statusCondition
+                    status: statusCondition,
+                     request: 1
                 }
             });
 
@@ -499,7 +500,8 @@ module.exports = {
                         { driverId: userId },
                         { userId: userId }
                     ],
-                    status: statusCondition
+                    status: statusCondition,
+                     request: 1
                 },
                 include: [
                     {
