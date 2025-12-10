@@ -420,6 +420,47 @@ module.exports = {
             return helper.failure(res, "Something went wrong while fetching requests.");
         }
     },
+    //    requestList: (io) => {
+    //     return async (req, res) => {
+    //     try {
+    //         const driverId = req.user.id;
+
+    //         const requests = await db.bookings.findAll({
+    //             where: {
+    //                 driverId: driverId,
+    //                 status: '0',
+    //                 request: '0'
+    //             },
+    //             include: [{
+    //                 model: db.users,
+    //                 as: 'userbook',
+    //             }]
+    //         });
+
+    //         return helper.success(res, 'Pending ride requests fetched successfully', {
+    //             totalRequests: requests.length,
+    //             requests: requests.map(booking => ({
+    //                 bookingId: booking.id,
+    //                 userId: booking.userId,
+    //                 userDetails: booking.userbook,
+    //                 pickupLocation: booking.pickupLocation,
+    //                 dropLocation: booking.dropLocation,
+    //                 pickupLatitude: booking.pickupLatitude,
+    //                 pickupLongitude: booking.pickupLongitude,
+    //                 dropLatitude: booking.dropLatitude,
+    //                 dropLongitude: booking.dropLongitude,
+    //                 status: booking.status,
+    //                 request: booking.request,
+    //                 bookingDate: booking.bookingDate,
+    //                 orderId: booking.orderId
+    //             }))
+    //         });
+
+    //     } catch (error) {
+    //         return helper.failure(res, "Something went wrong while fetching requests.");
+    //     }
+    // },
+
     updatedPickupLocation: async (req, res) => {
         try {
             const userId = req.user.id;
@@ -749,11 +790,11 @@ module.exports = {
 
     driverWaletRecharge: async (req, res) => {
         try {
-            await db.transferscreenshot.create({
+           const data=  await db.transferscreenshot.create({
                 driverId: req.user.id,
                 image: req.body.image
             });
-            return helper.success(res, "Driver Wallet Recharge created successfully");
+            return helper.success(res, "Driver Wallet Recharge created successfully",data);
         } catch (error) {
             console.log(error);
             return helper.failure(res, "Something went wrong");
