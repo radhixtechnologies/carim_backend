@@ -1251,8 +1251,6 @@ module.exports = function (io) {
           },
           raw: true,
         });
-        console.log(findConstant,"findConstantfindConstantfindConstantfindConstantfindConstant");
-        
 
         let chatConstantId;
 
@@ -1275,9 +1273,6 @@ module.exports = function (io) {
           chatConstant_id: chatConstantId,
           bookingId: get_data.bookingId || null,
         });
-
-        console.log(createMessage,"createMessagecreateMessagecreateMessagecreateMessage");
-        
 
         await db.chat_constant.update(
           {
@@ -1320,20 +1315,15 @@ module.exports = function (io) {
           raw: true,
         });
 
-console.log(getMsgData,"getMsgDatagetMsgDatagetMsgDatagetMsgDatagetMsgDatagetMsgData");
-
-
         let socketUser = await db.users.findOne({
           where: { id: get_data.reciever_id },
           raw: true,
         });
-console.log(socketUser,"socketUsersocketUsersocketUsersocketUsersocketUser");
 
         if (socketUser) {
-          io.to(socketUser.socket_id).emit("user_constant_list", null);
-          io.to(socketUser.socket_id).emit("send_message", getMsgData);
+          io.to(socketUser.socketId).emit("user_constant_list", null);
+          io.to(socketUser.socketId).emit("send_message", getMsgData);
         }
-
 
         socket.emit("send_message", getMsgData);
 
