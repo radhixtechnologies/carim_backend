@@ -1471,6 +1471,46 @@ module.exports = function (io) {
       }
     });
 
+    socket.on('user_blocked_status', async (data) => {
+      try {
+        const { userId } = data;
+        if (!userId) {
+          return socket.emit("user_blocked_status", {
+            success: false,
+            message: "User ID is required"
+          });
+        }
+        const user = await db.users.findOne({
+          where: { id: userId },
+          attributes: ["id", "block"]
+        });
+
+        if (!user) {
+          return socket.emit("user_blocked_status", {
+            success: false,
+            message: "User not found"
+          });
+        }
+
+        socket.emit("user_blocked_status", {
+          success: true,
+          message: "User block status fetched successfully",
+          data: {
+            userId: user.id,
+            isBlocked: user.block === "1" ? true : false
+          }
+        });
+
+      } catch (error) {
+        console.error("Error checking block status:", error);
+        socket.emit("user_blocked_status", {
+          success: false,
+          message: "Something went wrong"
+        });
+      }
+    });
+
+
 
   });
 };
