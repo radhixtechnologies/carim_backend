@@ -55,9 +55,9 @@ module.exports = {
 
                 await db.users.update(
                     {
-                        online:'1',
+                        online: '1',
                         otp: otp,
-                        rideOtp:rideOtp,
+                        rideOtp: rideOtp,
                         updatedAt: helper.unixTimestamp()
                     },
                     { where: { id: user.id } }
@@ -87,7 +87,7 @@ module.exports = {
                     deviceType: deviceType || null,
                     loginTime: helper.unixTimestamp(),
                     otp: otp,
-                    rideOtp:rideOtp,
+                    rideOtp: rideOtp,
                     status: "1"
                 });
 
@@ -771,12 +771,13 @@ module.exports = {
                 where: whereCondition,
                 order: [["createdAt", "DESC"]],
             });
-
-            return res.status(200).json({
+            return res.json({
                 status: true,
                 message: "Transaction history fetched successfully",
-                currentBalance: currentBalance,
-                history: history
+                body: {
+                    currentBalance: currentBalance,
+                    history: history
+                }
             });
 
         } catch (error) {
@@ -788,6 +789,7 @@ module.exports = {
             });
         }
     },
+
 
     userActiveRide: async (req, res) => {
         try {
@@ -856,7 +858,7 @@ module.exports = {
         }
     },
 
-    
+
 
 
 }

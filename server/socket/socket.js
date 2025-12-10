@@ -796,90 +796,6 @@ module.exports = function (io) {
       }
     });
 
-
-
-    // socket.on("bookingHistory", async (data) => {
-    //   try {
-    //     const { userId, status } = data;
-
-    //     if (!userId) {
-    //       return socket.emit("bookingHistory", {
-    //         success: false,
-    //         message: "User ID is required"
-    //       });
-    //     }
-
-    //     let statusCondition = {};
-
-    //     if (status) {
-    //       if (['0', '1', '2'].includes(status)) {
-    //         statusCondition = { [Op.in]: ['0', '1', '2'] };
-    //       } else if (status === '3') {
-    //         statusCondition = { [Op.in]: ['3', "4"] };
-    //       }
-    //     } else {
-    //       statusCondition = { [Op.in]: ['0', '1', '2'] };
-    //     }
-
-    //     const bookings = await db.bookings.findAll({
-    //       where: {
-    //         [Op.or]: [
-    //           { driverId: userId },
-    //           { userId: userId }
-    //         ],
-    //         status: statusCondition
-    //       },
-    //       include: [
-    //         {
-    //           model: db.users,
-    //           as: 'driverbook',
-    //           include: [{
-    //             model: db.vehicleDetails,
-    //             as: 'vehicleDetail',
-    //             required: false
-    //           }]
-    //         },
-    //         {
-    //           model: db.users,
-    //           as: 'userbook',
-    //         }
-    //       ]
-    //     });
-
-    //     socket.emit("bookingHistory", {
-    //       success: true,
-    //       message: "Booking history fetched successfully",
-    //       data: {
-    //         totalBookings: bookings.length,
-    //         bookings: bookings.map(booking => ({
-    //           bookingId: booking.id,
-    //           orderId: booking.orderId,
-    //           driverId: booking.driverId,
-    //           driverDetails: booking.driverbook,
-    //           vehicleDetail: booking.driverbook?.vehicleDetail,
-    //           userDetails: booking.userbook,
-    //           pickupLocation: booking.pickupLocation,
-    //           dropLocation: booking.dropLocation,
-    //           pickupLatitude: booking.pickupLatitude,
-    //           pickupLongitude: booking.pickupLongitude,
-    //           dropLatitude: booking.dropLatitude,
-    //           dropLongitude: booking.dropLongitude,
-    //           status: booking.status,
-    //           request: booking.request,
-    //           bookingDate: booking.bookingDate
-    //         }))
-    //       }
-    //     });
-
-    //   } catch (error) {
-    //     socket.emit("bookingHistory", {
-    //       success: false,
-    //       message: "Something went wrong while fetching booking history.",
-    //       error: error.message
-    //     });
-    //   }
-    // });
-
     socket.on("bookingHistory", async (data) => {
       try {
         const { userId, status, page = 1, limit = 10 } = data;
@@ -1335,6 +1251,8 @@ module.exports = function (io) {
           },
           raw: true,
         });
+        console.log(findConstant,"findConstantfindConstantfindConstantfindConstantfindConstant");
+        
 
         let chatConstantId;
 
@@ -1357,6 +1275,9 @@ module.exports = function (io) {
           chatConstant_id: chatConstantId,
           bookingId: get_data.bookingId || null,
         });
+
+        console.log(createMessage,"createMessagecreateMessagecreateMessagecreateMessage");
+        
 
         await db.chat_constant.update(
           {
@@ -1399,15 +1320,20 @@ module.exports = function (io) {
           raw: true,
         });
 
+console.log(getMsgData,"getMsgDatagetMsgDatagetMsgDatagetMsgDatagetMsgDatagetMsgData");
+
+
         let socketUser = await db.users.findOne({
           where: { id: get_data.reciever_id },
           raw: true,
         });
+console.log(socketUser,"socketUsersocketUsersocketUsersocketUsersocketUser");
 
         if (socketUser) {
           io.to(socketUser.socket_id).emit("user_constant_list", null);
           io.to(socketUser.socket_id).emit("send_message", getMsgData);
         }
+
 
         socket.emit("send_message", getMsgData);
 
