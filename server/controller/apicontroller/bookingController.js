@@ -335,7 +335,7 @@ module.exports = {
                     where: {
                         id: driverId,
                         role: '2',
-                        online: '0'
+                        online: '1'
                     },
                     include: [{
                         model: db.vehicleDetails,
@@ -343,6 +343,7 @@ module.exports = {
                         required: true
                     }]
                 });
+                
 
                 if (!driver) {
                     return helper.error(res, 'Driver not found or not available', 404);
@@ -464,7 +465,6 @@ module.exports = {
         };
     },
 
-
     driverAccptReject: (io) => {
         return async (req, res) => {
             try {
@@ -547,7 +547,6 @@ module.exports = {
         };
     },
 
-
     requestList: async (req, res) => {
         try {
             const driverId = req.user.id;
@@ -587,7 +586,6 @@ module.exports = {
             return helper.failure(res, "Something went wrong while fetching requests.");
         }
     },
-
 
     updatedPickupLocation: async (req, res) => {
         try {
@@ -924,12 +922,6 @@ module.exports = {
             return helper.failure(res, "Something went wrong");
         }
     }
-
-
-
-
-
-
 
 
 
