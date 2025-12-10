@@ -81,7 +81,7 @@ module.exports = function(sequelize, DataTypes) {
       defaultValue: 0
     },
     bio: {
-    type: DataTypes.STRING(900),
+      type: DataTypes.STRING(900),
       allowNull: false,
       defaultValue: ""
     },

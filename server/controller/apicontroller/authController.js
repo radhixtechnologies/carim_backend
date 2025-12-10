@@ -489,7 +489,8 @@ module.exports = {
                 vehicleNumber,
                 vehicleColor,
                 vehicleDocument,
-                drivingLicence
+                drivingLicence,
+                passengerCount
             } = req.body;
 
             const driverId = req.user.id;
@@ -532,7 +533,8 @@ module.exports = {
                     vehicleNumber: vehicleNumber,
                     vehicleColor: vehicleColor,
                     vehicleDocument: vehicleDocument,
-                    drivingLicence: drivingLicence
+                    drivingLicence: drivingLicence,
+                    passengerCount:passengerCount
                 }, { transaction });
 
                 await db.users.update(
@@ -558,6 +560,7 @@ module.exports = {
                     vehicleColor: vehicle.vehicleColor,
                     vehicleDocument: vehicle.vehicleDocument,
                     drivingLicence: vehicle.drivingLicence,
+                    passengerCount:vehicle.passengerCount,
                     userVehicleStatus: updatedUser.vehicle
                 };
 
@@ -607,7 +610,6 @@ module.exports = {
         }
     },
     vehicleEdit: async (req, res) => {
-        ``
         try {
             const v = new Validator(req.body, {
 
@@ -626,7 +628,8 @@ module.exports = {
                 vehicleNumber,
                 vehicleColor,
                 vehicleDocument,
-                drivingLicence
+                drivingLicence,
+                passengerCount
             } = req.body;
 
             const driverId = req.user.id;
@@ -673,6 +676,7 @@ module.exports = {
                 vehicleColor: vehicleColor,
                 vehicleDocument: vehicleDocument,
                 drivingLicence: drivingLicence,
+                passengerCount:passengerCount,
                 updatedAt: new Date()
             }, {
                 where: {
@@ -694,6 +698,7 @@ module.exports = {
                 vehicleColor: updatedVehicle.vehicleColor,
                 vehicleDocument: updatedVehicle.vehicleDocument,
                 drivingLicence: updatedVehicle.drivingLicence,
+                passengerCount:updatedVehicle.passengerCount,
                 updatedAt: updatedVehicle.updatedAt
             };
 
