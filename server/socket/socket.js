@@ -60,10 +60,7 @@ module.exports = function (io) {
           });
         }
 
-        const user = await db.users.findOne({
-          where: { id: userId }
-        });
-
+        const user = await db.users.findOne({ where: { id: userId } });
         if (!user) {
           return socket.emit("connectUser", {
             success: false,
@@ -71,16 +68,23 @@ module.exports = function (io) {
           });
         }
 
-        //  Store socket in global map (multiple sockets allowed)
-        if (!onlineUsers[userId]) onlineUsers[userId] = [];
-        onlineUsers[userId].push(socket.id);
+        // Disconnect previous sockets of the same user
+        if (onlineUsers[userId]) {
+          onlineUsers[userId].forEach((oldSocketId) => {
+            const oldSocket = io.sockets.sockets.get(oldSocketId);
+            if (oldSocket) oldSocket.disconnect(true);
+          });
+        }
 
-        // OPTIONAL: still update DB, but DB socketId will always be outdated
+        // Save new socket
+        onlineUsers[userId] = [socket.id];
+
+        // Store in socket object
+        socket.userId = userId;
+
+        // Update DB
         await db.users.update(
-          {
-            socketId: socket.id,
-            online: '1',
-          },
+          { socketId: socket.id, online: "1" },
           { where: { id: userId } }
         );
 
@@ -90,24 +94,19 @@ module.exports = function (io) {
           socketId: socket.id,
         });
 
-        // Remove socket on disconnect
         socket.on("disconnect", () => {
           if (onlineUsers[userId]) {
-            onlineUsers[userId] = onlineUsers[userId].filter(
-              (id) => id !== socket.id
-            );
-
-            if (onlineUsers[userId].length === 0) delete onlineUsers[userId];
+            delete onlineUsers[userId];
           }
         });
       } catch (error) {
-        console.error("Error in connectUser:", error);
         socket.emit("connectUser", {
           success: false,
           message: "Internal server error",
         });
       }
     });
+
 
     socket.on("unreadNotificationCount", async (data) => {
       try {
@@ -809,71 +808,61 @@ module.exports = function (io) {
 
     //     let statusCondition = {};
 
-    //     // UPDATED STATUS LOGIC
     //     if (status) {
-
-    //       // Pending / Searching / Accepted
     //       if (['0', '1', '2'].includes(status)) {
     //         statusCondition = { [Op.in]: ['0', '1', '2'] };
-    //       }
-
-    //       // Completed rides
-    //       else if (status === '3') {
-    //         statusCondition = { [Op.in]: ['3','4','5'] };
-    //       }
-
-    //       // Cancelled rides (Driver = 4, User = 5)
-    //       else if (status === '4') {
+    //       } else if (status === '3') {
+    //         statusCondition = { [Op.in]: ['3', '4', '5'] };
+    //       } else if (status === '4') {
     //         statusCondition = { [Op.in]: ['4', '5'] };
     //       }
-
     //     } else {
-    //       // Default list → Active rides
     //       statusCondition = { [Op.in]: ['0', '1', '2'] };
     //     }
 
     //     const offset = (page - 1) * limit;
 
-    //     //  Count total
-    //     const totalBookings = await db.bookings.count({
-    //       where: {
-    //         [Op.or]: [
-    //           { driverId: userId },
-    //           { userId: userId }
-    //         ],
-    //         status: statusCondition,
-    //         request: '1'
-    //       }
-    //     });
+    //     // REQUEST FILTER FIXED
+    //     const requestFilter = {
+    //       [Op.or]: [
+    //         { request: '1' },
+    //         {
+    //           request: '2',
+    //           status: { [Op.in]: ['3', '4', '5'] }
+    //         }
+    //       ]
+    //     };
 
-    //     //  Get paginated data
+    //     const whereCondition = {
+    //       [Op.or]: [{ driverId: userId }, { userId: userId }],
+    //       status: statusCondition,
+    //       ...requestFilter
+    //     };
+
+    //     const totalBookings = await db.bookings.count({ where: whereCondition });
+
     //     const bookings = await db.bookings.findAll({
-    //       where: {
-    //         [Op.or]: [
-    //           { driverId: userId },
-    //           { userId: userId }
-    //         ],
-    //         status: statusCondition,
-    //         request: '1'
-    //       },
+    //       where: whereCondition,
     //       include: [
     //         {
     //           model: db.users,
-    //           as: 'driverbook',
-    //           include: [{
-    //             model: db.vehicleDetails,
-    //             as: 'vehicleDetail',
-    //             required: false
-    //           }]
+    //           as: "driverbook",
+    //           include: [
+    //             {
+    //               model: db.vehicleDetails,
+    //               as: "vehicleDetail",
+    //               required: false
+    //             }
+    //           ]
     //         },
     //         {
     //           model: db.users,
-    //           as: 'userbook',
+    //           as: "userbook"
     //         }
     //       ],
     //       limit: parseInt(limit),
     //       offset: offset,
-    //       order: [['id', 'DESC']]
+    //       order: [["id", "DESC"]]
     //     });
 
     //     socket.emit("bookingHistory", {
@@ -922,90 +911,62 @@ module.exports = function (io) {
           });
         }
 
-        let statusCondition = {};
-
-        // UPDATED STATUS LOGIC
-        if (status) {
-
-          // Pending / Searching / Accepted
-          if (['0', '1', '2'].includes(status)) {
-            statusCondition = { [Op.in]: ['0', '1', '2'] };
-          }
-
-          // Completed rides
-          else if (status === '3') {
-            statusCondition = { [Op.in]: ['3', '4', '5'] };
-          }
-
-          // Cancelled rides (Driver = 4, User = 5)
-          else if (status === '4') {
-            statusCondition = { [Op.in]: ['4', '5'] };
-          }
-
-        } else {
-          // Default list → Active rides
-          statusCondition = { [Op.in]: ['0', '1', '2'] };
-        }
-
         const offset = (page - 1) * limit;
 
-        // ---------------------------
-        //  REQUEST LOGIC UPDATED HERE
-        // ---------------------------
-        const requestFilter = {
+        // OLD STATUS GROUP LOGIC
+        let statusCondition = {};
+
+        if (status !== undefined && status !== null && status !== "") {
+
+          if (['0', '1', '2'].includes(status)) {
+            statusCondition = { status: { [Op.in]: ['0', '1', '2'] } };
+          }
+
+          else if (status === '3') {
+            statusCondition = { status: { [Op.in]: ['3', '4', '5'] } };
+          }
+
+          else if (status === '4') {
+            statusCondition = { status: { [Op.in]: ['4', '5'] } };
+          }
+
+          else {
+            statusCondition = { status: status };
+          }
+
+        }
+        const whereCondition = {
           [Op.or]: [
-            { request: '1' },
-            {
-              request: '2',
-              status: { [Op.in]: ['3', '4', '5'] }
-            }
-          ]
+            { driverId: userId },
+            { userId: userId }
+          ],
+          ...statusCondition
         };
 
-        // ---------------------------
-        //  Count total
-        // ---------------------------
-        const totalBookings = await db.bookings.count({
-          where: {
-            [Op.or]: [
-              { driverId: userId },
-              { userId: userId }
-            ],
-            status: statusCondition,
-            ...requestFilter
-          }
-        });
+        const totalBookings = await db.bookings.count({ where: whereCondition });
 
-        // ---------------------------
-        //  Get paginated data
-        // ---------------------------
         const bookings = await db.bookings.findAll({
-          where: {
-            [Op.or]: [
-              { driverId: userId },
-              { userId: userId }
-            ],
-            status: statusCondition,
-            ...requestFilter
-          },
+          where: whereCondition,
           include: [
             {
               model: db.users,
-              as: 'driverbook',
-              include: [{
-                model: db.vehicleDetails,
-                as: 'vehicleDetail',
-                required: false
-              }]
+              as: "driverbook",
+              include: [
+                {
+                  model: db.vehicleDetails,
+                  as: "vehicleDetail",
+                  required: false
+                }
+              ]
             },
             {
               model: db.users,
-              as: 'userbook',
+              as: "userbook"
             }
           ],
           limit: parseInt(limit),
-          offset: offset,
-          order: [['id', 'DESC']]
+          offset,
+          order: [["id", "DESC"]]
         });
 
         socket.emit("bookingHistory", {
@@ -1043,6 +1004,7 @@ module.exports = function (io) {
         });
       }
     });
+
 
 
     socket.on("onlineStatusUpdate", async (data) => {
