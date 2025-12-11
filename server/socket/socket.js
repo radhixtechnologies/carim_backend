@@ -79,7 +79,7 @@ module.exports = function (io) {
         await db.users.update(
           {
             socketId: socket.id,
-            online: 1,
+            online: '1',
           },
           { where: { id: userId } }
         );

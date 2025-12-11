@@ -343,8 +343,6 @@ module.exports = {
                         required: true
                     }]
                 });
-                
-
                 if (!driver) {
                     return helper.error(res, 'Driver not found or not available', 404);
                 }
