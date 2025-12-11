@@ -1133,7 +1133,12 @@ module.exports = function (io) {
                 ),
                 "unread_msg"
               ],
-
+              [
+                Sequelize.literal(
+                  "(SELECT orderId FROM bookings WHERE bookings.id = chat_constant.bookingId)"
+                ),
+                "orderId"
+              ],
               // Existing
               [
                 Sequelize.literal(
