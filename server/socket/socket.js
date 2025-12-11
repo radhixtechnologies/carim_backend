@@ -819,7 +819,7 @@ module.exports = function (io) {
 
           // Completed rides
           else if (status === '3') {
-            statusCondition = { [Op.in]: ['3'] };
+            statusCondition = { [Op.in]: ['3','4','5'] };
           }
 
           // Cancelled rides (Driver = 4, User = 5)
