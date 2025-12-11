@@ -619,7 +619,6 @@ module.exports = function (io) {
             message: "Invalid status value."
           });
         }
-
         const booking = await db.bookings.findOne({
           where: {
             id: bookingId,
