@@ -796,6 +796,121 @@ module.exports = function (io) {
       }
     });
 
+    // socket.on("bookingHistory", async (data) => {
+    //   try {
+    //     const { userId, status, page = 1, limit = 10 } = data;
+
+    //     if (!userId) {
+    //       return socket.emit("bookingHistory", {
+    //         success: false,
+    //         message: "User ID is required"
+    //       });
+    //     }
+
+    //     let statusCondition = {};
+
+    //     // UPDATED STATUS LOGIC
+    //     if (status) {
+
+    //       // Pending / Searching / Accepted
+    //       if (['0', '1', '2'].includes(status)) {
+    //         statusCondition = { [Op.in]: ['0', '1', '2'] };
+    //       }
+
+    //       // Completed rides
+    //       else if (status === '3') {
+    //         statusCondition = { [Op.in]: ['3','4','5'] };
+    //       }
+
+    //       // Cancelled rides (Driver = 4, User = 5)
+    //       else if (status === '4') {
+    //         statusCondition = { [Op.in]: ['4', '5'] };
+    //       }
+
+    //     } else {
+    //       // Default list → Active rides
+    //       statusCondition = { [Op.in]: ['0', '1', '2'] };
+    //     }
+
+    //     const offset = (page - 1) * limit;
+
+    //     //  Count total
+    //     const totalBookings = await db.bookings.count({
+    //       where: {
+    //         [Op.or]: [
+    //           { driverId: userId },
+    //           { userId: userId }
+    //         ],
+    //         status: statusCondition,
+    //         request: '1'
+    //       }
+    //     });
+
+    //     //  Get paginated data
+    //     const bookings = await db.bookings.findAll({
+    //       where: {
+    //         [Op.or]: [
+    //           { driverId: userId },
+    //           { userId: userId }
+    //         ],
+    //         status: statusCondition,
+    //         request: '1'
+    //       },
+    //       include: [
+    //         {
+    //           model: db.users,
+    //           as: 'driverbook',
+    //           include: [{
+    //             model: db.vehicleDetails,
+    //             as: 'vehicleDetail',
+    //             required: false
+    //           }]
+    //         },
+    //         {
+    //           model: db.users,
+    //           as: 'userbook',
+    //         }
+    //       ],
+    //       limit: parseInt(limit),
+    //       offset: offset,
+    //       order: [['id', 'DESC']]
+    //     });
+
+    //     socket.emit("bookingHistory", {
+    //       success: true,
+    //       message: "Booking history fetched successfully",
+    //       data: {
+    //         totalBookings,
+    //         currentPage: page,
+    //         totalPages: Math.ceil(totalBookings / limit),
+    //         bookings: bookings.map(booking => ({
+    //           bookingId: booking.id,
+    //           orderId: booking.orderId,
+    //           driverId: booking.driverId,
+    //           driverDetails: booking.driverbook,
+    //           vehicleDetail: booking.driverbook?.vehicleDetail,
+    //           userDetails: booking.userbook,
+    //           pickupLocation: booking.pickupLocation,
+    //           dropLocation: booking.dropLocation,
+    //           pickupLatitude: booking.pickupLatitude,
+    //           pickupLongitude: booking.pickupLongitude,
+    //           dropLatitude: booking.dropLatitude,
+    //           dropLongitude: booking.dropLongitude,
+    //           status: booking.status,
+    //           request: booking.request,
+    //           bookingDate: booking.bookingDate
+    //         }))
+    //       }
+    //     });
+
+    //   } catch (error) {
+    //     socket.emit("bookingHistory", {
+    //       success: false,
+    //       message: "Something went wrong while fetching booking history.",
+    //       error: error.message
+    //     });
+    //   }
+    // });
     socket.on("bookingHistory", async (data) => {
       try {
         const { userId, status, page = 1, limit = 10 } = data;
@@ -819,7 +934,7 @@ module.exports = function (io) {
 
           // Completed rides
           else if (status === '3') {
-            statusCondition = { [Op.in]: ['3','4','5'] };
+            statusCondition = { [Op.in]: ['3', '4', '5'] };
           }
 
           // Cancelled rides (Driver = 4, User = 5)
@@ -834,7 +949,22 @@ module.exports = function (io) {
 
         const offset = (page - 1) * limit;
 
+        // ---------------------------
+        //  REQUEST LOGIC UPDATED HERE
+        // ---------------------------
+        const requestFilter = {
+          [Op.or]: [
+            { request: '1' },
+            {
+              request: '2',
+              status: { [Op.in]: ['3', '4', '5'] }
+            }
+          ]
+        };
+
+        // ---------------------------
         //  Count total
+        // ---------------------------
         const totalBookings = await db.bookings.count({
           where: {
             [Op.or]: [
@@ -842,11 +972,13 @@ module.exports = function (io) {
               { userId: userId }
             ],
             status: statusCondition,
-            // request: '1'
+            ...requestFilter
           }
         });
 
+        // ---------------------------
         //  Get paginated data
+        // ---------------------------
         const bookings = await db.bookings.findAll({
           where: {
             [Op.or]: [
@@ -854,7 +986,7 @@ module.exports = function (io) {
               { userId: userId }
             ],
             status: statusCondition,
-            // request: '1'
+            ...requestFilter
           },
           include: [
             {
@@ -911,6 +1043,7 @@ module.exports = function (io) {
         });
       }
     });
+
 
     socket.on("onlineStatusUpdate", async (data) => {
       try {
@@ -983,7 +1116,7 @@ module.exports = function (io) {
         console.error("Error updating read status:", error);
       }
     });
-  
+
     socket.on("user_constant_list", async (get_data) => {
       try {
 
