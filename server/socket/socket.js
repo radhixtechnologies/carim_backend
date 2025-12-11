@@ -842,7 +842,7 @@ module.exports = function (io) {
               { userId: userId }
             ],
             status: statusCondition,
-            request: '1'
+            // request: '1'
           }
         });
 
@@ -854,7 +854,7 @@ module.exports = function (io) {
               { userId: userId }
             ],
             status: statusCondition,
-            request: '1'
+            // request: '1'
           },
           include: [
             {
@@ -911,109 +911,6 @@ module.exports = function (io) {
         });
       }
     });
-
-    // socket.on("bookingHistory", async (data) => {
-    //   try {
-    //     const { userId, status, page = 1, limit = 10 } = data;
-
-    //     if (!userId) {
-    //       return socket.emit("bookingHistory", {
-    //         success: false,
-    //         message: "User ID is required"
-    //       });
-    //     }
-
-    //     let statusCondition = {};
-
-    //     // -------------------------------------
-    //     // ONLY THESE 3 SHOULD COME:
-    //     // 3 => completed
-    //     // 4 => rejected by driver
-    //     // 5 => cancelled by user
-    //     // -------------------------------------
-    //     statusCondition = { [Op.in]: ['3', '4', '5'] };
-    //     // -------------------------------------
-
-    //     const offset = (page - 1) * limit;
-
-    //     // Count total
-    //     const totalBookings = await db.bookings.count({
-    //       where: {
-    //         [Op.or]: [
-    //           { driverId: userId },
-    //           { userId: userId }
-    //         ],
-    //         status: statusCondition,
-    //         request: '1'
-    //       }
-    //     });
-
-    //     // Get paginated data
-    //     const bookings = await db.bookings.findAll({
-    //       where: {
-    //         [Op.or]: [
-    //           { driverId: userId },
-    //           { userId: userId }
-    //         ],
-    //         status: statusCondition,
-    //         request: '1'
-    //       },
-    //       include: [
-    //         {
-    //           model: db.users,
-    //           as: 'driverbook',
-    //           include: [{
-    //             model: db.vehicleDetails,
-    //             as: 'vehicleDetail',
-    //             required: false
-    //           }]
-    //         },
-    //         {
-    //           model: db.users,
-    //           as: 'userbook',
-    //         }
-    //       ],
-    //       limit: parseInt(limit),
-    //       offset: offset,
-    //       order: [['id', 'DESC']]
-    //     });
-
-    //     socket.emit("bookingHistory", {
-    //       success: true,
-    //       message: "Booking history fetched successfully",
-    //       data: {
-    //         totalBookings,
-    //         currentPage: page,
-    //         totalPages: Math.ceil(totalBookings / limit),
-    //         bookings: bookings.map(booking => ({
-    //           bookingId: booking.id,
-    //           orderId: booking.orderId,
-    //           driverId: booking.driverId,
-    //           driverDetails: booking.driverbook,
-    //           vehicleDetail: booking.driverbook?.vehicleDetail,
-    //           userDetails: booking.userbook,
-    //           pickupLocation: booking.pickupLocation,
-    //           dropLocation: booking.dropLocation,
-    //           pickupLatitude: booking.pickupLatitude,
-    //           pickupLongitude: booking.pickupLongitude,
-    //           dropLatitude: booking.dropLatitude,
-    //           dropLongitude: booking.dropLongitude,
-    //           status: booking.status,
-    //           request: booking.request,
-    //           bookingDate: booking.bookingDate
-    //         }))
-    //       }
-    //     });
-
-    //   } catch (error) {
-    //     socket.emit("bookingHistory", {
-    //       success: false,
-    //       message: "Something went wrong while fetching booking history.",
-    //       error: error.message
-    //     });
-    //   }
-    // });
-
 
     socket.on("onlineStatusUpdate", async (data) => {
       try {
@@ -1086,98 +983,7 @@ module.exports = function (io) {
         console.error("Error updating read status:", error);
       }
     });
-    // socket.on("user_constant_list", async (get_data) => {
-    //   try {
-
-    //     let whereCondition = {
-    //       [Op.or]: [
-    //         { sender_id: get_data.sender_id },
-    //         { reciever_id: get_data.sender_id },
-    //       ],
-    //       deletedId: {
-    //         [Op.not]: get_data.sender_id,
-    //       },
-    //     };
-
-    //     if (get_data.bookingId) {
-    //       whereCondition.bookingId = get_data.bookingId;
-    //     }
-
-
-    //     let constantList = await db.chat_constant.findAll({
-    //       attributes: {
-    //         include: [
-    //           [
-    //             Sequelize.literal(
-    //               `CASE WHEN chat_constant.reciever_id = ${get_data.sender_id} THEN chat_constant.sender_id ELSE chat_constant.reciever_id END`
-    //             ),
-    //             "Receiver_user_id",
-    //           ],
-    //           [
-    //             Sequelize.literal(
-    //               `IFNULL((SELECT message FROM message WHERE message.id = chat_constant.lastMessage_id AND deletedId != ${get_data.sender_id}),"")`
-    //             ),
-    //             "last_msg",
-    //           ],
-    //           [
-    //             Sequelize.literal(
-    //               `(SELECT createdAt FROM message where message.reciever_id = chat_constant.reciever_id AND message.sender_id= chat_constant.sender_id ORDER BY id DESC limit 1)`
-    //             ),
-    //             "CreatedAt",
-    //           ],
-    //           [
-    //             Sequelize.literal(
-    //               `(SELECT COUNT(*) FROM message 
-    //                 WHERE message.reciever_id = ${get_data.sender_id} 
-    //                 AND message.sender_id = Receiver_user_id 
-    //                 AND message.readStatus = 0 )`
-    //             ),
-    //             "unread_msg"
-    //           ],
-    //           [
-    //             Sequelize.literal(
-    //               "(SELECT orderId FROM bookings WHERE bookings.id = chat_constant.bookingId)"
-    //             ),
-    //             "orderId"
-    //           ],
-    //           // Existing
-    //           [
-    //             Sequelize.literal(
-    //               "(SELECT CONCAT(firstName,lastName) FROM users WHERE users.id  = Receiver_user_id)"
-    //             ),
-    //             "ReceiverName",
-    //           ],
-    //           [
-    //             Sequelize.literal(
-    //               "(SELECT image FROM users WHERE users.id  = Receiver_user_id)"
-    //             ),
-    //             "Receiverimage",
-    //           ],
-    //           [
-    //             Sequelize.literal(
-    //               "(SELECT online FROM users WHERE users.id  = Receiver_user_id)"
-    //             ),
-    //             "online",
-    //           ],
-    //         ],
-    //       },
-    //       where: whereCondition,
-
-    //       order: [
-    //         [
-    //           Sequelize.literal(
-    //             `(SELECT createdAt FROM message WHERE message.reciever_id = chat_constant.reciever_id AND message.sender_id = chat_constant.sender_id ORDER BY id DESC LIMIT 1)`
-    //           ),
-    //           "DESC",
-    //         ],
-    //       ],
-    //     });
-
-    //     socket.emit("user_constant_list", constantList);
-    //   } catch (error) {
-    //     console.log(error);
-    //   }
-    // });
+  
     socket.on("user_constant_list", async (get_data) => {
       try {
 
@@ -1286,8 +1092,6 @@ module.exports = function (io) {
         console.log(error);
       }
     });
-
-
 
     socket.on("send_message", async (get_data) => {
       try {
