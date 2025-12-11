@@ -51,7 +51,7 @@ module.exports = function (io) {
     //     });
     //   }
     // });
-   
+
     socket.on("connectUser", async ({ userId }) => {
       try {
         if (!userId) {
@@ -795,7 +795,7 @@ module.exports = function (io) {
       }
     });
 
-   
+
     socket.on("bookingHistory", async (data) => {
       try {
         const { userId, status, page = 1, limit = 10 } = data;
@@ -1203,6 +1203,15 @@ module.exports = function (io) {
         if (get_data.bookingId) {
           whereCondition.bookingId = get_data.bookingId;
         }
+
+        // 🚀 NEW: Filter out messages from completed / cancelled / rejected bookings
+        whereCondition.bookingId = {
+          [Op.in]: Sequelize.literal(`(
+        SELECT id FROM bookings 
+        WHERE status NOT IN ('3','4','5') 
+        AND request != '2'
+      )`)
+        };
 
         const allMsg = await db.message.findAll({
           where: whereCondition,
