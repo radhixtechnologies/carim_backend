@@ -519,7 +519,7 @@ const UserList = () => {
                       {selectedUser.id}
                     </td>
                   </tr>
-                  <tr>
+                  {/* <tr>
                     <td>First Name :</td>
                     <td className="text-end text-black fw-medium">
                       {selectedUser.firstName || ""}
@@ -536,7 +536,7 @@ const UserList = () => {
                     <td className="text-end text-black fw-medium">
                       {selectedUser.email || ""}
                     </td>
-                  </tr>
+                  </tr> */}
                   <tr>
                     <td>Country Code :</td>
                     <td className="text-end text-black fw-medium">
