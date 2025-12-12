@@ -213,9 +213,9 @@ const UserList = () => {
                           <tr>
                             <th>Sr no.</th>
                             <th>Image</th>
-                            <th>First Name</th>
-                            <th>Last Name</th>
-                            <th>Email Address</th>
+                            <th>Phone Number</th>
+                            {/* <th>Last Name</th>
+                            <th>Email Address</th> */}
                             <th>Location</th>
                             <th>Blocked</th>
                             <th>Suspended</th>
@@ -243,13 +243,13 @@ const UserList = () => {
                                     "No Image"
                                   )}
                                 </td>
-                                <td>{user.firstName || ""}</td>
-                                <td>{user.lastName || ""}</td>
-                                <td>{user.email || ""}</td>
+                                <td>({user.countryCode || ""}) {user.phoneNumber || ""}</td>
+                                {/* <td>{user.lastName || ""}</td>
+                                <td>{user.email || ""}</td> */}
                                 <td>
-                                  {user.city && `${user.city} `}
-                                  {user.state && `${user.state}, `}
-                                  {user.country || ""}
+                                  {/* {user.city && `${user.city} `} */}
+                                  {user.location && `${user.location}, `}
+                                  {/* {user.country || ""} */}
                                 </td>
                                 <td>
                                   <div className="form-check form-switch">
