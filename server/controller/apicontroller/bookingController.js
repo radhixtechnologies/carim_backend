@@ -340,13 +340,7 @@ module.exports = {
             try {
                 const userId = req.user.id;
                 const {
-                    driverId,
-                    pickupLocation,
-                    dropLocation,
-                    pickupLatitude,
-                    pickupLongitude,
-                    dropLatitude,
-                    dropLongitude,
+                    driverId, pickupLocation, dropLocation, pickupLatitude, pickupLongitude, dropLatitude, dropLongitude,
                 } = req.body;
 
                 if (!driverId) {
@@ -370,7 +364,7 @@ module.exports = {
                     return helper.failure(res, 'Invalid coordinates provided.');
                 }
 
-                // ------------------- DRIVER FETCH -------------------
+                // -------- DRIVER FETCH ---------
                 const driver = await db.users.findOne({
                     where: {
                         id: driverId,
@@ -383,8 +377,6 @@ module.exports = {
                         required: true
                     }]
                 });
-                console.log(driver, "driverdriverdriverdriverdriver");
-
 
                 if (!driver) {
                     return helper.error(res, 'Driver not found or not available', 404);
@@ -417,7 +409,6 @@ module.exports = {
                     return helper.error(res, 'No drivers available within 30 km of your pickup location', 404);
                 }
 
-                // -------- YOUR EXISTING LOGIC (UNCHANGED) ----------
                 const existingBooking = await db.bookings.findOne({
                     where: {
                         userId: userId,

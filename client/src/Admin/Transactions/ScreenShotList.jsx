@@ -86,7 +86,7 @@ const ScreenShotList = () => {
     const formattedData = allData.map((transaction, index) => ({
       "Sr No.": index + 1,
       "Transaction ID": transaction.id || "",
-      "Driver Name": transaction.screenshotdriver?.name || "",
+      "Driver Name": transaction.screenshotdriver?.firstName|| "",
       "Driver Email": transaction.screenshotdriver?.email || "",
       "Driver Balance ($)": transaction.screenshotdriver?.totalAmount || "0",
       "Verification Status": getApprovalLabel(transaction.status),
@@ -447,7 +447,7 @@ const ScreenShotList = () => {
                                     )}
                                   </td>
                                   <td>
-                                    {transaction.screenshotdriver?.name || ""}
+                                    {transaction.screenshotdriver?.firstName || ""}
                                   </td>
                                    <td>
                                     {transaction.screenshotdriver?.email || ""}
