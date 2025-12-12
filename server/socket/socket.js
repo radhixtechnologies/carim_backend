@@ -821,6 +821,7 @@ module.exports = function (io) {
           else if (status === '3') {
             statusCondition = { status: { [Op.in]: ['3', '4', '5'] } };
           }
+          
 
           else if (status === '4') {
             statusCondition = { status: { [Op.in]: ['4', '5'] } };
@@ -836,7 +837,8 @@ module.exports = function (io) {
             { driverId: userId },
             { userId: userId }
           ],
-          ...statusCondition
+          ...statusCondition,
+          request: '1'
         };
 
         const totalBookings = await db.bookings.count({ where: whereCondition });
