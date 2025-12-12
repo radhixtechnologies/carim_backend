@@ -266,7 +266,7 @@ const DriverList = () => {
                             <th>Image</th>
                             <th>First Name</th>
                             <th>Last Name</th>
-                            <th>Email Address</th>
+                            {/* <th>Email Address</th> */}
                             <th>Location</th>
                             <th>Blocked</th>
                             <th>Suspended</th>
@@ -298,11 +298,11 @@ const DriverList = () => {
                                 </td>
                                 <td>{user.firstName || ""}</td>
                                 <td>{user.lastName || ""}</td>
-                                <td>{user.email || ""}</td>
+                                {/* <td>{user.email || ""}</td> */}
                                 <td>
-                                  {user.city && `${user.city} `}
-                                  {user.state && `${user.state}, `}
-                                  {user.country || ""}
+                                  {/* {user.city && `${user.city} `} */}
+                                  {user.location && `${user.location}, `}
+                                  {/* {user.country || ""} */}
                                 </td>
                                 <td>
                                   <div className="form-check form-switch">
@@ -698,12 +698,12 @@ const DriverList = () => {
                       {selectedUser.lastName || ""}
                     </td>
                   </tr>
-                  <tr>
+                  {/* <tr>
                     <td>Email :</td>
                     <td className="text-end text-black fw-medium">
                       {selectedUser.email || ""}
                     </td>
-                  </tr>
+                  </tr> */}
                   <tr>
                     <td>Country Code :</td>
                     <td className="text-end text-black fw-medium">
@@ -731,14 +731,14 @@ const DriverList = () => {
                   <tr>
                     <td>Location:</td>
                     <td className="text-end text-black fw-medium">
-                      {`${selectedUser.country || ""}${
-                        selectedUser.country && selectedUser.city ? ", " : ""
-                      }${selectedUser.city || ""}${
-                        (selectedUser.city || selectedUser.country) &&
-                        selectedUser.state
+                      {`${selectedUser.location || ""}${
+                        selectedUser.location && selectedUser.location ? ", " : ""
+                      }${selectedUser.location || ""}${
+                        (selectedUser.location || selectedUser.location) &&
+                        selectedUser.location
                           ? ", "
                           : ""
-                      }${selectedUser.state || ""}`}
+                      }${selectedUser.location || ""}`}
                     </td>
                   </tr>
                   <tr>

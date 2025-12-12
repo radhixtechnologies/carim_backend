@@ -334,7 +334,7 @@ const DriverDocuments = () => {
                             <th>Image</th>
                             <th>first Name</th>
                             <th>Last Name</th>
-                            <th>Email</th>
+                            {/* <th>Email</th> */}
                             <th>Location</th>
                             <th>Verified Status</th>
                             <th>Upload Date</th>
@@ -369,11 +369,11 @@ const DriverDocuments = () => {
                                 <td>{user.firstName || ""}</td>
                                 <td>{user.lastName || ""}</td>
 
-                                <td>{user.email || ""}</td>
+                                {/* <td>{user.email || ""}</td> */}
                                 <td>
-                                  {`${user.city || ""}${
-                                    user.city && user.country ? ", " : ""
-                                  }${user.country || ""}` || ""}
+                                  {`${user.location || ""}${
+                                    user.location && user.location ? ", " : ""
+                                  }${user.location || ""}` || ""}
                                 </td>
                                 <td>
                                   <div className="dropdown dropup">
@@ -868,14 +868,14 @@ const DriverDocuments = () => {
                   <tr>
                     <td>Location:</td>
                     <td className="text-end text-black fw-medium">
-                      {`${selectedUser.country || ""}${
-                        selectedUser.country && selectedUser.city ? ", " : ""
-                      }${selectedUser.city || ""}${
-                        (selectedUser.city || selectedUser.country) &&
-                        selectedUser.state
+                      {`${selectedUser.location || ""}${
+                        selectedUser.location && selectedUser.location ? ", " : ""
+                      }${selectedUser.location || ""}${
+                        (selectedUser.location || selectedUser.location) &&
+                        selectedUser.location
                           ? ", "
                           : ""
-                      }${selectedUser.state || ""}` || ""}
+                      }${selectedUser.location || ""}` || ""}
                     </td>
                   </tr>
                   <tr>

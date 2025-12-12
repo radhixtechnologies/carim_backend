@@ -214,7 +214,7 @@ const BookingList = () => {
                         <thead>
                           <tr>
                             <th>Sr no.</th>
-                            <th>User Name</th>
+                            <th>User Phone Number</th>
                             <th>Driver Name</th>
                             <th>Ride Type</th>
                             <th>Price($)</th>
@@ -234,7 +234,7 @@ const BookingList = () => {
                                   <td>
                                     {(currentPage - 1) * limit + index + 1}
                                   </td>
-                                  <td>{`${match.userbook?.firstName || ""} ${
+                                  <td>{`${match.userbook?.phoneNumber || ""} ${
                                     match.userbook?.lastName || ""
                                   }`}</td>
                                   <td>{`${match.driverbook?.firstName || ""} ${
@@ -352,9 +352,9 @@ const BookingList = () => {
                     </td>
                   </tr>
                   <tr>
-                    <td>User Name :</td>
+                    <td>User Phone Number :</td>
                     <td className="text-end text-black fw-medium">
-                      {`${selectedMatch.userbook?.firstName || ""} ${
+                      {`${selectedMatch.userbook?.phoneNumber || ""} ${
                         selectedMatch.userbook?.lastName || ""
                       }`}
                     </td>
