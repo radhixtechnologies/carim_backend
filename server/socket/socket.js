@@ -838,7 +838,8 @@ module.exports = function (io) {
             { userId: userId }
           ],
           ...statusCondition,
-          request: '1'
+          // request: '1'
+          request: { [Op.in]: ['1', '2'] }
         };
 
         const totalBookings = await db.bookings.count({ where: whereCondition });
