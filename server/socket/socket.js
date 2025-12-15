@@ -107,80 +107,80 @@ module.exports = function (io) {
     //     });
     //   }
     // });
-socket.on("connectUser", async ({ userId }) => {
-  try {
-    if (!userId) {
-      return socket.emit("connectUser", {
-        success: false,
-        message: "User ID is required",
-      });
-    }
-
-    const user = await db.users.findOne({ where: { id: userId } });
-    if (!user) {
-      return socket.emit("connectUser", {
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    // Initialize array if not exists
-    if (!onlineUsers[userId]) {
-      onlineUsers[userId] = [];
-    }
-
-    // Avoid duplicate socket
-    if (!onlineUsers[userId].includes(socket.id)) {
-      onlineUsers[userId].push(socket.id);
-    }
-
-    // Attach userId to socket
-    socket.userId = userId;
-
-    // Update DB (same as your logic)
-    await db.users.update(
-      {
-        socketId: socket.id,
-        online: "1",
-      },
-      { where: { id: userId } }
-    );
-
-    socket.emit("connectUser", {
-      success: true,
-      message: "Connected successfully",
-      socketId: socket.id,
-    });
-
-    // Proper disconnect cleanup
-    socket.on("disconnect", async () => {
+    socket.on("connectUser", async ({ userId }) => {
       try {
-        if (onlineUsers[userId]) {
-          onlineUsers[userId] = onlineUsers[userId].filter(
-            (sid) => sid !== socket.id
-          );
-
-          if (onlineUsers[userId].length === 0) {
-            delete onlineUsers[userId];
-
-            await db.users.update(
-              { online: "0", socketId: null },
-              { where: { id: userId } }
-            );
-          }
+        if (!userId) {
+          return socket.emit("connectUser", {
+            success: false,
+            message: "User ID is required",
+          });
         }
-      } catch (err) {
-        console.error("Disconnect error:", err);
+
+        const user = await db.users.findOne({ where: { id: userId } });
+        if (!user) {
+          return socket.emit("connectUser", {
+            success: false,
+            message: "User not found",
+          });
+        }
+
+        // Initialize array if not exists
+        if (!onlineUsers[userId]) {
+          onlineUsers[userId] = [];
+        }
+
+        // Avoid duplicate socket
+        if (!onlineUsers[userId].includes(socket.id)) {
+          onlineUsers[userId].push(socket.id);
+        }
+
+        // Attach userId to socket
+        socket.userId = userId;
+
+        // Update DB (same as your logic)
+        await db.users.update(
+          {
+            socketId: socket.id,
+            online: "1",
+          },
+          { where: { id: userId } }
+        );
+
+        socket.emit("connectUser", {
+          success: true,
+          message: "Connected successfully",
+          socketId: socket.id,
+        });
+
+        // Proper disconnect cleanup
+        socket.on("disconnect", async () => {
+          try {
+            if (onlineUsers[userId]) {
+              onlineUsers[userId] = onlineUsers[userId].filter(
+                (sid) => sid !== socket.id
+              );
+
+              if (onlineUsers[userId].length === 0) {
+                delete onlineUsers[userId];
+
+                await db.users.update(
+                  { online: "0", socketId: null },
+                  { where: { id: userId } }
+                );
+              }
+            }
+          } catch (err) {
+            console.error("Disconnect error:", err);
+          }
+        });
+
+      } catch (error) {
+        socket.emit("connectUser", {
+          success: false,
+          message: "Internal server error",
+        });
       }
     });
-
-  } catch (error) {
-    socket.emit("connectUser", {
-      success: false,
-      message: "Internal server error",
-    });
-  }
-});
 
 
     socket.on("unreadNotificationCount", async (data) => {
@@ -301,7 +301,7 @@ socket.on("connectUser", async ({ userId }) => {
         });
       }
     });
-   
+
     // socket.on("rideStatusUpdate", async (data) => {
     //   try {
     //     const { bookingId, status, otp, driverId } = data;
@@ -508,7 +508,7 @@ socket.on("connectUser", async ({ userId }) => {
     //     });
     //   }
     // });
-    
+
     socket.on("rideStatusUpdate", async (data) => {
       try {
         const { bookingId, status, otp, driverId } = data;
@@ -728,7 +728,7 @@ socket.on("connectUser", async ({ userId }) => {
           else if (status === '3') {
             statusCondition = { status: { [Op.in]: ['3', '4', '5'] } };
           }
-          
+
 
           else if (status === '4') {
             statusCondition = { status: { [Op.in]: ['4', '5'] } };

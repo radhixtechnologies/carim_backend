@@ -173,13 +173,7 @@ module.exports = {
     //         try {
     //             const userId = req.user.id;
     //             const {
-    //                 driverId,
-    //                 pickupLocation,
-    //                 dropLocation,
-    //                 pickupLatitude,
-    //                 pickupLongitude,
-    //                 dropLatitude,
-    //                 dropLongitude,
+    //                 driverId, pickupLocation, dropLocation, pickupLatitude, pickupLongitude, dropLatitude, dropLongitude,
     //             } = req.body;
 
     //             if (!driverId) {
@@ -203,6 +197,7 @@ module.exports = {
     //                 return helper.failure(res, 'Invalid coordinates provided.');
     //             }
 
+    //             // -------- DRIVER FETCH ---------
     //             const driver = await db.users.findOne({
     //                 where: {
     //                     id: driverId,
@@ -215,8 +210,36 @@ module.exports = {
     //                     required: true
     //                 }]
     //             });
+
     //             if (!driver) {
     //                 return helper.error(res, 'Driver not found or not available', 404);
+    //             }
+
+    //             //  ADD YOUR SAME RADIUS CHECK (0–30 KM LIMIT)
+    //             const maxRadius = 30;
+
+    //             if (!driver.latitude || !driver.longitude) {
+    //                 return helper.error(res, 'Driver location not available', 404);
+    //             }
+
+    //             const driverLat = parseFloat(driver.latitude);
+    //             const driverLng = parseFloat(driver.longitude);
+
+    //             if (isNaN(driverLat) || isNaN(driverLng)) {
+    //                 return helper.error(res, 'Driver has invalid coordinates', 404);
+    //             }
+
+    //             const driverDistance = calculateDistance(
+    //                 pickupLat,
+    //                 pickupLng,
+    //                 driverLat,
+    //                 driverLng
+    //             );
+
+    //             console.log(`Driver distance from pickup: ${driverDistance} km`);
+
+    //             if (!(driverDistance >= 0 && driverDistance <= maxRadius)) {
+    //                 return helper.error(res, 'No drivers available within 30 km of your pickup location', 404);
     //             }
 
     //             const existingBooking = await db.bookings.findOne({
@@ -276,7 +299,7 @@ module.exports = {
 
     //             console.log(`Booking created for user ${userId} with driver ${driverId}, Order ID: ${orderId}`);
 
-    //             // SOCKET EMIT (THIS IS THE ONLY NEW CODE)
+    //             // SOCKET EMIT
     //             try {
     //                 if (io && global.onlineUsers && onlineUsers[driverId]) {
     //                     onlineUsers[driverId].forEach(sockId => {
@@ -299,6 +322,7 @@ module.exports = {
     //             } catch (e) {
     //                 console.log("Socket emit failed:", e);
     //             }
+
     //             return helper.success(res, 'Ride booking request sent successfully', {
     //                 bookingId: newBooking.id,
     //                 orderId: newBooking.orderId,
@@ -340,7 +364,13 @@ module.exports = {
             try {
                 const userId = req.user.id;
                 const {
-                    driverId, pickupLocation, dropLocation, pickupLatitude, pickupLongitude, dropLatitude, dropLongitude,
+                    driverId,
+                    pickupLocation,
+                    dropLocation,
+                    pickupLatitude,
+                    pickupLongitude,
+                    dropLatitude,
+                    dropLongitude,
                 } = req.body;
 
                 if (!driverId) {
@@ -360,7 +390,12 @@ module.exports = {
                 const dropLat = parseFloat(dropLatitude);
                 const dropLng = parseFloat(dropLongitude);
 
-                if (isNaN(pickupLat) || isNaN(pickupLng) || isNaN(dropLat) || isNaN(dropLng)) {
+                if (
+                    isNaN(pickupLat) ||
+                    isNaN(pickupLng) ||
+                    isNaN(dropLat) ||
+                    isNaN(dropLng)
+                ) {
                     return helper.failure(res, 'Invalid coordinates provided.');
                 }
 
@@ -382,7 +417,7 @@ module.exports = {
                     return helper.error(res, 'Driver not found or not available', 404);
                 }
 
-                //  ADD YOUR SAME RADIUS CHECK (0–30 KM LIMIT)
+                // -------- RADIUS CHECK (0–30 KM) --------
                 const maxRadius = 30;
 
                 if (!driver.latitude || !driver.longitude) {
@@ -403,15 +438,17 @@ module.exports = {
                     driverLng
                 );
 
-                console.log(`Driver distance from pickup: ${driverDistance} km`);
-
                 if (!(driverDistance >= 0 && driverDistance <= maxRadius)) {
-                    return helper.error(res, 'No drivers available within 30 km of your pickup location', 404);
+                    return helper.error(
+                        res,
+                        'No drivers available within 30 km of your pickup location',
+                        404
+                    );
                 }
 
                 const existingBooking = await db.bookings.findOne({
                     where: {
-                        userId: userId,
+                        userId,
                         status: { [Sequelize.Op.in]: ['0', '1', '2'] },
                         request: '0'
                     }
@@ -423,14 +460,18 @@ module.exports = {
 
                 const driverActiveBooking = await db.bookings.findOne({
                     where: {
-                        driverId: driverId,
+                        driverId,
                         status: { [Sequelize.Op.in]: ['0', '1', '2'] },
                         request: '0'
                     }
                 });
 
                 if (driverActiveBooking) {
-                    return helper.error(res, 'Driver is currently busy with another ride', 400);
+                    return helper.error(
+                        res,
+                        'Driver is currently busy with another ride',
+                        400
+                    );
                 }
 
                 const generateOrderId = () => {
@@ -443,7 +484,7 @@ module.exports = {
                 while (!isUnique) {
                     orderId = generateOrderId();
                     const existingOrder = await db.bookings.findOne({
-                        where: { orderId: orderId }
+                        where: { orderId }
                     });
                     if (!existingOrder) {
                         isUnique = true;
@@ -451,12 +492,12 @@ module.exports = {
                 }
 
                 const newBooking = await db.bookings.create({
-                    userId: userId,
-                    driverId: driverId,
-                    orderId: orderId,
+                    userId,
+                    driverId,
+                    orderId,
                     status: '0',
-                    pickupLocation: pickupLocation,
-                    dropLocation: dropLocation,
+                    pickupLocation,
+                    dropLocation,
                     pickupLatitude: pickupLatitude.toString(),
                     pickupLongitude: pickupLongitude.toString(),
                     dropLatitude: dropLatitude.toString(),
@@ -464,17 +505,22 @@ module.exports = {
                     request: '0'
                 });
 
-                console.log(`Booking created for user ${userId} with driver ${driverId}, Order ID: ${orderId}`);
+                console.log(
+                    `Booking created for user ${userId} with driver ${driverId}, Order ID: ${orderId}`
+                );
 
-                // SOCKET EMIT
+                // ---------------- SOCKET EMIT (FULL SAFE) ----------------
                 try {
-                    if (io && global.onlineUsers && onlineUsers[driverId]) {
+                    let emitted = false;
+
+                    // 1️⃣ Emit using onlineUsers (old drivers)
+                    if (io && global.onlineUsers && onlineUsers[driverId]?.length) {
                         onlineUsers[driverId].forEach(sockId => {
                             io.to(sockId).emit("newRideRequest", {
                                 bookingId: newBooking.id,
                                 orderId: newBooking.orderId,
-                                userId: userId,
-                                driverId: driverId,
+                                userId,
+                                driverId,
                                 pickupLocation,
                                 dropLocation,
                                 pickupLatitude,
@@ -485,43 +531,71 @@ module.exports = {
                                 request: '0'
                             });
                         });
+                        emitted = true;
                     }
+
+                    // 2️⃣ Fallback → DB socketId (NEW DRIVER CASE)
+                    if (!emitted && driver.socketId) {
+                        io.to(driver.socketId).emit("newRideRequest", {
+                            bookingId: newBooking.id,
+                            orderId: newBooking.orderId,
+                            userId,
+                            driverId,
+                            pickupLocation,
+                            dropLocation,
+                            pickupLatitude,
+                            pickupLongitude,
+                            dropLatitude,
+                            dropLongitude,
+                            status: '0',
+                            request: '0'
+                        });
+                    }
+
                 } catch (e) {
                     console.log("Socket emit failed:", e);
                 }
+                // ---------------------------------------------------------
 
-                return helper.success(res, 'Ride booking request sent successfully', {
-                    bookingId: newBooking.id,
-                    orderId: newBooking.orderId,
-                    userId: userId,
-                    driverId: driverId,
-                    status: newBooking.status,
-                    request: newBooking.request,
-                    pickupLocation: newBooking.pickupLocation,
-                    dropLocation: newBooking.dropLocation,
-                    coordinates: {
-                        pickup: {
-                            latitude: newBooking.pickupLatitude,
-                            longitude: newBooking.pickupLongitude
+                return helper.success(
+                    res,
+                    'Ride booking request sent successfully',
+                    {
+                        bookingId: newBooking.id,
+                        orderId: newBooking.orderId,
+                        userId,
+                        driverId,
+                        status: newBooking.status,
+                        request: newBooking.request,
+                        pickupLocation: newBooking.pickupLocation,
+                        dropLocation: newBooking.dropLocation,
+                        coordinates: {
+                            pickup: {
+                                latitude: newBooking.pickupLatitude,
+                                longitude: newBooking.pickupLongitude
+                            },
+                            drop: {
+                                latitude: newBooking.dropLatitude,
+                                longitude: newBooking.dropLongitude
+                            }
                         },
-                        drop: {
-                            latitude: newBooking.dropLatitude,
-                            longitude: newBooking.dropLongitude
-                        }
-                    },
-                    driverDetails: {
-                        id: driver.id,
-                        fullName: `${driver.firstName} ${driver.lastName}`,
-                        phone: driver.phoneNumber,
-                        profileImage: driver.image,
-                        vehicleDetails: driver.vehicleDetail
-                    },
-                    message: 'Waiting for driver to accept your request'
-                });
+                        driverDetails: {
+                            id: driver.id,
+                            fullName: `${driver.firstName} ${driver.lastName}`,
+                            phone: driver.phoneNumber,
+                            profileImage: driver.image,
+                            vehicleDetails: driver.vehicleDetail
+                        },
+                        message: 'Waiting for driver to accept your request'
+                    }
+                );
 
             } catch (error) {
                 console.error('Booking error:', error);
-                return helper.failure(res, "Something went wrong while booking the ride.");
+                return helper.failure(
+                    res,
+                    "Something went wrong while booking the ride."
+                );
             }
         };
     },
