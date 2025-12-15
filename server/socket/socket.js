@@ -52,61 +52,135 @@ module.exports = function (io) {
     //   }
     // });
 
-    socket.on("connectUser", async ({ userId }) => {
+    // 1socket.on("connectUser", async ({ userId }) => {
+    //   try {
+    //     if (!userId) {
+    //       return socket.emit("connectUser", {
+    //         success: false,
+    //         message: "User ID is required",
+    //       });
+    //     }
+
+    //     const user = await db.users.findOne({ where: { id: userId } });
+    //     if (!user) {
+    //       return socket.emit("connectUser", {
+    //         success: false,
+    //         message: "User not found",
+    //       });
+    //     }
+
+    //     // Disconnect previous sockets of the same user
+    //     if (onlineUsers[userId]) {
+    //       onlineUsers[userId].forEach((oldSocketId) => {
+    //         const oldSocket = io.sockets.sockets.get(oldSocketId);
+    //         if (oldSocket) oldSocket.disconnect(true);
+    //       });
+    //     }
+
+    //     // Save new socket
+    //     onlineUsers[userId] = [socket.id];
+
+    //     // Store in socket object
+    //     socket.userId = userId;
+
+    //     // Update DB
+    //     await db.users.update(
+    //       { socketId: socket.id, online: "1" },
+    //       { where: { id: userId } }
+    //     );
+
+    //     socket.emit("connectUser", {
+    //       success: true,
+    //       message: "Connected successfully",
+    //       socketId: socket.id,
+    //     });
+
+    //     socket.on("disconnect", () => {
+    //       if (onlineUsers[userId]) {
+    //         delete onlineUsers[userId];
+    //       }
+    //     });
+    //   } catch (error) {
+    //     socket.emit("connectUser", {
+    //       success: false,
+    //       message: "Internal server error",
+    //     });
+    //   }
+    // });
+socket.on("connectUser", async ({ userId }) => {
+  try {
+    if (!userId) {
+      return socket.emit("connectUser", {
+        success: false,
+        message: "User ID is required",
+      });
+    }
+
+    const user = await db.users.findOne({ where: { id: userId } });
+    if (!user) {
+      return socket.emit("connectUser", {
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Initialize array if not exists
+    if (!onlineUsers[userId]) {
+      onlineUsers[userId] = [];
+    }
+
+    // Avoid duplicate socket
+    if (!onlineUsers[userId].includes(socket.id)) {
+      onlineUsers[userId].push(socket.id);
+    }
+
+    // Attach userId to socket
+    socket.userId = userId;
+
+    // Update DB (same as your logic)
+    await db.users.update(
+      {
+        socketId: socket.id,
+        online: "1",
+      },
+      { where: { id: userId } }
+    );
+
+    socket.emit("connectUser", {
+      success: true,
+      message: "Connected successfully",
+      socketId: socket.id,
+    });
+
+    // Proper disconnect cleanup
+    socket.on("disconnect", async () => {
       try {
-        if (!userId) {
-          return socket.emit("connectUser", {
-            success: false,
-            message: "User ID is required",
-          });
-        }
-
-        const user = await db.users.findOne({ where: { id: userId } });
-        if (!user) {
-          return socket.emit("connectUser", {
-            success: false,
-            message: "User not found",
-          });
-        }
-
-        // Disconnect previous sockets of the same user
         if (onlineUsers[userId]) {
-          onlineUsers[userId].forEach((oldSocketId) => {
-            const oldSocket = io.sockets.sockets.get(oldSocketId);
-            if (oldSocket) oldSocket.disconnect(true);
-          });
-        }
+          onlineUsers[userId] = onlineUsers[userId].filter(
+            (sid) => sid !== socket.id
+          );
 
-        // Save new socket
-        onlineUsers[userId] = [socket.id];
-
-        // Store in socket object
-        socket.userId = userId;
-
-        // Update DB
-        await db.users.update(
-          { socketId: socket.id, online: "1" },
-          { where: { id: userId } }
-        );
-
-        socket.emit("connectUser", {
-          success: true,
-          message: "Connected successfully",
-          socketId: socket.id,
-        });
-
-        socket.on("disconnect", () => {
-          if (onlineUsers[userId]) {
+          if (onlineUsers[userId].length === 0) {
             delete onlineUsers[userId];
+
+            await db.users.update(
+              { online: "0", socketId: null },
+              { where: { id: userId } }
+            );
           }
-        });
-      } catch (error) {
-        socket.emit("connectUser", {
-          success: false,
-          message: "Internal server error",
-        });
+        }
+      } catch (err) {
+        console.error("Disconnect error:", err);
       }
     });
+
+  } catch (error) {
+    socket.emit("connectUser", {
+      success: false,
+      message: "Internal server error",
+    });
+  }
+});
 
 
     socket.on("unreadNotificationCount", async (data) => {
@@ -227,176 +301,8 @@ module.exports = function (io) {
         });
       }
     });
+   
     // socket.on("rideStatusUpdate", async (data) => {
-    //   try {
-    //     const { bookingId, status, otp, driverId } = data;
-
-    //     if (!bookingId || !status || !driverId) {
-    //       return socket.emit("rideStatusUpdate", {
-    //         success: false,
-    //         message: "Booking ID, status, and driver ID are required."
-    //       });
-    //     }
-
-    //     if (!['0', '1', '2', '3', '4'].includes(status)) {
-    //       return socket.emit("rideStatusUpdate", {
-    //         success: false,
-    //         message: "Invalid status value."
-    //       });
-    //     }
-
-    //     const booking = await db.bookings.findOne({
-    //       where: {
-    //         id: bookingId,
-    //         driverId: driverId,
-    //       },
-    //       include: [{
-    //         model: db.users,
-    //         as: 'userbook',
-    //         attributes: ['id', 'rideOtp', 'socketId']
-    //       }]
-    //     });
-
-    //     if (!booking) {
-    //       return socket.emit("rideStatusUpdate", {
-    //         success: false,
-    //         message: "Booking not found",
-    //         code: 404
-    //       });
-    //     }
-
-    //     const currentStatus = booking.status;
-
-    //     if (status === '2') {
-    //       if (currentStatus === '2') {
-    //         return socket.emit("rideStatusUpdate", {
-    //           success: false,
-    //           message: "Ride already started."
-    //         });
-    //       }
-
-    //       if (!otp) {
-    //         return socket.emit("rideStatusUpdate", {
-    //           success: false,
-    //           message: "OTP is required to start the ride."
-    //         });
-    //       }
-
-    //       if (!booking.userbook) {
-    //         return socket.emit("rideStatusUpdate", {
-    //           success: false,
-    //           message: "User not found for this booking."
-    //         });
-    //       }
-
-    //       if (booking.userbook.rideOtp !== otp) {
-    //         return socket.emit("rideStatusUpdate", {
-    //           success: false,
-    //           message: "OTP does not match. Please enter correct OTP."
-    //         });
-    //       }
-
-    //       await db.bookings.update({
-    //         status: status,
-    //         otpbooking: otp
-    //       }, {
-    //         where: { id: bookingId }
-    //       });
-
-    //       if (booking.userbook && booking.userbook.socketId) {
-    //         io.to(booking.userbook.socketId).emit("rideStatusUpdated", {
-    //           success: true,
-    //           message: "Ride has started",
-    //           bookingId: booking.id,
-    //           status: status
-    //         });
-    //       }
-
-    //       return socket.emit("rideStatusUpdate", {
-    //         success: true,
-    //         message: "Ride started successfully",
-    //         data: {
-    //           bookingId: booking.id,
-    //           status: status,
-    //           otpVerified: true
-    //         }
-    //       });
-    //     }
-
-    //     if (status === '3' || status === '4') {
-    //       if (currentStatus !== '2') {
-    //         const action = status === '3' ? 'finish' : 'cancel';
-    //         return socket.emit("rideStatusUpdate", {
-    //           success: false,
-    //           message: `Cannot ${action} ride. Ride must be started first (status 2).`
-    //         });
-    //       }
-
-    //       await booking.update({ status: status });
-
-    //       if (booking.userbook && booking.userbook.socketId) {
-    //         io.to(booking.userbook.socketId).emit("rideStatusUpdated", {
-    //           success: true,
-    //           message: `Ride ${status === '3' ? 'finished' : 'cancelled'} successfully`,
-    //           bookingId: booking.id,
-    //           status: status
-    //         });
-    //       }
-
-    //       return socket.emit("rideStatusUpdate", {
-    //         success: true,
-    //         message: `Ride ${status === '3' ? 'finished' : 'cancelled'} successfully`,
-    //         data: {
-    //           bookingId: booking.id,
-    //           status: status
-    //         }
-    //       });
-    //     }
-
-    //     if (['0', '1'].includes(status)) {
-    //       if (currentStatus >= '2') {
-    //         return socket.emit("rideStatusUpdate", {
-    //           success: false,
-    //           message: `Cannot change status to ${status} after ride has started.`
-    //         });
-    //       }
-
-    //       await booking.update({ status: status });
-
-    //       if (booking.userbook && booking.userbook.socketId) {
-    //         io.to(booking.userbook.socketId).emit("rideStatusUpdated", {
-    //           success: true,
-    //           message: "Ride status updated",
-    //           bookingId: booking.id,
-    //           status: status
-    //         });
-    //       }
-
-    //       return socket.emit("rideStatusUpdate", {
-    //         success: true,
-    //         message: "Ride status updated successfully",
-    //         data: {
-    //           bookingId: booking.id,
-    //           status: status
-    //         }
-    //       });
-    //     }
-
-    //     return socket.emit("rideStatusUpdate", {
-    //       success: false,
-    //       message: "Invalid status operation."
-    //     });
-
-    //   } catch (error) {
-    //     console.error("Error updating ride status:", error);
-    //     return socket.emit("rideStatusUpdate", {
-    //       success: false,
-    //       message: "Something went wrong while updating ride status.",
-    //       error: error.message
-    //     });
-    //   }
-    // });
-    // 1socket.on("rideStatusUpdate", async (data) => {
     //   try {
     //     const { bookingId, status, otp, driverId } = data;
 
@@ -602,6 +508,7 @@ module.exports = function (io) {
     //     });
     //   }
     // });
+    
     socket.on("rideStatusUpdate", async (data) => {
       try {
         const { bookingId, status, otp, driverId } = data;
