@@ -797,7 +797,8 @@ module.exports = function (io) {
               dropLongitude: booking.dropLongitude,
               status: booking.status,
               request: booking.request,
-              bookingDate: booking.bookingDate
+              bookingDate: booking.bookingDate,
+              bookingPrice: booking.bookingPrice
             }))
           }
         });
