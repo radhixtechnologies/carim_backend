@@ -935,40 +935,88 @@ module.exports = {
         }
     },
 
-    blockUser: async (req, res) => {
-        try {
-            const v = new Validator(req.body, {
-                userId: "required",
-                block: "required|in:0,1"   // 0 = unblock, 1 = block
-            });
-            const errorResponse = await helper.checkValidation(v);
-            if (errorResponse) {
-                return helper.error(res, errorResponse);
+    // blockUser: async (req, res) => {
+    //     try {
+    //         const v = new Validator(req.body, {
+    //             userId: "required",
+    //             block: "required|in:0,1"   // 0 = unblock, 1 = block
+    //         });
+    //         const errorResponse = await helper.checkValidation(v);
+    //         if (errorResponse) {
+    //             return helper.error(res, errorResponse);
+    //         }
+
+    //         const blockBy = req.user.id;
+    //         const blockTo = req.body.userId;
+
+    //         if (blockBy == blockTo) {
+    //             return helper.error(res, "You cannot block yourself.");
+    //         }
+
+    //         // Update block status
+    //         await db.users.update(
+    //             { block: req.body.block },
+    //             { where: { id: blockTo } }
+    //         );
+
+    //         const message = req.body.block === "1"
+    //             ? "User blocked successfully"
+    //             : "User unblocked successfully";
+
+    //         return helper.success(res, message);
+
+    //     } catch (error) {
+    //         console.error("Error:", error);
+    //         return helper.error(res, "Something went wrong.", error);
+    //     }
+    // },
+
+    blockUser: (io) => {
+        return async (req, res) => {
+            try {
+                const v = new Validator(req.body, {
+                    userId: "required",
+                    block: "required|in:0,1"
+                });
+
+                const errorResponse = await helper.checkValidation(v);
+                if (errorResponse) {
+                    return helper.error(res, errorResponse);
+                }
+
+                const blockBy = req.user.id;
+                const blockTo = req.body.userId;
+
+                if (blockBy == blockTo) {
+                    return helper.error(res, "You cannot block yourself.");
+                }
+
+                await db.users.update(
+                    { block: req.body.block },
+                    { where: { id: blockTo } }
+                );
+
+                const message =
+                    req.body.block === "1"
+                        ? "User blocked successfully"
+                        : "User unblocked successfully";
+                if (io && global.onlineUsers && onlineUsers[blockTo]) {
+                    onlineUsers[blockTo].forEach(socketId => {
+                        io.to(socketId).emit("blockedStatusChanged", {
+                            by: blockBy,
+                            status: req.body.block,
+                            message
+                        });
+                    });
+                }
+
+                return helper.success(res, message);
+
+            } catch (error) {
+                console.error("Block user error:", error);
+                return helper.error(res, "Something went wrong.");
             }
-
-            const blockBy = req.user.id;
-            const blockTo = req.body.userId;
-
-            if (blockBy == blockTo) {
-                return helper.error(res, "You cannot block yourself.");
-            }
-
-            // Update block status
-            await db.users.update(
-                { block: req.body.block },
-                { where: { id: blockTo } }
-            );
-
-            const message = req.body.block === "1"
-                ? "User blocked successfully"
-                : "User unblocked successfully";
-
-            return helper.success(res, message);
-
-        } catch (error) {
-            console.error("Error:", error);
-            return helper.error(res, "Something went wrong.", error);
-        }
+        };
     },
 
     driverWaletRecharge: async (req, res) => {
