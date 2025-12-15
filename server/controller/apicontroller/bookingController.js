@@ -61,6 +61,7 @@ module.exports = {
             const nearbyDrivers = await db.users.findAll({
                 where: {
                     role: '2',
+                    online: '1',
                     id: { [Sequelize.Op.notIn]: busyDriverIds }
                 },
                 include: [{
@@ -1172,7 +1173,7 @@ module.exports = {
                 status: booking.status,
                 request: booking.request,
                 bookingDate: booking.bookingDate,
-                bookingPrice:booking.bookingPrice
+                bookingPrice: booking.bookingPrice
             });
 
         } catch (error) {
