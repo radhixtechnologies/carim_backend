@@ -105,7 +105,7 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 0,
-      comment: "0-normal , 1=pro"
+      comment: "0-normal , 1=Open"
     }
   }, {
     sequelize,

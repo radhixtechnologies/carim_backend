@@ -613,6 +613,7 @@ module.exports = {
                     pickupLongitude,
                     dropLatitude,
                     dropLongitude,
+                    rideOpen
                 } = req.body;
 
                 if (!driverId) {
@@ -771,7 +772,8 @@ module.exports = {
                     dropLatitude: dropLatitude.toString(),
                     dropLongitude: dropLongitude.toString(),
                     bookingPrice: bookingPrice.toString(),
-                    request: '0'
+                    request: '0',
+                    rideOpen
                 });
                 // ---------------------------------------------------------
 
@@ -793,7 +795,8 @@ module.exports = {
                                 dropLatitude,
                                 dropLongitude,
                                 status: '0',
-                                request: '0'
+                                request: '0',
+                                rideOpen
                             });
                         });
                         emitted = true;
@@ -812,7 +815,8 @@ module.exports = {
                             dropLatitude,
                             dropLongitude,
                             status: '0',
-                            request: '0'
+                            request: '0',
+                            rideOpen
                         });
                     }
                 } catch (e) {
