@@ -10,29 +10,17 @@ module.exports = function(sequelize, DataTypes) {
     userId: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      defaultValue: 0,
-      references: {
-        model: 'users',
-        key: 'id'
-      }
+      defaultValue: 0
     },
     driverId: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      defaultValue: 0,
-      references: {
-        model: 'users',
-        key: 'id'
-      }
+      defaultValue: 0
     },
     bookingId: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      defaultValue: 0,
-      references: {
-        model: 'bookings',
-        key: 'id'
-      }
+      defaultValue: 0
     },
     totalAmount: {
       type: DataTypes.DOUBLE(10,2),

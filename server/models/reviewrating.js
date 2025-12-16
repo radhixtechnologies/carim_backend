@@ -9,27 +9,15 @@ module.exports = function(sequelize, DataTypes) {
     },
     ratedBy: {
       type: DataTypes.INTEGER,
-      allowNull: true,
-      references: {
-        model: 'users',
-        key: 'id'
-      }
+      allowNull: true
     },
     ratedTo: {
       type: DataTypes.INTEGER,
-      allowNull: true,
-      references: {
-        model: 'users',
-        key: 'id'
-      }
+      allowNull: true
     },
     bookingId: {
       type: DataTypes.INTEGER,
-      allowNull: true,
-      references: {
-        model: 'bookings',
-        key: 'id'
-      }
+      allowNull: true
     },
     rating: {
       type: DataTypes.STRING(255),

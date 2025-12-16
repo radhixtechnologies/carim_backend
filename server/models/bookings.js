@@ -100,6 +100,12 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: Sequelize.Sequelize.literal('CURRENT_TIMESTAMP')
+    },
+    ridePro: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+      comment: "0-normal , 1=pro"
     }
   }, {
     sequelize,

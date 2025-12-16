@@ -9,27 +9,15 @@ module.exports = function(sequelize, DataTypes) {
     },
     bookingId: {
       type: DataTypes.INTEGER,
-      allowNull: true,
-      references: {
-        model: 'bookings',
-        key: 'id'
-      }
+      allowNull: true
     },
     reportBy: {
       type: DataTypes.INTEGER,
-      allowNull: true,
-      references: {
-        model: 'users',
-        key: 'id'
-      }
+      allowNull: true
     },
     reportTo: {
       type: DataTypes.INTEGER,
-      allowNull: true,
-      references: {
-        model: 'users',
-        key: 'id'
-      }
+      allowNull: true
     },
     rason: {
       type: DataTypes.TEXT,
