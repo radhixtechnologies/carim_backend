@@ -302,7 +302,7 @@ module.exports = {
             return helper.success(res, 'Nearby drivers found', {
                 userId: userId,
 
-                bookingPrice: bookingPrice,               // ✅ ADDED
+                bookingPrice: bookingPrice,
                 rideDistanceKm: rideDistanceKm.toFixed(2), // optional (safe)
 
                 pickupLocation: {
@@ -1355,61 +1355,152 @@ module.exports = {
         }
     },
 
-    cancelRide: async (req, res) => {
-        try {
-            const loggedInUserId = req.user.id;
-            const loggedInUserRole = req.user.role; // 1=user, 2=driver
+    //cancelRide:(io) =>{
+    //         return async (req, res) => {
+    //         try {
+    //             const loggedInUserId = req.user.id;
+    //             const loggedInUserRole = req.user.role; // 1=user, 2=driver
 
-            const { bookingId } = req.body;
+    //             const { bookingId } = req.body;
 
-            if (!bookingId) {
-                return helper.failure(res, "Booking ID is required.");
+    //             if (!bookingId) {
+    //                 return helper.failure(res, "Booking ID is required.");
+    //             }
+
+    //             // Only status 0 or 1 can be cancelled
+    //             const cancellableStatus = ["0", "1"];
+
+    //             const whereCond = {
+    //                 id: bookingId,
+    //                 status: { [Op.in]: cancellableStatus }
+    //             };
+
+    //             // Role-based check
+    //             if (loggedInUserRole === "1") {
+    //                 whereCond.userId = loggedInUserId;
+    //             }
+    //             else if (loggedInUserRole === "2") {
+    //                 whereCond.driverId = loggedInUserId;
+    //             }
+    //             else {
+    //                 return helper.failure(res, "Only users or drivers can cancel a ride.");
+    //             }
+
+    //             const booking = await db.bookings.findOne({ where: whereCond });
+
+    //             if (!booking) {
+    //                 return helper.failure(res, "Ride cannot be cancelled or already processed.");
+    //             }
+
+    //             // UPDATED STATUS 
+    //             const newStatus = loggedInUserRole === "1" ? "5" : "4";
+    //             await booking.update({ status: newStatus });
+
+    //             const msg = loggedInUserRole === "1"
+    //                 ? "Ride cancelled by user successfully."
+    //                 : "Ride cancelled by driver successfully.";
+
+    //             return helper.success(res, msg, {
+    //                 bookingId: booking.id,
+    //                 cancelledBy: loggedInUserRole === "1" ? "user" : "driver",
+    //                 status: newStatus,
+    //                 message: "Ride has been cancelled."
+    //             });
+
+    //         } catch (error) {
+    //             console.log(error);
+    //             return helper.failure(res, "Something went wrong while cancelling the ride.");
+    //         }
+    //     }
+    // },
+
+    cancelRide: (io) => {
+        return async (req, res) => {
+            try {
+                const loggedInUserId = req.user.id;
+                const loggedInUserRole = req.user.role; // "1" = user, "2" = driver
+                const { bookingId } = req.body;
+
+                if (!bookingId) {
+                    return helper.failure(res, "Booking ID is required.");
+                }
+
+                // Only pending / accepted rides can be cancelled
+                const cancellableStatus = ["0", "1"];
+
+                const whereCond = {
+                    id: bookingId,
+                    status: { [Op.in]: cancellableStatus }
+                };
+
+                // Role based ownership check
+                if (loggedInUserRole === "1") {
+                    whereCond.userId = loggedInUserId;
+                } else if (loggedInUserRole === "2") {
+                    whereCond.driverId = loggedInUserId;
+                } else {
+                    return helper.failure(res, "Only users or drivers can cancel a ride.");
+                }
+
+                const booking = await db.bookings.findOne({ where: whereCond });
+
+                if (!booking) {
+                    return helper.failure(res, "Ride cannot be cancelled or already processed.");
+                }
+
+                // 5 = cancelled by user
+                // 4 = cancelled by driver
+                const newStatus = loggedInUserRole === "1" ? "5" : "4";
+                await booking.update({ status: newStatus });
+
+                // USER cancelled → notify DRIVER
+                if (loggedInUserRole === "1") {
+                    const driverId = booking.driverId;
+
+                    if (driverId && global.onlineUsers?.[driverId]) {
+                        global.onlineUsers[driverId].forEach(socketId => {
+                            io.to(socketId).emit("rideStatusUpdate", {
+                                success: true,
+                                message: "Ride cancelled by user",
+                                bookingId: booking.id,
+                                status: "5",
+                                cancelledBy: "user"
+                            });
+                        });
+                    }
+                }
+                // DRIVER cancelled → notify USER
+                if (loggedInUserRole === "2") {
+                    const userId = booking.userId;
+
+                    if (userId && global.onlineUsers?.[userId]) {
+                        global.onlineUsers[userId].forEach(socketId => {
+                            io.to(socketId).emit("rideStatusUpdate", {
+                                success: true,
+                                message: "Ride cancelled by driver",
+                                bookingId: booking.id,
+                                status: "4",
+                                cancelledBy: "driver"
+                            });
+                        });
+                    }
+                }
+                const msg =
+                    loggedInUserRole === "1"
+                        ? "Ride cancelled by user successfully."
+                        : "Ride cancelled by driver successfully.";
+
+                return helper.success(res, msg, {
+                    bookingId: booking.id,
+                    cancelledBy: loggedInUserRole === "1" ? "user" : "driver",
+                    status: newStatus,
+                    message: "Ride has been cancelled."
+                });
+            } catch (error) {
+                console.error(error);
+                return helper.failure(res, "Something went wrong while cancelling the ride.");
             }
-
-            // Only status 0 or 1 can be cancelled
-            const cancellableStatus = ["0", "1"];
-
-            const whereCond = {
-                id: bookingId,
-                status: { [Op.in]: cancellableStatus }
-            };
-
-            // Role-based check
-            if (loggedInUserRole === "1") {
-                whereCond.userId = loggedInUserId;
-            }
-            else if (loggedInUserRole === "2") {
-                whereCond.driverId = loggedInUserId;
-            }
-            else {
-                return helper.failure(res, "Only users or drivers can cancel a ride.");
-            }
-
-            const booking = await db.bookings.findOne({ where: whereCond });
-
-            if (!booking) {
-                return helper.failure(res, "Ride cannot be cancelled or already processed.");
-            }
-
-            // UPDATED STATUS 
-            const newStatus = loggedInUserRole === "1" ? "5" : "4";
-            await booking.update({ status: newStatus });
-
-            const msg = loggedInUserRole === "1"
-                ? "Ride cancelled by user successfully."
-                : "Ride cancelled by driver successfully.";
-
-            return helper.success(res, msg, {
-                bookingId: booking.id,
-                cancelledBy: loggedInUserRole === "1" ? "user" : "driver",
-                status: newStatus,
-                message: "Ride has been cancelled."
-            });
-
-        } catch (error) {
-            console.log(error);
-            return helper.failure(res, "Something went wrong while cancelling the ride.");
-        }
+        };
     },
 
     report: async (req, res) => {

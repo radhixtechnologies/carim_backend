@@ -58,7 +58,7 @@ router.get('/bookingdetail/:id', bookingController.bookingDetail);
 router.get("/transactionSsHistory", authController.transactionSsHistory);
 router.get("/userActiveRide", authController.userActiveRide);
 
-router.post("/cancelRide", bookingController.cancelRide);
+router.post("/cancelRide", bookingController.cancelRide(io));
 router.post("/report", bookingController.report);
 router.post("/blockUser", bookingController.blockUser(io));
 router.post("/driverWaletRecharge", bookingController.driverWaletRecharge);
