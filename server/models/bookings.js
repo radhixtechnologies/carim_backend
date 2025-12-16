@@ -101,7 +101,7 @@ module.exports = function(sequelize, DataTypes) {
       allowNull: false,
       defaultValue: Sequelize.Sequelize.literal('CURRENT_TIMESTAMP')
     },
-    ridePro: {
+    rideOpen: {
       type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 0,
