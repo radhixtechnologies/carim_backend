@@ -24,7 +24,7 @@ module.exports = {
       next();
     } catch (error) {
       if (error.name === "JsonWebTokenError") {
-        return helper.failure(res, "Invalid token", 400);
+        return helper.error(res, "Invalid token", 403);
       } else if (error.name === "TokenExpiredError") {
         return helper.failure(res, "Token expired", 400);
       }
@@ -128,7 +128,7 @@ module.exports = {
         attributes: { exclude: ["password"] },
       });
       if (!userData) {
-        return helper.failure(res, "Invalid token or user not found.");
+        return helper.error(res, "Invalid token or user not found.");
       }
 
       // if (userData.deviceToken && userData.deviceToken !== decoded.deviceToken) {
