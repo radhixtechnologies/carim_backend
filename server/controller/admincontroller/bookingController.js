@@ -40,13 +40,13 @@ module.exports = {
                 const searchConditions = [];
 
                 searchConditions.push({
-                    '$driverbook.name$': {
+                    '$driverbook.firstName$': {
                         [db.Sequelize.Op.like]: `%${search}%`
                     }
                 });
 
                 searchConditions.push({
-                    '$userbook.name$': {
+                    '$userbook.firstName$': {
                         [db.Sequelize.Op.like]: `%${search}%`
                     }
                 });

@@ -167,7 +167,7 @@ module.exports = {
 
             if (search && search.trim() !== "") {
                 whereCondition[Op.or] = [
-                    { name: { [Op.like]: `%${search}%` } },
+                    { firstName: { [Op.like]: `%${search}%` } },
                     { email: { [Op.like]: `%${search}%` } },
                 ];
             }
