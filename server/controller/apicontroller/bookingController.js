@@ -291,11 +291,10 @@ module.exports = {
                 .sort((a, b) => a.distanceFromPickup - b.distanceFromPickup);
 
             if (driversWithDistance.length === 0) {
-                return helper.error(
+                return helper.failure(
                     res,
                     'No drivers available within 30 km of your pickup location',
-                    404
-                );
+                                    );
             }
 
             // -------- RESPONSE --------
@@ -851,21 +850,21 @@ module.exports = {
                 });
 
                 if (!driver) {
-                    return helper.error(res, 'Driver not found or not available', 404);
+                    return helper.failure(res, 'Driver not found or not available',);
                 }
 
                 // -------- RADIUS CHECK (0–30 KM) --------
                 const maxRadius = 30;
 
                 if (!driver.latitude || !driver.longitude) {
-                    return helper.error(res, 'Driver location not available', 404);
+                    return helper.failure(res, 'Driver location not available',);
                 }
 
                 const driverLat = parseFloat(driver.latitude);
                 const driverLng = parseFloat(driver.longitude);
 
                 if (isNaN(driverLat) || isNaN(driverLng)) {
-                    return helper.error(res, 'Driver has invalid coordinates', 404);
+                    return helper.failure(res, 'Driver has invalid coordinates',);
                 }
 
                 const driverDistance = calculateDistance(
@@ -876,11 +875,10 @@ module.exports = {
                 );
 
                 if (!(driverDistance >= 0 && driverDistance <= maxRadius)) {
-                    return helper.error(
+                    return helper.failure(
                         res,
                         'No drivers available within 30 km of your pickup location',
-                        404
-                    );
+                                            );
                 }
 
                 const existingBooking = await db.bookings.findOne({
@@ -904,10 +902,9 @@ module.exports = {
                 });
 
                 if (driverActiveBooking) {
-                    return helper.error(
+                    return helper.failure(
                         res,
                         'Driver is currently busy with another ride',
-                        400
                     );
                 }
 
