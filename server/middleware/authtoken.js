@@ -148,13 +148,13 @@ module.exports = {
       if (userData.status === "0") {
         return helper.failure(res, "Your account has been deactivated by admin.");
       }
-      //       if (userData.block === "1") {
-      //   return helper.failure(res, "Your account has been blocked by admin.",);
-      // }
-      // if (userData.suspend === "1") {
-      //   return helper.failure(res, "Your account has been suspended by admin.",);
-      // }
-      
+      if (userData.block === "1") {
+        return helper.failure(res, "Your account has been blocked by admin.",);
+      }
+      if (userData.suspend === "1") {
+        return helper.failure(res, "Your account has been suspended by admin.",);
+      }
+
       // if (userData.role === "2" && userData.approve === "0") {
       //   return helper.failure(res, "Your account is not approved by admin.");
       // }
