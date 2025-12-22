@@ -132,7 +132,7 @@ module.exports = {
     //         console.log('Drivers within 0-30 km radius:', driversWithDistance.length);
 
     //         if (driversWithDistance.length === 0) {
-    //             return helper.error(res, 'No drivers available within 30 km of your pickup location', 404);
+    //             return helper.failure(res, 'No drivers available within 30 km of your pickup location', 404);
     //         }
 
     //         return helper.success(res, 'Nearby drivers found', {
@@ -381,21 +381,21 @@ module.exports = {
     //             });
 
     //             if (!driver) {
-    //                 return helper.error(res, 'Driver not found or not available', 404);
+    //                 return helper.failure(res, 'Driver not found or not available', 404);
     //             }
 
     //             //  ADD YOUR SAME RADIUS CHECK (0–30 KM LIMIT)
     //             const maxRadius = 30;
 
     //             if (!driver.latitude || !driver.longitude) {
-    //                 return helper.error(res, 'Driver location not available', 404);
+    //                 return helper.failure(res, 'Driver location not available', 404);
     //             }
 
     //             const driverLat = parseFloat(driver.latitude);
     //             const driverLng = parseFloat(driver.longitude);
 
     //             if (isNaN(driverLat) || isNaN(driverLng)) {
-    //                 return helper.error(res, 'Driver has invalid coordinates', 404);
+    //                 return helper.failure(res, 'Driver has invalid coordinates', 404);
     //             }
 
     //             const driverDistance = calculateDistance(
@@ -408,7 +408,7 @@ module.exports = {
     //             console.log(`Driver distance from pickup: ${driverDistance} km`);
 
     //             if (!(driverDistance >= 0 && driverDistance <= maxRadius)) {
-    //                 return helper.error(res, 'No drivers available within 30 km of your pickup location', 404);
+    //                 return helper.failure(res, 'No drivers available within 30 km of your pickup location', 404);
     //             }
 
     //             const existingBooking = await db.bookings.findOne({
@@ -420,7 +420,7 @@ module.exports = {
     //             });
 
     //             if (existingBooking) {
-    //                 return helper.error(res, 'You already have an active ride request');
+    //                 return helper.failure(res, 'You already have an active ride request');
     //             }
 
     //             const driverActiveBooking = await db.bookings.findOne({
@@ -432,7 +432,7 @@ module.exports = {
     //             });
 
     //             if (driverActiveBooking) {
-    //                 return helper.error(res, 'Driver is currently busy with another ride', 400);
+    //                 return helper.failure(res, 'Driver is currently busy with another ride', 400);
     //             }
 
     //             const generateOrderId = () => {
@@ -890,7 +890,7 @@ module.exports = {
                 });
 
                 if (existingBooking) {
-                    return helper.error(res, 'You already have an active ride request');
+                    return helper.failure(res, 'You already have an active ride request');
                 }
 
                 const driverActiveBooking = await db.bookings.findOne({
@@ -1063,7 +1063,7 @@ module.exports = {
                 });
 
                 if (!booking) {
-                    return helper.error(res, 'Booking already processed');
+                    return helper.failure(res, 'Booking already processed');
                 }
                 // Accept or reject
                 if (request === '1') {
@@ -1176,7 +1176,7 @@ module.exports = {
             });
 
             if (!booking) {
-                return helper.error(res, 'Booking not found or cannot be updated', 404);
+                return helper.failure(res, 'Booking not found or cannot be updated', 404);
             }
 
             await booking.update({
@@ -1324,7 +1324,7 @@ module.exports = {
             });
 
             if (!booking) {
-                return helper.error(res, 'Booking not found', 404);
+                return helper.failure(res, 'Booking not found', 404);
             }
 
             return helper.success(res, 'Booking details fetched successfully', {
@@ -1459,7 +1459,7 @@ module.exports = {
             });
 
             if (existingReport) {
-                return helper.error(res, "You have already reported this user.");
+                return helper.failure(res, "You have already reported this user.");
             }
 
             // Create a new report if it doesn't exist
@@ -1521,14 +1521,14 @@ module.exports = {
 
                 const errorResponse = await helper.checkValidation(v);
                 if (errorResponse) {
-                    return helper.error(res, errorResponse);
+                    return helper.failure(res, errorResponse);
                 }
 
                 const blockBy = req.user.id;
                 const blockTo = req.body.userId;
 
                 if (blockBy == blockTo) {
-                    return helper.error(res, "You cannot block yourself.");
+                    return helper.failure(res, "You cannot block yourself.");
                 }
 
                 await db.users.update(
@@ -1554,7 +1554,7 @@ module.exports = {
 
             } catch (error) {
                 console.error("Block user error:", error);
-                return helper.error(res, "Something went wrong.");
+                return helper.failure(res, "Something went wrong.");
             }
         };
     },
