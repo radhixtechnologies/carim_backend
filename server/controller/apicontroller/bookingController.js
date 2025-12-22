@@ -168,6 +168,174 @@ module.exports = {
     //         return helper.failure(res, "Something went wrong.");
     //     }
     // },
+    // findRide(main): async (req, res) => {
+    //     try {
+    //         const userId = req.user.id;
+    //         const {
+    //             pickupLatitude,
+    //             pickupLongitude,
+    //             dropLatitude,
+    //             dropLongitude,
+    //             pickupLocation,
+    //             dropLocation
+    //         } = req.body;
+
+    //         if (!pickupLatitude || !pickupLongitude || !dropLatitude || !dropLongitude) {
+    //             return helper.failure(res, 'Pickup and drop coordinates are required.');
+    //         }
+
+    //         const pickupLat = parseFloat(pickupLatitude);
+    //         const pickupLng = parseFloat(pickupLongitude);
+    //         const dropLat = parseFloat(dropLatitude);
+    //         const dropLng = parseFloat(dropLongitude);
+
+    //         if (
+    //             isNaN(pickupLat) ||
+    //             isNaN(pickupLng) ||
+    //             isNaN(dropLat) ||
+    //             isNaN(dropLng)
+    //         ) {
+    //             return helper.failure(res, 'Invalid coordinates provided.');
+    //         }
+
+    //         console.log("Parsed Pickup Coordinates:", pickupLat, pickupLng);
+    //         console.log("Parsed Drop Coordinates:", dropLat, dropLng);
+    //         console.log("Pickup Address:", pickupLocation || 'Not provided');
+    //         console.log("Drop Address:", dropLocation || 'Not provided');
+
+    //         const maxRadius = 30;
+
+    //         // -------- DISTANCE UTILS --------
+    //         function toRad(degrees) {
+    //             return degrees * (Math.PI / 180);
+    //         }
+
+    //         function calculateDistance(lat1, lon1, lat2, lon2) {
+    //             const R = 6371;
+    //             const dLat = toRad(lat2 - lat1);
+    //             const dLon = toRad(lon2 - lon1);
+    //             const a =
+    //                 Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    //                 Math.cos(toRad(lat1)) *
+    //                 Math.cos(toRad(lat2)) *
+    //                 Math.sin(dLon / 2) *
+    //                 Math.sin(dLon / 2);
+    //             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    //             return R * c;
+    //         }
+
+    //         // -------- PRICE CALCULATION (NEW) --------
+    //         const rideDistanceKm = calculateDistance(
+    //             pickupLat,
+    //             pickupLng,
+    //             dropLat,
+    //             dropLng
+    //         );
+
+    //         const bookingPrice = Math.round(rideDistanceKm * 10); // ₹10 per KM
+    //         // ----------------------------------------
+
+    //         // -------- FETCH BUSY DRIVERS --------
+    //         const busyDrivers = await db.bookings.findAll({
+    //             where: {
+    //                 status: { [Sequelize.Op.in]: ['0', '1', '2'] },
+    //                 request: '0'
+    //             },
+    //             attributes: ['driverId']
+    //         });
+
+    //         const busyDriverIds = busyDrivers.map(b => b.driverId);
+
+    //         // -------- FETCH NEARBY DRIVERS --------
+    //         const nearbyDrivers = await db.users.findAll({
+    //             where: {
+    //                 role: '2',
+    //                 online: '1',
+    //                 id: { [Sequelize.Op.notIn]: busyDriverIds }
+    //             },
+    //             include: [{
+    //                 model: db.vehicleDetails,
+    //                 as: 'vehicleDetail',
+    //                 required: true
+    //             }],
+    //         });
+
+    //         const driversWithDistance = nearbyDrivers
+    //             .map(driver => {
+    //                 if (!driver.latitude || !driver.longitude) return null;
+
+    //                 const driverLat = parseFloat(driver.latitude);
+    //                 const driverLng = parseFloat(driver.longitude);
+
+    //                 if (isNaN(driverLat) || isNaN(driverLng)) return null;
+
+    //                 const distance = calculateDistance(
+    //                     pickupLat,
+    //                     pickupLng,
+    //                     driverLat,
+    //                     driverLng
+    //                 );
+
+    //                 if (distance >= 0 && distance <= maxRadius) {
+    //                     return {
+    //                         ...driver.toJSON(),
+    //                         fullName: `${driver.firstName || ''} ${driver.lastName || ''}`.trim(),
+    //                         distanceFromPickup: distance.toFixed(2),
+    //                         distanceUnit: 'km',
+    //                         vehicleDetails: driver.vehicleDetail
+    //                     };
+    //                 }
+    //                 return null;
+    //             })
+    //             .filter(Boolean)
+    //             .sort((a, b) => a.distanceFromPickup - b.distanceFromPickup);
+
+    //         if (driversWithDistance.length === 0) {
+    //             return helper.failure(
+    //                 res,
+    //                 'No drivers available within 30 km of your pickup location',
+    //                                 );
+    //         }
+
+    //         // -------- RESPONSE --------
+    //         return helper.success(res, 'Nearby drivers found', {
+    //             userId: userId,
+
+    //             bookingPrice: bookingPrice,
+    //             rideDistanceKm: rideDistanceKm.toFixed(2), // optional (safe)
+
+    //             pickupLocation: {
+    //                 latitude: pickupLat,
+    //                 longitude: pickupLng,
+    //                 address: pickupLocation || null
+    //             },
+    //             dropLocation: {
+    //                 latitude: dropLat,
+    //                 longitude: dropLng,
+    //                 address: dropLocation || null
+    //             },
+    //             searchRadius: `0-${maxRadius} km`,
+    //             totalDriversNearPickup: driversWithDistance.length,
+    //             drivers: driversWithDistance.map(driver => ({
+    //                 id: driver.id,
+    //                 fullName: driver.fullName,
+    //                 firstName: driver.firstName,
+    //                 lastName: driver.lastName,
+    //                 phone: driver.phone,
+    //                 profileImage: driver.profileImage,
+    //                 vehicleDetails: driver.vehicleDetails,
+    //                 latitude: driver.latitude,
+    //                 longitude: driver.longitude,
+    //                 distanceFromPickup: driver.distanceFromPickup,
+    //                 distanceUnit: driver.distanceUnit
+    //             }))
+    //         });
+
+    //     } catch (error) {
+    //         console.error(error);
+    //         return helper.failure(res, "Something went wrong.");
+    //     }
+    // },
     findRide: async (req, res) => {
         try {
             const userId = req.user.id;
@@ -198,11 +366,6 @@ module.exports = {
                 return helper.failure(res, 'Invalid coordinates provided.');
             }
 
-            console.log("Parsed Pickup Coordinates:", pickupLat, pickupLng);
-            console.log("Parsed Drop Coordinates:", dropLat, dropLng);
-            console.log("Pickup Address:", pickupLocation || 'Not provided');
-            console.log("Drop Address:", dropLocation || 'Not provided');
-
             const maxRadius = 30;
 
             // -------- DISTANCE UTILS --------
@@ -224,7 +387,7 @@ module.exports = {
                 return R * c;
             }
 
-            // -------- PRICE CALCULATION (NEW) --------
+            // -------- PRICE CALCULATION --------
             const rideDistanceKm = calculateDistance(
                 pickupLat,
                 pickupLng,
@@ -233,7 +396,6 @@ module.exports = {
             );
 
             const bookingPrice = Math.round(rideDistanceKm * 10); // ₹10 per KM
-            // ----------------------------------------
 
             // -------- FETCH BUSY DRIVERS --------
             const busyDrivers = await db.bookings.findAll({
@@ -241,17 +403,20 @@ module.exports = {
                     status: { [Sequelize.Op.in]: ['0', '1', '2'] },
                     request: '0'
                 },
-                attributes: ['driverId']
+                attributes: ['driverId', 'status'],
+                raw: true
             });
 
-            const busyDriverIds = busyDrivers.map(b => b.driverId);
+            const busyDriverMap = {};
+            busyDrivers.forEach(b => {
+                busyDriverMap[b.driverId] = b.status;
+            });
 
-            // -------- FETCH NEARBY DRIVERS --------
+            // -------- FETCH NEARBY DRIVERS (BUSY INCLUDED) --------
             const nearbyDrivers = await db.users.findAll({
                 where: {
                     role: '2',
-                    online: '1',
-                    id: { [Sequelize.Op.notIn]: busyDriverIds }
+                    online: '1'
                 },
                 include: [{
                     model: db.vehicleDetails,
@@ -282,6 +447,8 @@ module.exports = {
                             fullName: `${driver.firstName || ''} ${driver.lastName || ''}`.trim(),
                             distanceFromPickup: distance.toFixed(2),
                             distanceUnit: 'km',
+                            isBusy: busyDriverMap[driver.id] ? true : false,
+                            bookingStatus: busyDriverMap[driver.id] || null,
                             vehicleDetails: driver.vehicleDetail
                         };
                     }
@@ -293,16 +460,15 @@ module.exports = {
             if (driversWithDistance.length === 0) {
                 return helper.failure(
                     res,
-                    'No drivers available within 30 km of your pickup location',
-                                    );
+                    'No drivers available within 30 km of your pickup location'
+                );
             }
 
             // -------- RESPONSE --------
             return helper.success(res, 'Nearby drivers found', {
                 userId: userId,
-
                 bookingPrice: bookingPrice,
-                rideDistanceKm: rideDistanceKm.toFixed(2), // optional (safe)
+                rideDistanceKm: rideDistanceKm.toFixed(2),
 
                 pickupLocation: {
                     latitude: pickupLat,
@@ -327,7 +493,9 @@ module.exports = {
                     latitude: driver.latitude,
                     longitude: driver.longitude,
                     distanceFromPickup: driver.distanceFromPickup,
-                    distanceUnit: driver.distanceUnit
+                    distanceUnit: driver.distanceUnit,
+                    isBusy: driver.isBusy,
+                    bookingStatus: driver.bookingStatus
                 }))
             });
 
@@ -336,6 +504,9 @@ module.exports = {
             return helper.failure(res, "Something went wrong.");
         }
     },
+
+
+
 
     // bookRide: (io) => {
     //     return async (req, res) => {
@@ -768,7 +939,6 @@ module.exports = {
     //         }
     //     };
     // },
-
     bookRide: (io) => {
         return async (req, res) => {
             try {
@@ -878,7 +1048,7 @@ module.exports = {
                     return helper.failure(
                         res,
                         'No drivers available within 30 km of your pickup location',
-                                            );
+                    );
                 }
 
                 const existingBooking = await db.bookings.findOne({

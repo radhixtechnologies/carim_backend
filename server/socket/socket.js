@@ -899,7 +899,7 @@ module.exports = function (io) {
           whereCondition.bookingId = get_data.bookingId;
         }
 
-        // 🚀 NEW: Filter out chats from completed / cancelled / rejected bookings
+        //  NEW: Filter out chats from completed / cancelled / rejected bookings
         whereCondition.bookingId = {
           [Op.in]: Sequelize.literal(`(
         SELECT id FROM bookings 
