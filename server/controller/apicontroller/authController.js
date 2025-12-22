@@ -47,6 +47,12 @@ module.exports = {
                 if (existingUser.status === "0") {
                     return helper.failure(res, 'Your account has been deactivated by admin.');
                 }
+                if (existingUser.block === "1") {
+                    return helper.failure(res, "Your account has been blocked by admin.",);
+                }
+                if (existingUser.suspend === "1") {
+                    return helper.failure(res, "Your account has been suspended by admin.",);
+                }
                 // if (existingUser.role === "2" && existingUser.approve === "0") {
                 //     return helper.failure(res, 'Your account is not approved by admin.');
                 // }
@@ -160,7 +166,7 @@ module.exports = {
                 return helper.failure(res, 'User not found.');
             }
 
-            if (user.status === 0) {
+            if (user.status === "0") {
                 return helper.failure(res, "Your account is in-active by Admin. Please contact the admin for assistance."); // Changed from failure to failure
             }
 
@@ -534,7 +540,7 @@ module.exports = {
                     vehicleColor: vehicleColor,
                     vehicleDocument: vehicleDocument,
                     drivingLicence: drivingLicence,
-                    passengerCount:passengerCount
+                    passengerCount: passengerCount
                 }, { transaction });
 
                 await db.users.update(
@@ -560,7 +566,7 @@ module.exports = {
                     vehicleColor: vehicle.vehicleColor,
                     vehicleDocument: vehicle.vehicleDocument,
                     drivingLicence: vehicle.drivingLicence,
-                    passengerCount:vehicle.passengerCount,
+                    passengerCount: vehicle.passengerCount,
                     userVehicleStatus: updatedUser.vehicle
                 };
 
@@ -676,7 +682,7 @@ module.exports = {
                 vehicleColor: vehicleColor,
                 vehicleDocument: vehicleDocument,
                 drivingLicence: drivingLicence,
-                passengerCount:passengerCount,
+                passengerCount: passengerCount,
                 updatedAt: new Date()
             }, {
                 where: {
@@ -698,7 +704,7 @@ module.exports = {
                 vehicleColor: updatedVehicle.vehicleColor,
                 vehicleDocument: updatedVehicle.vehicleDocument,
                 drivingLicence: updatedVehicle.drivingLicence,
-                passengerCount:updatedVehicle.passengerCount,
+                passengerCount: updatedVehicle.passengerCount,
                 updatedAt: updatedVehicle.updatedAt
             };
 
