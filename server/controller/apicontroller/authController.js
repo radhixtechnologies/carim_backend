@@ -355,7 +355,7 @@ module.exports = {
             await db.users.update(
                 {
                     deviceToken: "",
-                    loginTime: loginTime,
+                    loginTime: 0,
                 },
                 {
                     where: {
