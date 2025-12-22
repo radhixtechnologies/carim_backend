@@ -66,6 +66,7 @@ module.exports = {
 
             const whereCondition = {
                 role: "1",
+                otpVerify: "1"
             };
 
             if (search && search.trim() !== "") {
@@ -163,8 +164,7 @@ module.exports = {
             dateFilter = dateFilter || "all";
 
             const Op = db.Sequelize.Op;
-            const whereCondition = { role: "2" };
-
+            const whereCondition = { role: "2", vehicle: "1" };
             if (search && search.trim() !== "") {
                 whereCondition[Op.or] = [
                     { firstName: { [Op.like]: `%${search}%` } },
