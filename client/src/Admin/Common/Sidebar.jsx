@@ -119,7 +119,7 @@ function Sidebar({ isOpen }) {
             <img src="/assets/images/carim1.png" alt="" height={20} />
           </span>
         </Link>
-        <button
+        {/* <button
           type="button"
           className="btn btn-sm hide-menu-btn"
           onClick={() => {
@@ -140,7 +140,7 @@ function Sidebar({ isOpen }) {
           }}
         >
           <i className="fe-x"></i>
-        </button>
+        </button> */}
       </div>
       <div data-simplebar="" className="sidebar-menu-scroll mt-1">
         <div id="sidebar-menu">
