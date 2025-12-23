@@ -993,7 +993,8 @@ module.exports = {
                     status: booking.status,
                     request: booking.request,
                     bookingDate: booking.bookingDate,
-                    orderId: booking.orderId
+                    orderId: booking.orderId,
+                    rideOpen: booking.rideOpen
                 }))
             });
 
@@ -1126,7 +1127,8 @@ module.exports = {
                     dropLongitude: booking.dropLongitude,
                     status: booking.status,
                     request: booking.request,
-                    bookingDate: booking.bookingDate
+                    bookingDate: booking.bookingDate,
+                    rideOpen: booking.rideOpen
                 }))
             });
 
@@ -1171,7 +1173,7 @@ module.exports = {
             });
 
             if (!booking) {
-                return helper.failure(res, 'Booking not found', 404);
+                return helper.failure(res, 'Booking not found',);
             }
 
             return helper.success(res, 'Booking details fetched successfully', {
