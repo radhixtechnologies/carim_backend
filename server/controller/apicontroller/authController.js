@@ -805,12 +805,10 @@ module.exports = {
     userActiveRide: async (req, res) => {
         try {
             const userId = req.user.id;
-
-            // Find if user has any active ride
             const activeRide = await db.bookings.findOne({
                 where: {
                     userId: userId,
-                    status: { [Sequelize.Op.in]: ['0', '1', '2','3'] },
+                    status: { [Sequelize.Op.in]: ['0', '1', '2',] },
                     // request: '0'
                 },
                 include: [
@@ -821,8 +819,6 @@ module.exports = {
                 ],
                 order: [['id', 'DESC']]
             });
-
-            // If no ride active
             if (!activeRide) {
                 return helper.success(res, "No active ride", {
                     hasActiveRide: false,
@@ -830,9 +826,7 @@ module.exports = {
                 });
             }
 
-            // If active ride exists
             const driver = activeRide.driverbook;
-
             return helper.success(res, "Active ride found", {
                 hasActiveRide: true,
                 ride: {
