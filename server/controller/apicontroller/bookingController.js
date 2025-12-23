@@ -505,9 +505,6 @@ module.exports = {
         }
     },
 
-
-
-
     // bookRide: (io) => {
     //     return async (req, res) => {
     //         try {
