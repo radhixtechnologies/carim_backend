@@ -810,8 +810,8 @@ module.exports = {
             const activeRide = await db.bookings.findOne({
                 where: {
                     userId: userId,
-                    status: { [Sequelize.Op.in]: ['0', '1', '2','3'] },
-                    request: '0'
+                    status: { [Sequelize.Op.in]: ['0', '1', '2',] },
+                    // request: '0'
                 },
                 include: [
                     {
