@@ -1284,20 +1284,73 @@ module.exports = {
         };
     },
 
+    // requestList: async (req, res) => {
+    //     try {
+    //         const driverId = req.user.id;
+
+    //         const requests = await db.bookings.findAll({
+    //             where: {
+    //                 driverId: driverId,
+    //                 status: '0',
+    //                 request: '0'
+    //             },
+    //             include: [{
+    //                 model: db.users,
+    //                 as: 'userbook',
+    //             }]
+    //         });
+
+    //         return helper.success(res, 'Pending ride requests fetched successfully', {
+    //             totalRequests: requests.length,
+    //             requests: requests.map(booking => ({
+    //                 bookingId: booking.id,
+    //                 userId: booking.userId,
+    //                 userDetails: booking.userbook,
+    //                 pickupLocation: booking.pickupLocation,
+    //                 dropLocation: booking.dropLocation,
+    //                 pickupLatitude: booking.pickupLatitude,
+    //                 pickupLongitude: booking.pickupLongitude,
+    //                 dropLatitude: booking.dropLatitude,
+    //                 dropLongitude: booking.dropLongitude,
+    //                 status: booking.status,
+    //                 request: booking.request,
+    //                 bookingDate: booking.bookingDate,
+    //                 orderId: booking.orderId
+    //             }))
+    //         });
+
+    //     } catch (error) {
+    //         return helper.failure(res, "Something went wrong while fetching requests.");
+    //     }
+    // },
     requestList: async (req, res) => {
         try {
             const driverId = req.user.id;
+            const thirtySecondsAgo = new Date(Date.now() - 30 * 1000);
 
+            await db.bookings.destroy({
+                where: {
+                    driverId: driverId,
+                    status: '0',        
+                    request: '0',       
+                    bookingDate: {
+                        [Sequelize.Op.lt]: thirtySecondsAgo
+                    }
+                }
+            });
             const requests = await db.bookings.findAll({
                 where: {
                     driverId: driverId,
                     status: '0',
                     request: '0'
                 },
-                include: [{
-                    model: db.users,
-                    as: 'userbook',
-                }]
+                include: [
+                    {
+                        model: db.users,
+                        as: 'userbook',
+                    }
+                ],
+                order: [['id', 'DESC']]
             });
 
             return helper.success(res, 'Pending ride requests fetched successfully', {
@@ -1320,9 +1373,11 @@ module.exports = {
             });
 
         } catch (error) {
+            console.log("requestList error:", error);
             return helper.failure(res, "Something went wrong while fetching requests.");
         }
     },
+
 
     updatedPickupLocation: async (req, res) => {
         try {
