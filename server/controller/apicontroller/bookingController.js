@@ -359,7 +359,7 @@ module.exports = {
         }
     },
 
- 
+
     // bookRide: (io) => {
     //     return async (req, res) => {
     //         try {
@@ -956,8 +956,8 @@ module.exports = {
             await db.bookings.destroy({
                 where: {
                     driverId: driverId,
-                    status: '0',        
-                    request: '0',       
+                    status: '0',
+                    request: '0',
                     bookingDate: {
                         [Sequelize.Op.lt]: oneMinuteAgo
                     }
@@ -1190,7 +1190,8 @@ module.exports = {
                 status: booking.status,
                 request: booking.request,
                 bookingDate: booking.bookingDate,
-                bookingPrice: booking.bookingPrice
+                bookingPrice: booking.bookingPrice,
+                rideOpen: booking.rideOpen
             });
 
         } catch (error) {
