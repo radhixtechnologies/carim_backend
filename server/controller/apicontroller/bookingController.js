@@ -903,7 +903,7 @@ module.exports = {
                     where: {
                         driverId,
                         status: { [Sequelize.Op.in]: ['0', '1', '2'] },
-                        request: '0'
+                        request: '1'
                     }
                 });
 
