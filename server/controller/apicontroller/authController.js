@@ -831,7 +831,7 @@ module.exports = {
             }
 
             // If active ride exists
-            const driver = activeRide.driver;
+            const driver = activeRide.driverbook;
 
             return helper.success(res, "Active ride found", {
                 hasActiveRide: true,
