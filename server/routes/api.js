@@ -50,7 +50,7 @@ router.post('/findride', bookingController.findRide);
 router.post('/bookride', bookingController.bookRide(io));
 
 router.post('/accpetreject', bookingController.driverAccptReject(io));
-router.get('/requestList', bookingController.requestList);
+router.get('/requestList', bookingController.requestList(io));
 router.post('/locationupdate', bookingController.updatedPickupLocation);
 router.get('/bookingHistory', bookingController.bookingHistory);
 

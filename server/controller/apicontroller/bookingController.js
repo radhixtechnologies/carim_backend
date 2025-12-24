@@ -391,7 +391,7 @@ module.exports = {
 
             const maxRadius = 30; // KM
 
-            /* ---------------- DISTANCE UTILS ---------------- */
+            //---------------- DISTANCE UTILS ---------------- 
             const toRad = deg => deg * (Math.PI / 180);
 
             const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -408,7 +408,7 @@ module.exports = {
                 return R * c;
             };
 
-            /* ---------------- PRICE CALCULATION ---------------- */
+            // ---------------- PRICE CALCULATION -----------
             const rideDistanceKm = calculateDistance(
                 pickupLat,
                 pickupLng,
@@ -418,7 +418,7 @@ module.exports = {
 
             const bookingPrice = Math.round(rideDistanceKm * 10); // ₹10/km
 
-            /* ---------------- FETCH ACTIVE BOOKINGS ---------------- */
+            //---------------- FETCH ACTIVE BOOKINGS -------
             const activeBookings = await db.bookings.findAll({
                 where: {
                     status: { [Sequelize.Op.in]: ['0', '1', '2'] },
@@ -436,7 +436,7 @@ module.exports = {
                 rideOpenMap[b.driverId] = b.rideOpen;
             });
 
-            /* ---------------- FETCH ONLINE DRIVERS ---------------- */
+            //---------------- FETCH ONLINE DRIVERS ---------------- 
             const drivers = await db.users.findAll({
                 where: {
                     role: '2',
@@ -449,7 +449,7 @@ module.exports = {
                 }]
             });
 
-            /* ---------------- FILTER BY DISTANCE ---------------- */
+            // ---------------- FILTER BY DISTANCE ---------------- 
             const driversWithDistance = drivers
                 .map(driver => {
                     if (!driver.latitude || !driver.longitude) return null;
@@ -475,7 +475,7 @@ module.exports = {
                         distanceUnit: 'km',
                         isBusy: busyDriverMap[driver.id] ? true : false,
                         bookingStatus: busyDriverMap[driver.id] || null,
-                        rideOpen: rideOpenMap[driver.id] ?? '1', 
+                        rideOpen: rideOpenMap[driver.id] ?? '1',
                         vehicleDetails: driver.vehicleDetail
                     };
                 })
@@ -489,7 +489,7 @@ module.exports = {
                 );
             }
 
-            /* ---------------- RESPONSE ---------------- */
+            //---------------- RESPONSE ---------------- 
             return helper.success(res, 'Nearby drivers found', {
                 userId,
                 bookingPrice,
@@ -839,7 +839,6 @@ module.exports = {
                 );
 
                 const bookingPrice = Math.round(rideDistanceKm * 10); // ₹10 per KM
-                // --------------------------------------------------------------------
 
                 // -------- DRIVER FETCH ---------
                 const driver = await db.users.findOne({
@@ -931,7 +930,6 @@ module.exports = {
                     }
                 }
 
-                // ---------------- SAVE bookingPrice (NEW) ----------------
                 const newBooking = await db.bookings.create({
                     userId,
                     driverId,
@@ -947,9 +945,8 @@ module.exports = {
                     request: '0',
                     rideOpen
                 });
-                // ---------------------------------------------------------
 
-                // ---------------- SOCKET EMIT (UNCHANGED) ----------------
+                // -- SOCKET EMIT ---
                 try {
                     let emitted = false;
 
@@ -994,7 +991,7 @@ module.exports = {
                 } catch (e) {
                     console.log("Socket emit failed:", e);
                 }
-                // ---------------------------------------------------------
+                // -----------------
 
                 return helper.success(
                     res,
@@ -1006,8 +1003,8 @@ module.exports = {
                         driverId,
                         status: newBooking.status,
                         request: newBooking.request,
-                        bookingPrice: bookingPrice,          // 👈 SHOWN
-                        rideDistanceKm: rideDistanceKm.toFixed(2), // 👈 SHOWN
+                        bookingPrice: bookingPrice,          //  SHOWN
+                        rideDistanceKm: rideDistanceKm.toFixed(2), //  SHOWN
                         pickupLocation: newBooking.pickupLocation,
                         dropLocation: newBooking.dropLocation,
                         coordinates: {
@@ -1123,61 +1120,144 @@ module.exports = {
         };
     },
 
-    requestList: async (req, res) => {
-        try {
-            const driverId = req.user.id;
-            const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
+    // requestList: async (req, res) => {
+    //     try {
+    //         const driverId = req.user.id;
+    //         const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
 
-            await db.bookings.destroy({
-                where: {
-                    driverId: driverId,
-                    status: '0',
-                    request: '0',
-                    bookingDate: {
-                        [Sequelize.Op.lt]: oneMinuteAgo
+    //         await db.bookings.destroy({
+    //             where: {
+    //                 driverId: driverId,
+    //                 status: '0',
+    //                 request: '0',
+    //                 bookingDate: {
+    //                     [Sequelize.Op.lt]: oneMinuteAgo
+    //                 }
+    //             }
+    //         });
+    //         const requests = await db.bookings.findAll({
+    //             where: {
+    //                 driverId: driverId,
+    //                 status: '0',
+    //                 request: '0'
+    //             },
+    //             include: [
+    //                 {
+    //                     model: db.users,
+    //                     as: 'userbook',
+    //                 }
+    //             ],
+    //             order: [['id', 'DESC']]
+    //         });
+
+    //         return helper.success(res, 'Pending ride requests fetched successfully', {
+    //             totalRequests: requests.length,
+    //             requests: requests.map(booking => ({
+    //                 bookingId: booking.id,
+    //                 userId: booking.userId,
+    //                 userDetails: booking.userbook,
+    //                 pickupLocation: booking.pickupLocation,
+    //                 dropLocation: booking.dropLocation,
+    //                 pickupLatitude: booking.pickupLatitude,
+    //                 pickupLongitude: booking.pickupLongitude,
+    //                 dropLatitude: booking.dropLatitude,
+    //                 dropLongitude: booking.dropLongitude,
+    //                 status: booking.status,
+    //                 request: booking.request,
+    //                 bookingDate: booking.bookingDate,
+    //                 orderId: booking.orderId,
+    //                 rideOpen: booking.rideOpen
+    //             }))
+    //         });
+
+    //     } catch (error) {
+    //         console.log("requestList error:", error);
+    //         return helper.failure(res, "Something went wrong while fetching requests.");
+    //     }
+    // },
+    requestList: (io) => {
+        return async (req, res) => {
+            try {
+                const driverId = req.user.id;
+                const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
+
+                const expiredBookings = await db.bookings.findAll({
+                    where: {
+                        driverId: driverId,
+                        status: '0',
+                        request: '0',
+                        bookingDate: {
+                            [Sequelize.Op.lt]: oneMinuteAgo
+                        }
+                    },
+                    attributes: ['id', 'userId'],
+                    raw: true
+                });
+
+                await db.bookings.destroy({
+                    where: {
+                        driverId: driverId,
+                        status: '0',
+                        request: '0',
+                        bookingDate: {
+                            [Sequelize.Op.lt]: oneMinuteAgo
+                        }
                     }
+                });
+                // USER SOCKET EMIT ONLY
+                if (expiredBookings.length) {
+                    expiredBookings.forEach(b => {
+                        if (global.onlineUsers && onlineUsers[b.userId]?.length) {
+                            onlineUsers[b.userId].forEach(sockId => {
+                                io.to(sockId).emit("rideStatusUpdate", {
+                                    bookingId: b.id,
+                                    message: "Driver did not respond. Please try again."
+                                });
+                            });
+                        }
+                    });
                 }
-            });
-            const requests = await db.bookings.findAll({
-                where: {
-                    driverId: driverId,
-                    status: '0',
-                    request: '0'
-                },
-                include: [
-                    {
-                        model: db.users,
-                        as: 'userbook',
-                    }
-                ],
-                order: [['id', 'DESC']]
-            });
+                const requests = await db.bookings.findAll({
+                    where: {
+                        driverId: driverId,
+                        status: '0',
+                        request: '0'
+                    },
+                    include: [
+                        {
+                            model: db.users,
+                            as: 'userbook',
+                        }
+                    ],
+                    order: [['id', 'DESC']]
+                });
+                return helper.success(res, 'Pending ride requests fetched successfully', {
+                    totalRequests: requests.length,
+                    requests: requests.map(booking => ({
+                        bookingId: booking.id,
+                        userId: booking.userId,
+                        userDetails: booking.userbook,
+                        pickupLocation: booking.pickupLocation,
+                        dropLocation: booking.dropLocation,
+                        pickupLatitude: booking.pickupLatitude,
+                        pickupLongitude: booking.pickupLongitude,
+                        dropLatitude: booking.dropLatitude,
+                        dropLongitude: booking.dropLongitude,
+                        status: booking.status,
+                        request: booking.request,
+                        bookingDate: booking.bookingDate,
+                        orderId: booking.orderId,
+                        rideOpen: booking.rideOpen
+                    }))
+                });
 
-            return helper.success(res, 'Pending ride requests fetched successfully', {
-                totalRequests: requests.length,
-                requests: requests.map(booking => ({
-                    bookingId: booking.id,
-                    userId: booking.userId,
-                    userDetails: booking.userbook,
-                    pickupLocation: booking.pickupLocation,
-                    dropLocation: booking.dropLocation,
-                    pickupLatitude: booking.pickupLatitude,
-                    pickupLongitude: booking.pickupLongitude,
-                    dropLatitude: booking.dropLatitude,
-                    dropLongitude: booking.dropLongitude,
-                    status: booking.status,
-                    request: booking.request,
-                    bookingDate: booking.bookingDate,
-                    orderId: booking.orderId,
-                    rideOpen: booking.rideOpen
-                }))
-            });
-
-        } catch (error) {
-            console.log("requestList error:", error);
-            return helper.failure(res, "Something went wrong while fetching requests.");
-        }
+            } catch (error) {
+                console.log("requestList error:", error);
+                return helper.failure(res, "Something went wrong while fetching requests.");
+            }
+        };
     },
+
 
 
     updatedPickupLocation: async (req, res) => {
