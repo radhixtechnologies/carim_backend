@@ -45,13 +45,13 @@ module.exports = {
 
             if (existingUser) {
                 if (existingUser.status === "0") {
-                    return helper.error2(res, 'Your account has been deactivated by admin.');
+                    return helper.failure(res, 'Your account has been deactivated by admin.');
                 }
                 if (existingUser.block === "1") {
-                    return helper.error1(res, "Your account has been blocked by admin.",);
+                    return helper.failure(res, "Your account has been blocked by admin.",);
                 }
                 if (existingUser.suspend === "1") {
-                    return helper.error3(res, "Your account has been suspended by admin.",);
+                    return helper.failure(res, "Your account has been suspended by admin.",);
                 }
                 if (existingUser.role == '2') {
 

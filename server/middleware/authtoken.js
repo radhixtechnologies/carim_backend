@@ -130,6 +130,7 @@ module.exports = {
       if (!userData) {
         return helper.error(res, "Invalid token or user not found.");
       }
+      
 
       // if (userData.deviceToken && userData.deviceToken !== decoded.deviceToken) {
       //   await db.users.update(
