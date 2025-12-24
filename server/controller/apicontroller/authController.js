@@ -44,9 +44,6 @@ module.exports = {
             const rideOtp = '1111'
 
             if (existingUser) {
-                if (existingUser.role == '2' && existingUser.approve != "1") {
-                    return helper.failure(res, "Your driver account is not approved yet.");
-                }
                 if (existingUser.status === "0") {
                     return helper.failure(res, 'Your account has been deactivated by admin.');
                 }
@@ -55,6 +52,20 @@ module.exports = {
                 }
                 if (existingUser.suspend === "1") {
                     return helper.failure(res, "Your account has been suspended by admin.",);
+                }
+                if (existingUser.role == '2') {
+
+                    if (existingUser.isProfileComplete != "1") {
+                        return helper.failure(res, "Please complete your profile first.");
+                    }
+
+                    if (existingUser.vehicle != "1") {
+                        return helper.failure(res, "Please add your vehicle details first.");
+                    }
+
+                    if (existingUser.approve != "1") {
+                        return helper.failure(res, "Your driver account is not approved yet.");
+                    }
                 }
 
                 user = existingUser;
