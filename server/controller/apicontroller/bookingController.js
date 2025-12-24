@@ -371,13 +371,13 @@ module.exports = {
                 return helper.failure(res, "User not found.");
             }
             if (userStatus.status === "0") {
-                return helper.failure(res, "Your account has been deactivated by admin.");
+                return helper.error2(res, "Your account has been deactivated by admin.");
             }
             if (userStatus.block === "1") {
-                return helper.failure(res, "Your account has been blocked by admin.");
+                return helper.error1(res, "Your account has been blocked by admin.");
             }
             if (userStatus.suspend === "1") {
-                return helper.failure(res, "Your account has been suspended by admin.");
+                return helper.error3(res, "Your account has been suspended by admin.");
             }
             const {
                 pickupLatitude,
@@ -806,13 +806,13 @@ module.exports = {
                     return helper.failure(res, "User not found.");
                 }
                 if (userStatus.status === "0") {
-                    return helper.failure(res, "Your account has been deactivated by admin.");
+                    return helper.error2(res, "Your account has been deactivated by admin.");
                 }
                 if (userStatus.block === "1") {
-                    return helper.failure(res, "Your account has been blocked by admin.");
+                    return helper.error1(res, "Your account has been blocked by admin.");
                 }
                 if (userStatus.suspend === "1") {
-                    return helper.failure(res, "Your account has been suspended by admin.");
+                    return helper.error3(res, "Your account has been suspended by admin.");
                 }
 
                 const {
@@ -1225,13 +1225,13 @@ module.exports = {
                     return helper.failure(res, "driver not found.");
                 }
                 if (driver.status === "0") {
-                    return helper.failure(res, "Your account has been deactivated by admin.");
+                    return helper.error2(res, "Your account has been deactivated by admin.");
                 }
                 if (driver.block === "1") {
-                    return helper.failure(res, "Your account has been blocked by admin.");
+                    return helper.error1(res, "Your account has been blocked by admin.");
                 }
                 if (driver.suspend === "1") {
-                    return helper.failure(res, "Your account has been suspended by admin.");
+                    return helper.error3(res, "Your account has been suspended by admin.");
                 }
 
                 const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
@@ -1367,13 +1367,13 @@ module.exports = {
                 return helper.failure(res, "User not found.");
             }
             if (userStatus.status === "0") {
-                return helper.failure(res, "Your account has been deactivated by admin.");
+                return helper.error2(res, "Your account has been deactivated by admin.");
             }
             if (userStatus.block === "1") {
-                return helper.failure(res, "Your account has been blocked by admin.");
+                return helper.error1(res, "Your account has been blocked by admin.");
             }
             if (userStatus.suspend === "1") {
-                return helper.failure(res, "Your account has been suspended by admin.");
+                return helper.error3(res, "Your account has been suspended by admin.");
             }
 
             const { status } = req.query;
@@ -1480,13 +1480,13 @@ module.exports = {
                 return helper.failure(res, "User not found.");
             }
             if (userStatus.status === "0") {
-                return helper.failure(res, "Your account has been deactivated by admin.");
+                return helper.error2(res, "Your account has been deactivated by admin.");
             }
             if (userStatus.block === "1") {
-                return helper.failure(res, "Your account has been blocked by admin.");
+                return helper.error1(res, "Your account has been blocked by admin.");
             }
             if (userStatus.suspend === "1") {
-                return helper.failure(res, "Your account has been suspended by admin.");
+                return helper.error3(res, "Your account has been suspended by admin.");
             }
 
             if (!id) {

@@ -146,7 +146,7 @@ module.exports = {
       //   return helper.error(res, "Session expired - logged in on another device", 401);
       // }
       if (userData.status === "0") {
-        return helper.failure(res, "Your account has been deactivated by admin.");
+        return helper.error2(res, "Your account has been deactivated by admin.");
       }
      
 

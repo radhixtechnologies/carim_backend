@@ -45,13 +45,13 @@ module.exports = {
 
             if (existingUser) {
                 if (existingUser.status === "0") {
-                    return helper.failure(res, 'Your account has been deactivated by admin.');
+                    return helper.error2(res, 'Your account has been deactivated by admin.');
                 }
                 if (existingUser.block === "1") {
-                    return helper.failure(res, "Your account has been blocked by admin.",);
+                    return helper.error1(res, "Your account has been blocked by admin.",);
                 }
                 if (existingUser.suspend === "1") {
-                    return helper.failure(res, "Your account has been suspended by admin.",);
+                    return helper.error3(res, "Your account has been suspended by admin.",);
                 }
                 if (existingUser.role == '2') {
 
@@ -629,13 +629,13 @@ module.exports = {
                 return helper.failure(res, "User not found.");
             }
             if (userStatus.status === "0") {
-                return helper.failure(res, "Your account has been deactivated by admin.");
+                return helper.error2(res, "Your account has been deactivated by admin.");
             }
             if (userStatus.block === "1") {
-                return helper.failure(res, "Your account has been blocked by admin.");
+                return helper.error1(res, "Your account has been blocked by admin.");
             }
             if (userStatus.suspend === "1") {
-                return helper.failure(res, "Your account has been suspended by admin.");
+                return helper.error3(res, "Your account has been suspended by admin.");
             }
             const responseData = await db.banners.findAll();
             return helper.success(res, 'All banner detail.', responseData);
@@ -758,15 +758,15 @@ module.exports = {
                 return helper.failure(res, 'User not found or not authorized as driver');
             }
             if (driver.status === "0") {
-                return helper.failure(res, "Your account has been deactivated by admin.");
+                return helper.error2(res, "Your account has been deactivated by admin.");
             }
 
             if (driver.block === "1") {
-                return helper.failure(res, "Your account has been blocked by admin.");
+                return helper.error1(res, "Your account has been blocked by admin.");
             }
 
             if (driver.suspend === "1") {
-                return helper.failure(res, "Your account has been suspended by admin.");
+                return helper.error3(res, "Your account has been suspended by admin.");
             }
             const vehicle = await db.vehicleDetails.findOne({
                 where: { driverId },
@@ -813,13 +813,13 @@ module.exports = {
                 return helper.failure(res, "user not found");
             }
             if (driverStatus.status === "0") {
-                return helper.failure(res, "Your account has been deactivated by admin.");
+                return helper.error2(res, "Your account has been deactivated by admin.");
             }
             if (driverStatus.block === "1") {
-                return helper.failure(res, "Your account has been blocked by admin.");
+                return helper.error1(res, "Your account has been blocked by admin.");
             }
             if (driverStatus.suspend === "1") {
-                return helper.failure(res, "Your account has been suspended by admin.");
+                return helper.error3(res, "Your account has been suspended by admin.");
             }
 
             const { status } = req.body;
@@ -867,13 +867,13 @@ module.exports = {
                 return helper.failure(res, "User not found.");
             }
             if (userStatus.status === "0") {
-                return helper.failure(res, "Your account has been deactivated by admin.");
+                return helper.error2(res, "Your account has been deactivated by admin.");
             }
             if (userStatus.block === "1") {
-                return helper.failure(res, "Your account has been blocked by admin.");
+                return helper.error1(res, "Your account has been blocked by admin.");
             }
             if (userStatus.suspend === "1") {
-                return helper.failure(res, "Your account has been suspended by admin.");
+                return helper.error3(res, "Your account has been suspended by admin.");
             }
             const activeRide = await db.bookings.findOne({
                 where: {

@@ -26,6 +26,31 @@ module.exports = {
             body: body
         });
     },
+
+    error1: function (res, message = "", body = {}) {
+        return res.status(405).json({
+            success: false,
+            status: 405,
+            message: message,
+            body: body
+        });
+    },
+    error2: function (res, message = "", body = {}) {
+        return res.status(406).json({
+            success: false,
+            status: 406,
+            message: message,
+            body: body
+        });
+    },
+    error3: function (res, message = "", body = {}) {
+        return res.status(407).json({
+            success: false,
+            status: 407,
+            message: message,
+            body: body
+        });
+    },
     forbidden: function (res, message = "", body = {}) {
         return res.status(402).json({
             success: false,
@@ -70,5 +95,5 @@ module.exports = {
         var n = time / 1000;
         return (time = Math.floor(n));
     },
-    
+
 }
