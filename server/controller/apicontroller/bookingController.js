@@ -457,7 +457,10 @@ module.exports = {
             const drivers = await db.users.findAll({
                 where: {
                     role: '2',
-                    online: '1'
+                    online: '1',
+                    status: "1",
+                    block: "0",
+                    suspend: "0",
                 },
                 include: [{
                     model: db.vehicleDetails,

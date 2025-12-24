@@ -986,9 +986,116 @@ module.exports = function (io) {
       }
     });
 
+    // socket.on("user_constant_list", async (get_data) => {
+    //   try {
+
+    //     let whereCondition = {
+    //       [Op.or]: [
+    //         { sender_id: get_data.sender_id },
+    //         { reciever_id: get_data.sender_id },
+    //       ],
+    //       deletedId: { [Op.not]: get_data.sender_id },
+    //     };
+
+    //     if (get_data.bookingId) {
+    //       whereCondition.bookingId = get_data.bookingId;
+    //     }
+
+    //     //  NEW: Filter out chats from completed / cancelled / rejected bookings
+    //     whereCondition.bookingId = {
+    //       [Op.in]: Sequelize.literal(`(
+    //     SELECT id FROM bookings 
+    //     WHERE status NOT IN ('3','4','5') 
+    //     AND request != '2'
+    //   )`)
+    //     };
+
+    //     let constantList = await db.chat_constant.findAll({
+    //       attributes: {
+    //         include: [
+    //           [
+    //             Sequelize.literal(
+    //               `CASE WHEN chat_constant.reciever_id = ${get_data.sender_id}
+    //             THEN chat_constant.sender_id ELSE chat_constant.reciever_id END`
+    //             ),
+    //             "Receiver_user_id",
+    //           ],
+    //           [
+    //             Sequelize.literal(
+    //               `IFNULL((SELECT message FROM message 
+    //             WHERE message.id = chat_constant.lastMessage_id 
+    //             AND deletedId != ${get_data.sender_id}), "")`
+    //             ),
+    //             "last_msg",
+    //           ],
+    //           [
+    //             Sequelize.literal(
+    //               `(SELECT createdAt FROM message 
+    //             WHERE message.reciever_id = chat_constant.reciever_id 
+    //             AND message.sender_id= chat_constant.sender_id 
+    //             ORDER BY id DESC LIMIT 1)`
+    //             ),
+    //             "CreatedAt",
+    //           ],
+    //           [
+    //             Sequelize.literal(
+    //               `(SELECT COUNT(*) FROM message 
+    //             WHERE message.reciever_id = ${get_data.sender_id} 
+    //             AND message.sender_id = Receiver_user_id 
+    //             AND message.readStatus = 0)`
+    //             ),
+    //             "unread_msg",
+    //           ],
+    //           [
+    //             Sequelize.literal(
+    //               "(SELECT orderId FROM bookings WHERE bookings.id = chat_constant.bookingId)"
+    //             ),
+    //             "orderId",
+    //           ],
+    //           [
+    //             Sequelize.literal(
+    //               "(SELECT CONCAT(firstName,lastName) FROM users WHERE users.id = Receiver_user_id)"
+    //             ),
+    //             "ReceiverName",
+    //           ],
+    //           [
+    //             Sequelize.literal(
+    //               "(SELECT image FROM users WHERE users.id = Receiver_user_id)"
+    //             ),
+    //             "Receiverimage",
+    //           ],
+    //           [
+    //             Sequelize.literal(
+    //               "(SELECT online FROM users WHERE users.id = Receiver_user_id)"
+    //             ),
+    //             "online",
+    //           ],
+    //         ],
+    //       },
+
+    //       where: whereCondition,
+
+    //       order: [
+    //         [
+    //           Sequelize.literal(
+    //             `(SELECT createdAt FROM message 
+    //           WHERE message.reciever_id = chat_constant.reciever_id 
+    //           AND message.sender_id = chat_constant.sender_id 
+    //           ORDER BY id DESC LIMIT 1)`
+    //           ),
+    //           "DESC",
+    //         ],
+    //       ],
+    //     });
+
+    //     socket.emit("user_constant_list", constantList);
+
+    //   } catch (error) {
+    //     console.log(error);
+    //   }
+    // });
     socket.on("user_constant_list", async (get_data) => {
       try {
-
         let whereCondition = {
           [Op.or]: [
             { sender_id: get_data.sender_id },
@@ -1001,7 +1108,7 @@ module.exports = function (io) {
           whereCondition.bookingId = get_data.bookingId;
         }
 
-        //  NEW: Filter out chats from completed / cancelled / rejected bookings
+        // Filter out chats from completed / cancelled / rejected bookings
         whereCondition.bookingId = {
           [Op.in]: Sequelize.literal(`(
         SELECT id FROM bookings 
@@ -1054,7 +1161,7 @@ module.exports = function (io) {
               ],
               [
                 Sequelize.literal(
-                  "(SELECT CONCAT(firstName,lastName) FROM users WHERE users.id = Receiver_user_id)"
+                  "(SELECT CONCAT(firstName,' ',lastName) FROM users WHERE users.id = Receiver_user_id)"
                 ),
                 "ReceiverName",
               ],
@@ -1072,9 +1179,7 @@ module.exports = function (io) {
               ],
             ],
           },
-
           where: whereCondition,
-
           order: [
             [
               Sequelize.literal(
@@ -1088,12 +1193,33 @@ module.exports = function (io) {
           ],
         });
 
-        socket.emit("user_constant_list", constantList);
+        // --- BLOCK / SUSPEND / DEACTIVATED CHECK ---
+        const filteredList = [];
+        for (let chat of constantList) {
+          const receiverId = chat.dataValues.Receiver_user_id;
+
+          const userStatus = await db.users.findOne({
+            where: { id: receiverId },
+            attributes: ['status', 'block', 'suspend'],
+            raw: true
+          });
+
+          if (!userStatus) continue; // user not found → skip
+
+          if (userStatus.status === "0" || userStatus.block === "1" || userStatus.suspend === "1") {
+            continue; // skip blocked/suspended/deactivated users
+          }
+
+          filteredList.push(chat);
+        }
+
+        socket.emit("user_constant_list", filteredList);
 
       } catch (error) {
         console.log(error);
       }
     });
+
 
     socket.on("send_message", async (get_data) => {
       try {
