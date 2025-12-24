@@ -526,15 +526,16 @@ module.exports = function (io) {
             message: "Invalid status value."
           });
         }
+
+
+
+        // --- FETCH BOOKING WITH USER ---
         const booking = await db.bookings.findOne({
-          where: {
-            id: bookingId,
-            driverId: driverId,
-          },
+          where: { id: bookingId, driverId },
           include: [{
             model: db.users,
             as: 'userbook',
-            attributes: ['id', 'rideOtp', 'socketId']
+            attributes: ['id', 'rideOtp', 'socketId', 'status', 'block', 'suspend']
           }]
         });
 
@@ -547,6 +548,72 @@ module.exports = function (io) {
         }
 
         const currentStatus = booking.status;
+
+        // --- DRIVER STATUS CHECK ---
+        const driverStatus = await db.users.findOne({
+          where: { id: driverId },
+          attributes: ['status', 'block', 'suspend'],
+          raw: true
+        });
+
+        if (!driverStatus) {
+          return socket.emit("rideStatusUpdate", {
+            success: false,
+            message: "Driver not found."
+          });
+        }
+
+        if (driverStatus.status === "0") {
+          return socket.emit("rideStatusUpdate", {
+            success: false,
+            message: "Your account has been deactivated by admin."
+          });
+        }
+
+        if (driverStatus.block === "1") {
+          return socket.emit("rideStatusUpdate", {
+            success: false,
+            message: "Your account has been blocked by admin."
+          });
+        }
+
+        if (driverStatus.suspend === "1") {
+          return socket.emit("rideStatusUpdate", {
+            success: false,
+            message: "Your account has been suspended by admin."
+          });
+        }
+
+        // --- USER STATUS CHECK ---
+        const user = booking.userbook;
+        if (!user) {
+          return socket.emit("rideStatusUpdate", {
+            success: false,
+            message: "User not found for this booking."
+          });
+        }
+
+        if (user.status === "0") {
+          return socket.emit("rideStatusUpdate", {
+            success: false,
+            message: "User account has been deactivated by admin."
+          });
+        }
+
+        if (user.block === "1") {
+          return socket.emit("rideStatusUpdate", {
+            success: false,
+            message: "User account has been blocked by admin."
+          });
+        }
+
+        if (user.suspend === "1") {
+          return socket.emit("rideStatusUpdate", {
+            success: false,
+            message: "User account has been suspended by admin."
+          });
+        }
+
 
         // Function to emit to both driver and user
         const emitToBoth = (message, statusData, otpVerified = false) => {
@@ -713,6 +780,41 @@ module.exports = function (io) {
             message: "User ID is required"
           });
         }
+        // ------------------- USER STATUS CHECK -------------------
+        const userStatus = await db.users.findOne({
+          where: { id: userId },
+          attributes: ['status', 'block', 'suspend'],
+          raw: true
+        });
+
+        if (!userStatus) {
+          return socket.emit("bookingHistory", {
+            success: false,
+            message: "User not found."
+          });
+        }
+
+        if (userStatus.status === "0") {
+          return socket.emit("bookingHistory", {
+            success: false,
+            message: "Your account has been deactivated by admin."
+          });
+        }
+
+        if (userStatus.block === "1") {
+          return socket.emit("bookingHistory", {
+            success: false,
+            message: "Your account has been blocked by admin."
+          });
+        }
+
+        if (userStatus.suspend === "1") {
+          return socket.emit("bookingHistory", {
+            success: false,
+            message: "Your account has been suspended by admin."
+          });
+        }
+        // ------------------- USER STATUS CHECK END -------------------
 
         const offset = (page - 1) * limit;
 
