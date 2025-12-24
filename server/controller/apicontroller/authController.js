@@ -619,6 +619,24 @@ module.exports = {
     },
     home: async (req, res) => {
         try {
+            const userId = req.user.id;
+            const userStatus = await db.users.findOne({
+                where: { id: userId },
+                attributes: ['status', 'block', 'suspend'],
+                raw: true
+            });
+            if (!userStatus) {
+                return helper.failure(res, "User not found.");
+            }
+            if (userStatus.status === "0") {
+                return helper.failure(res, "Your account has been deactivated by admin.");
+            }
+            if (userStatus.block === "1") {
+                return helper.failure(res, "Your account has been blocked by admin.");
+            }
+            if (userStatus.suspend === "1") {
+                return helper.failure(res, "Your account has been suspended by admin.");
+            }
             const responseData = await db.banners.findAll();
             return helper.success(res, 'All banner detail.', responseData);
         } catch (error) {
@@ -839,6 +857,24 @@ module.exports = {
     userActiveRide: async (req, res) => {
         try {
             const userId = req.user.id;
+
+            const userStatus = await db.users.findOne({
+                where: { id: userId },
+                attributes: ['status', 'block', 'suspend'],
+                raw: true
+            });
+            if (!userStatus) {
+                return helper.failure(res, "User not found.");
+            }
+            if (userStatus.status === "0") {
+                return helper.failure(res, "Your account has been deactivated by admin.");
+            }
+            if (userStatus.block === "1") {
+                return helper.failure(res, "Your account has been blocked by admin.");
+            }
+            if (userStatus.suspend === "1") {
+                return helper.failure(res, "Your account has been suspended by admin.");
+            }
             const activeRide = await db.bookings.findOne({
                 where: {
                     userId: userId,

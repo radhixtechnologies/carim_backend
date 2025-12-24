@@ -362,6 +362,23 @@ module.exports = {
         try {
             const userId = req.user.id;
 
+            const userStatus = await db.users.findOne({
+                where: { id: userId },
+                attributes: ['status', 'block', 'suspend'],
+                raw: true
+            });
+            if (!userStatus) {
+                return helper.failure(res, "User not found.");
+            }
+            if (userStatus.status === "0") {
+                return helper.failure(res, "Your account has been deactivated by admin.");
+            }
+            if (userStatus.block === "1") {
+                return helper.failure(res, "Your account has been blocked by admin.");
+            }
+            if (userStatus.suspend === "1") {
+                return helper.failure(res, "Your account has been suspended by admin.");
+            }
             const {
                 pickupLatitude,
                 pickupLongitude,
@@ -779,6 +796,25 @@ module.exports = {
         return async (req, res) => {
             try {
                 const userId = req.user.id;
+
+                const userStatus = await db.users.findOne({
+                    where: { id: userId },
+                    attributes: ['status', 'block', 'suspend'],
+                    raw: true
+                });
+                if (!userStatus) {
+                    return helper.failure(res, "User not found.");
+                }
+                if (userStatus.status === "0") {
+                    return helper.failure(res, "Your account has been deactivated by admin.");
+                }
+                if (userStatus.block === "1") {
+                    return helper.failure(res, "Your account has been blocked by admin.");
+                }
+                if (userStatus.suspend === "1") {
+                    return helper.failure(res, "Your account has been suspended by admin.");
+                }
+
                 const {
                     driverId,
                     pickupLocation,
