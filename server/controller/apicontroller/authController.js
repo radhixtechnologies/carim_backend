@@ -736,14 +736,22 @@ module.exports = {
                     deletedAt: null
                 }
             });
-
             if (!driver) {
                 return helper.failure(res, 'User not found or not authorized as driver');
             }
+            if (driver.status === "0") {
+                return helper.failure(res, "Your account has been deactivated by admin.");
+            }
 
+            if (driver.block === "1") {
+                return helper.failure(res, "Your account has been blocked by admin.");
+            }
+
+            if (driver.suspend === "1") {
+                return helper.failure(res, "Your account has been suspended by admin.");
+            }
             const vehicle = await db.vehicleDetails.findOne({
                 where: { driverId },
-
             });
 
             if (!vehicle) {
@@ -778,12 +786,27 @@ module.exports = {
     transactionSsHistory: async (req, res) => {
         try {
             const driverId = req.user.id;
-            const { status } = req.body;
-            const driver = await db.users.findOne({
+            const driverStatus = await db.users.findOne({
                 where: { id: driverId },
-                attributes: ["totalAmount"]
+                attributes: ['status', 'block', 'suspend', 'totalAmount'],
+                raw: true
             });
-            const currentBalance = driver?.totalAmount || "0.00";
+            if (!driverStatus) {
+                return helper.failure(res, "user not found");
+            }
+            if (driverStatus.status === "0") {
+                return helper.failure(res, "Your account has been deactivated by admin.");
+            }
+            if (driverStatus.block === "1") {
+                return helper.failure(res, "Your account has been blocked by admin.");
+            }
+            if (driverStatus.suspend === "1") {
+                return helper.failure(res, "Your account has been suspended by admin.");
+            }
+
+            const { status } = req.body;
+
+            const currentBalance = driverStatus?.totalAmount || "0.00";
             let whereCondition = { driverId };
 
             if (status !== undefined && status !== "") {
