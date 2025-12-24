@@ -1209,7 +1209,7 @@ module.exports = {
                     expiredBookings.forEach(b => {
                         if (global.onlineUsers && onlineUsers[b.userId]?.length) {
                             onlineUsers[b.userId].forEach(sockId => {
-                                io.to(sockId).emit("rideStatusUpdate", {
+                                io.to(sockId).emit("rideStatusUpdatee", {
                                     bookingId: b.id,
                                     message: "Driver did not respond. Please try again."
                                 });
