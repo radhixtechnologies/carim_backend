@@ -1096,6 +1096,7 @@ module.exports = function (io) {
     // });
     socket.on("user_constant_list", async (get_data) => {
       try {
+
         let whereCondition = {
           [Op.or]: [
             { sender_id: get_data.sender_id },
@@ -1108,7 +1109,6 @@ module.exports = function (io) {
           whereCondition.bookingId = get_data.bookingId;
         }
 
-        // Filter out chats from completed / cancelled / rejected bookings
         whereCondition.bookingId = {
           [Op.in]: Sequelize.literal(`(
         SELECT id FROM bookings 
@@ -1122,8 +1122,11 @@ module.exports = function (io) {
             include: [
               [
                 Sequelize.literal(
-                  `CASE WHEN chat_constant.reciever_id = ${get_data.sender_id}
-                THEN chat_constant.sender_id ELSE chat_constant.reciever_id END`
+                  `CASE 
+                WHEN chat_constant.reciever_id = ${get_data.sender_id}
+                THEN chat_constant.sender_id 
+                ELSE chat_constant.reciever_id 
+              END`
                 ),
                 "Receiver_user_id",
               ],
@@ -1193,21 +1196,29 @@ module.exports = function (io) {
           ],
         });
 
-        // --- BLOCK / SUSPEND / DEACTIVATED CHECK ---
+
         const filteredList = [];
+
         for (let chat of constantList) {
+
+          const senderId = get_data.sender_id;
           const receiverId = chat.dataValues.Receiver_user_id;
 
-          const userStatus = await db.users.findOne({
-            where: { id: receiverId },
-            attributes: ['status', 'block', 'suspend'],
+          // Fetch BOTH users status in one go
+          const usersStatus = await db.users.findAll({
+            where: {
+              id: { [Op.in]: [senderId, receiverId] }
+            },
+            attributes: ['id', 'status', 'block', 'suspend'],
             raw: true
           });
 
-          if (!userStatus) continue; // user not found → skip
+          let invalidUser = usersStatus.find(
+            u => u.status === "0" || u.block === "1" || u.suspend === "1"
+          );
 
-          if (userStatus.status === "0" || userStatus.block === "1" || userStatus.suspend === "1") {
-            continue; // skip blocked/suspended/deactivated users
+          if (invalidUser) {
+            continue;
           }
 
           filteredList.push(chat);
@@ -1217,6 +1228,7 @@ module.exports = function (io) {
 
       } catch (error) {
         console.log(error);
+        socket.emit("user_constant_list", []);
       }
     });
 
