@@ -53,7 +53,7 @@ module.exports = {
                 if (existingUser.suspend === "1") {
                     return helper.failure(res, "Your account has been suspended by admin.",);
                 }
-                if (existingUser.role == '2') {
+                if (existingUser.role == '2' && existingUser.otpVerify == "1") {
 
                     if (existingUser.isProfileComplete != "1") {
                         return helper.failure(res, "Please complete your profile first.");
@@ -67,6 +67,7 @@ module.exports = {
                         return helper.failure(res, "Your driver account is not approved yet.");
                     }
                 }
+
 
                 user = existingUser;
 
@@ -182,6 +183,7 @@ module.exports = {
             }
 
             if (req.body.otp == user.otp) {
+
                 const loginTime = helper.unixTimestamp();
 
                 const token = jwt.sign(
