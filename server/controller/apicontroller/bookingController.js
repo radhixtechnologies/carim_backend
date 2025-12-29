@@ -1153,6 +1153,129 @@ module.exports = {
             }
         };
     },
+    // requestList: (io) => {
+    //     return async (req, res) => {
+    //         try {
+    //             const driverId = req.user.id;
+
+    //             const driver = await db.users.findOne({
+    //                 where: { id: driverId },
+    //                 attributes: ['status', 'block', 'suspend'],
+    //                 raw: true
+    //             });
+
+    //             if (!driver) {
+    //                 return helper.failure(res, "driver not found.");
+    //             }
+    //             if (driver.status === "0") {
+    //                 return helper.error2(res, "Your account has been deactivated by admin.");
+    //             }
+    //             if (driver.block === "1") {
+    //                 return helper.error1(res, "Your account has been blocked by admin.");
+    //             }
+    //             if (driver.suspend === "1") {
+    //                 return helper.error3(res, "Your account has been suspended by admin.");
+    //             }
+
+    //             const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
+
+    //             const expiredBookings = await db.bookings.findAll({
+    //                 where: {
+    //                     driverId: driverId,
+    //                     status: '0',
+    //                     request: '0',
+    //                     bookingDate: {
+    //                         [Sequelize.Op.lt]: oneMinuteAgo
+    //                     }
+    //                 },
+    //                 attributes: ['id', 'userId'],
+    //                 raw: true
+    //             });
+
+    //             await db.bookings.destroy({
+    //                 where: {
+    //                     driverId: driverId,
+    //                     status: '0',
+    //                     request: '0',
+    //                     bookingDate: {
+    //                         [Sequelize.Op.lt]: oneMinuteAgo
+    //                     }
+    //                 }
+    //             });
+
+    //             // ================= SOCKET EMIT (USER + DRIVER) =================
+    //             if (expiredBookings.length) {
+    //                 expiredBookings.forEach(b => {
+
+    //                     // USER notify (existing logic)
+    //                     if (global.onlineUsers && onlineUsers[b.userId]?.length) {
+    //                         onlineUsers[b.userId].forEach(sockId => {
+    //                             io.to(sockId).emit("rideStatusUpdate", {
+    //                                 bookingId: b.id,
+    //                                 message: "Driver did not respond. Please try again."
+    //                             });
+    //                         });
+    //                     }
+
+    //                     // DRIVER notify (NEW - logic unchanged)
+    //                     if (global.onlineUsers && onlineUsers[driverId]?.length) {
+    //                         onlineUsers[driverId].forEach(sockId => {
+    //                             io.to(sockId).emit("rideStatusUpdate", {
+    //                                 bookingId: b.id,
+    //                                 message: "Ride request expired due to no response."
+    //                             });
+    //                         });
+    //                     }
+    //                 });
+    //             }
+    //             // =================================================================
+
+    //             const requests = await db.bookings.findAll({
+    //                 where: {
+    //                     driverId: driverId,
+    //                     status: '0',
+    //                     request: '0'
+    //                 },
+    //                 include: [
+    //                     {
+    //                         model: db.users,
+    //                         as: 'userbook',
+    //                     }
+    //                 ],
+    //                 order: [['id', 'DESC']]
+    //             });
+
+    //             return helper.success(
+    //                 res,
+    //                 'Pending ride requests fetched successfully',
+    //                 {
+    //                     totalRequests: requests.length,
+    //                     requests: requests.map(booking => ({
+    //                         bookingId: booking.id,
+    //                         userId: booking.userId,
+    //                         userDetails: booking.userbook,
+    //                         pickupLocation: booking.pickupLocation,
+    //                         dropLocation: booking.dropLocation,
+    //                         pickupLatitude: booking.pickupLatitude,
+    //                         pickupLongitude: booking.pickupLongitude,
+    //                         dropLatitude: booking.dropLatitude,
+    //                         dropLongitude: booking.dropLongitude,
+    //                         status: booking.status,
+    //                         request: booking.request,
+    //                         bookingDate: booking.bookingDate,
+    //                         orderId: booking.orderId,
+    //                         rideOpen: booking.rideOpen
+    //                     }))
+    //                 }
+    //             );
+
+    //         } catch (error) {
+    //             console.log("requestList error:", error);
+    //             return helper.failure(res, "Something went wrong while fetching requests.");
+    //         }
+    //     };
+    // },
+
 
 
 
