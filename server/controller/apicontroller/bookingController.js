@@ -1090,7 +1090,6 @@ module.exports = {
                     attributes: ['id', 'userId'],
                     raw: true
                 });
-
                 await db.bookings.destroy({
                     where: {
                         driverId: driverId,
