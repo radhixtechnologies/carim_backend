@@ -705,7 +705,6 @@ module.exports = {
                 if (userStatus.block === "1") return helper.error1(res, "Your account has been blocked by admin.");
                 if (userStatus.suspend === "1") return helper.error3(res, "Your account has been suspended by admin.");
 
-                // ---------------- BODY ----------------
                 const {
                     pickupLocation,
                     dropLocation,
@@ -759,6 +758,14 @@ module.exports = {
                     dropLat,
                     dropLng
                 );
+                
+                const maxRideDistance = 30; // km
+                if (rideDistanceKm > maxRideDistance) {
+                    return helper.failure(
+                        res,
+                        'Drop location must be within 30 km of pickup location'
+                    );
+                }
 
                 const bookingPrice = Math.round(rideDistanceKm * 10);
 
