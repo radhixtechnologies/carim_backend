@@ -1756,7 +1756,6 @@ module.exports = {
                     return helper.failure(res, "Booking ID is required.");
                 }
 
-                // Only pending / accepted rides can be cancelled
                 const cancellableStatus = ["0", "1"];
 
                 const whereCond = {
@@ -1764,7 +1763,6 @@ module.exports = {
                     status: { [Op.in]: cancellableStatus }
                 };
 
-                // Role based ownership check
                 if (loggedInUserRole === "1") {
                     whereCond.userId = loggedInUserId;
                 } else if (loggedInUserRole === "2") {
@@ -1786,10 +1784,17 @@ module.exports = {
 
                 /* ================= USER CANCEL ================= */
                 if (loggedInUserRole === "1") {
-                    const driverId = booking.driverId;
 
-                    // CASE 1: driver already accepted → notify that driver
-                    if (driverId && global.onlineUsers?.[driverId]) {
+                    const driverId = booking.driverId;
+                    const request = booking.request; // 0 / 1
+                    const status = booking.status;   // old status before cancel
+
+                    // 🔹 CASE 1: Driver already accepted (request = 1)
+                    if (
+                        request === "1" &&
+                        driverId &&
+                        global.onlineUsers?.[driverId]
+                    ) {
                         global.onlineUsers[driverId].forEach(socketId => {
                             io.to(socketId).emit("rideStatusUpdate", {
                                 success: true,
@@ -1800,8 +1805,10 @@ module.exports = {
                             });
                         });
                     }
-                    // CASE 2: no driver accepted yet → notify nearby drivers (30 KM)
-                    else {
+
+                    // 🔹 CASE 2: No driver accepted yet (request = 0, status = 0)
+                    if (request === "0") {
+
                         const pickupLat = parseFloat(booking.pickupLatitude);
                         const pickupLng = parseFloat(booking.pickupLongitude);
                         const MAX_DISTANCE = 30; // KM
@@ -1881,12 +1888,14 @@ module.exports = {
                     status: newStatus,
                     message: "Ride has been cancelled."
                 });
+
             } catch (error) {
                 console.error(error);
                 return helper.failure(res, "Something went wrong while cancelling the ride.");
             }
         };
     },
+
 
     report: async (req, res) => {
         try {
