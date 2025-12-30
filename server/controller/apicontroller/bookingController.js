@@ -758,7 +758,7 @@ module.exports = {
                     dropLat,
                     dropLng
                 );
-                
+
                 const maxRideDistance = 30; // km
                 if (rideDistanceKm > maxRideDistance) {
                     return helper.failure(
@@ -766,7 +766,6 @@ module.exports = {
                         'Drop location must be within 30 km of pickup location'
                     );
                 }
-
                 const bookingPrice = Math.round(rideDistanceKm * 10);
 
                 // ---------------- EXISTING USER RIDE CHECK ----------------
