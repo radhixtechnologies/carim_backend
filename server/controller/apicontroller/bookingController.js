@@ -216,6 +216,235 @@ module.exports = {
     //         return helper.failure(res, 'Something went wrong.');
     //     }
     // },
+    // findRide(main): async (req, res) => {
+    //     try {
+    //         const userId = req.user.id;
+
+    //         // ---------------- USER STATUS CHECK ----------------
+    //         const userStatus = await db.users.findOne({
+    //             where: { id: userId },
+    //             attributes: ['status', 'block', 'suspend'],
+    //             raw: true
+    //         });
+
+    //         if (!userStatus) {
+    //             return helper.failure(res, "User not found.");
+    //         }
+    //         if (userStatus.status === "0") {
+    //             return helper.error2(res, "Your account has been deactivated by admin.");
+    //         }
+    //         if (userStatus.block === "1") {
+    //             return helper.error1(res, "Your account has been blocked by admin.");
+    //         }
+    //         if (userStatus.suspend === "1") {
+    //             return helper.error3(res, "Your account has been suspended by admin.");
+    //         }
+
+    //         // ---------------- REQUEST DATA ----------------
+    //         const {
+    //             pickupLatitude,
+    //             pickupLongitude,
+    //             dropLatitude,
+    //             dropLongitude,
+    //             pickupLocation,
+    //             dropLocation
+    //         } = req.body;
+
+    //         if (!pickupLatitude || !pickupLongitude || !dropLatitude || !dropLongitude) {
+    //             return helper.failure(res, 'Pickup and drop coordinates are required.');
+    //         }
+
+    //         const pickupLat = parseFloat(pickupLatitude);
+    //         const pickupLng = parseFloat(pickupLongitude);
+    //         const dropLat = parseFloat(dropLatitude);
+    //         const dropLng = parseFloat(dropLongitude);
+
+    //         if (
+    //             isNaN(pickupLat) ||
+    //             isNaN(pickupLng) ||
+    //             isNaN(dropLat) ||
+    //             isNaN(dropLng)
+    //         ) {
+    //             return helper.failure(res, 'Invalid coordinates provided.');
+    //         }
+
+    //         const maxRadius = 30; // KM
+
+    //         // ---------------- DISTANCE UTILS ----------------
+    //         const toRad = deg => deg * (Math.PI / 180);
+
+    //         const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    //             const R = 6371;
+    //             const dLat = toRad(lat2 - lat1);
+    //             const dLon = toRad(lon2 - lon1);
+    //             const a =
+    //                 Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    //                 Math.cos(toRad(lat1)) *
+    //                 Math.cos(toRad(lat2)) *
+    //                 Math.sin(dLon / 2) *
+    //                 Math.sin(dLon / 2);
+    //             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    //             return R * c;
+    //         };
+
+    //         // ---------------- PRICE CALCULATION ----------------
+    //         const rideDistanceKm = calculateDistance(
+    //             pickupLat,
+    //             pickupLng,
+    //             dropLat,
+    //             dropLng
+    //         );
+
+    //         const bookingPrice = Math.round(rideDistanceKm * 10); // ₹10/km
+
+    //         // ---------------- ACTIVE BOOKINGS ----------------
+    //         const activeBookings = await db.bookings.findAll({
+    //             where: {
+    //                 status: { [Sequelize.Op.in]: ['0', '1', '2'] },
+    //                 request: '0'
+    //             },
+    //             attributes: ['driverId', 'status', 'rideOpen'],
+    //             raw: true
+    //         });
+
+    //         const busyDriverMap = {};
+    //         const rideOpenMap = {};
+
+    //         activeBookings.forEach(b => {
+    //             busyDriverMap[b.driverId] = b.status;
+    //             rideOpenMap[b.driverId] = b.rideOpen;
+    //         });
+
+    //         // ---------------- ONLINE DRIVERS ----------------
+    //         const drivers = await db.users.findAll({
+    //             where: {
+    //                 role: '2',
+    //                 online: '1',
+    //                 status: "1",
+    //                 block: "0",
+    //                 suspend: "0"
+    //             },
+    //             include: [{
+    //                 model: db.vehicleDetails,
+    //                 as: 'vehicleDetail',
+    //                 required: true
+    //             }]
+    //         });
+
+    //         // ---------------- PICKUP DISTANCE FILTER ----------------
+    //         const driversWithDistance = drivers
+    //             .map(driver => {
+    //                 if (!driver.latitude || !driver.longitude) return null;
+
+    //                 const driverLat = parseFloat(driver.latitude);
+    //                 const driverLng = parseFloat(driver.longitude);
+
+    //                 if (isNaN(driverLat) || isNaN(driverLng)) return null;
+
+    //                 const distance = calculateDistance(
+    //                     pickupLat,
+    //                     pickupLng,
+    //                     driverLat,
+    //                     driverLng
+    //                 );
+
+    //                 if (distance > maxRadius) return null;
+
+    //                 return {
+    //                     ...driver.toJSON(),
+    //                     fullName: `${driver.firstName || ''} ${driver.lastName || ''}`.trim(),
+    //                     distanceFromPickup: distance.toFixed(2),
+    //                     distanceUnit: 'km',
+    //                     isBusy: busyDriverMap[driver.id] ? true : false,
+    //                     bookingStatus: busyDriverMap[driver.id] || null,
+    //                     rideOpen: rideOpenMap[driver.id] ?? '1',
+    //                     vehicleDetails: driver.vehicleDetail
+    //                 };
+    //             })
+    //             .filter(Boolean)
+    //             .sort((a, b) => a.distanceFromPickup - b.distanceFromPickup);
+
+    //         // -------- PICKUP CHECK --------
+    //         if (!driversWithDistance.length) {
+    //             return helper.failure(
+    //                 res,
+    //                 'No drivers available within 30 km of your pickup location'
+    //             );
+    //         }
+
+    //         // ---------------- DROP LOCATION CHECK (NEW) ----------------
+    //         const driversNearDrop = drivers
+    //             .map(driver => {
+    //                 if (!driver.latitude || !driver.longitude) return null;
+
+    //                 const driverLat = parseFloat(driver.latitude);
+    //                 const driverLng = parseFloat(driver.longitude);
+
+    //                 if (isNaN(driverLat) || isNaN(driverLng)) return null;
+
+    //                 const distanceToDrop = calculateDistance(
+    //                     dropLat,
+    //                     dropLng,
+    //                     driverLat,
+    //                     driverLng
+    //                 );
+
+    //                 if (distanceToDrop > maxRadius) return null;
+
+    //                 return driver.id;
+    //             })
+    //             .filter(Boolean);
+
+    //         if (!driversNearDrop.length) {
+    //             return helper.failure(
+    //                 res,
+    //                 'No drivers available within 30 km of your drop location'
+    //             );
+    //         }
+
+    //         // ---------------- RESPONSE ----------------
+    //         return helper.success(res, 'Nearby drivers found', {
+    //             userId,
+    //             bookingPrice,
+    //             rideDistanceKm: rideDistanceKm.toFixed(2),
+
+    //             pickupLocation: {
+    //                 latitude: pickupLat,
+    //                 longitude: pickupLng,
+    //                 address: pickupLocation || null
+    //             },
+    //             dropLocation: {
+    //                 latitude: dropLat,
+    //                 longitude: dropLng,
+    //                 address: dropLocation || null
+    //             },
+
+    //             searchRadius: `0-${maxRadius} km`,
+    //             totalDriversNearPickup: driversWithDistance.length,
+
+    //             drivers: driversWithDistance.map(driver => ({
+    //                 id: driver.id,
+    //                 fullName: driver.fullName,
+    //                 firstName: driver.firstName,
+    //                 lastName: driver.lastName,
+    //                 phone: driver.phone,
+    //                 profileImage: driver.profileImage,
+    //                 vehicleDetails: driver.vehicleDetails,
+    //                 latitude: driver.latitude,
+    //                 longitude: driver.longitude,
+    //                 distanceFromPickup: driver.distanceFromPickup,
+    //                 distanceUnit: driver.distanceUnit,
+    //                 isBusy: driver.isBusy,
+    //                 bookingStatus: driver.bookingStatus,
+    //                 rideOpen: driver.rideOpen
+    //             }))
+    //         });
+
+    //     } catch (error) {
+    //         console.error(error);
+    //         return helper.failure(res, 'Something went wrong.');
+    //     }
+    // },
     findRide: async (req, res) => {
         try {
             const userId = req.user.id;
@@ -227,20 +456,11 @@ module.exports = {
                 raw: true
             });
 
-            if (!userStatus) {
-                return helper.failure(res, "User not found.");
-            }
-            if (userStatus.status === "0") {
-                return helper.error2(res, "Your account has been deactivated by admin.");
-            }
-            if (userStatus.block === "1") {
-                return helper.error1(res, "Your account has been blocked by admin.");
-            }
-            if (userStatus.suspend === "1") {
-                return helper.error3(res, "Your account has been suspended by admin.");
-            }
+            if (!userStatus) return helper.failure(res, "User not found.");
+            if (userStatus.status === "0") return helper.error2(res, "Your account has been deactivated by admin.");
+            if (userStatus.block === "1") return helper.error1(res, "Your account has been blocked by admin.");
+            if (userStatus.suspend === "1") return helper.error3(res, "Your account has been suspended by admin.");
 
-            // ---------------- REQUEST DATA ----------------
             const {
                 pickupLatitude,
                 pickupLongitude,
@@ -268,11 +488,9 @@ module.exports = {
                 return helper.failure(res, 'Invalid coordinates provided.');
             }
 
-            const maxRadius = 30; // KM
+            const maxRadius = 30;
 
-            // ---------------- DISTANCE UTILS ----------------
             const toRad = deg => deg * (Math.PI / 180);
-
             const calculateDistance = (lat1, lon1, lat2, lon2) => {
                 const R = 6371;
                 const dLat = toRad(lat2 - lat1);
@@ -287,7 +505,6 @@ module.exports = {
                 return R * c;
             };
 
-            // ---------------- PRICE CALCULATION ----------------
             const rideDistanceKm = calculateDistance(
                 pickupLat,
                 pickupLng,
@@ -295,9 +512,8 @@ module.exports = {
                 dropLng
             );
 
-            const bookingPrice = Math.round(rideDistanceKm * 10); // ₹10/km
+            const bookingPrice = Math.round(rideDistanceKm * 10);
 
-            // ---------------- ACTIVE BOOKINGS ----------------
             const activeBookings = await db.bookings.findAll({
                 where: {
                     status: { [Sequelize.Op.in]: ['0', '1', '2'] },
@@ -315,7 +531,6 @@ module.exports = {
                 rideOpenMap[b.driverId] = b.rideOpen;
             });
 
-            // ---------------- ONLINE DRIVERS ----------------
             const drivers = await db.users.findAll({
                 where: {
                     role: '2',
@@ -331,7 +546,6 @@ module.exports = {
                 }]
             });
 
-            // ---------------- PICKUP DISTANCE FILTER ----------------
             const driversWithDistance = drivers
                 .map(driver => {
                     if (!driver.latitude || !driver.longitude) return null;
@@ -364,7 +578,6 @@ module.exports = {
                 .filter(Boolean)
                 .sort((a, b) => a.distanceFromPickup - b.distanceFromPickup);
 
-            // -------- PICKUP CHECK --------
             if (!driversWithDistance.length) {
                 return helper.failure(
                     res,
@@ -372,72 +585,13 @@ module.exports = {
                 );
             }
 
-            // ---------------- DROP LOCATION CHECK (NEW) ----------------
-            const driversNearDrop = drivers
-                .map(driver => {
-                    if (!driver.latitude || !driver.longitude) return null;
-
-                    const driverLat = parseFloat(driver.latitude);
-                    const driverLng = parseFloat(driver.longitude);
-
-                    if (isNaN(driverLat) || isNaN(driverLng)) return null;
-
-                    const distanceToDrop = calculateDistance(
-                        dropLat,
-                        dropLng,
-                        driverLat,
-                        driverLng
-                    );
-
-                    if (distanceToDrop > maxRadius) return null;
-
-                    return driver.id;
-                })
-                .filter(Boolean);
-
-            if (!driversNearDrop.length) {
-                return helper.failure(
-                    res,
-                    'No drivers available within 30 km of your drop location'
-                );
-            }
-
-            // ---------------- RESPONSE ----------------
             return helper.success(res, 'Nearby drivers found', {
                 userId,
                 bookingPrice,
                 rideDistanceKm: rideDistanceKm.toFixed(2),
-
-                pickupLocation: {
-                    latitude: pickupLat,
-                    longitude: pickupLng,
-                    address: pickupLocation || null
-                },
-                dropLocation: {
-                    latitude: dropLat,
-                    longitude: dropLng,
-                    address: dropLocation || null
-                },
-
-                searchRadius: `0-${maxRadius} km`,
-                totalDriversNearPickup: driversWithDistance.length,
-
-                drivers: driversWithDistance.map(driver => ({
-                    id: driver.id,
-                    fullName: driver.fullName,
-                    firstName: driver.firstName,
-                    lastName: driver.lastName,
-                    phone: driver.phone,
-                    profileImage: driver.profileImage,
-                    vehicleDetails: driver.vehicleDetails,
-                    latitude: driver.latitude,
-                    longitude: driver.longitude,
-                    distanceFromPickup: driver.distanceFromPickup,
-                    distanceUnit: driver.distanceUnit,
-                    isBusy: driver.isBusy,
-                    bookingStatus: driver.bookingStatus,
-                    rideOpen: driver.rideOpen
-                }))
+                pickupLocation,
+                dropLocation,
+                drivers: driversWithDistance
             });
 
         } catch (error) {
@@ -449,10 +603,29 @@ module.exports = {
 
 
 
-    // bookRide: (io) => {
+    // bookRide(main): (io) => {
     //     return async (req, res) => {
     //         try {
     //             const userId = req.user.id;
+
+    //             const userStatus = await db.users.findOne({
+    //                 where: { id: userId },
+    //                 attributes: ['status', 'block', 'suspend'],
+    //                 raw: true
+    //             });
+    //             if (!userStatus) {
+    //                 return helper.failure(res, "User not found.");
+    //             }
+    //             if (userStatus.status === "0") {
+    //                 return helper.error2(res, "Your account has been deactivated by admin.");
+    //             }
+    //             if (userStatus.block === "1") {
+    //                 return helper.error1(res, "Your account has been blocked by admin.");
+    //             }
+    //             if (userStatus.suspend === "1") {
+    //                 return helper.error3(res, "Your account has been suspended by admin.");
+    //             }
+
     //             const {
     //                 driverId,
     //                 pickupLocation,
@@ -461,6 +634,7 @@ module.exports = {
     //                 pickupLongitude,
     //                 dropLatitude,
     //                 dropLongitude,
+    //                 rideOpen
     //             } = req.body;
 
     //             if (!driverId) {
@@ -489,6 +663,30 @@ module.exports = {
     //                 return helper.failure(res, 'Invalid coordinates provided.');
     //             }
 
+    //             // ---------------- DISTANCE + PRICE CALCULATION (NEW) ----------------
+    //             const toRad = (value) => value * Math.PI / 180;
+
+    //             const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    //                 const R = 6371; // KM
+    //                 const dLat = toRad(lat2 - lat1);
+    //                 const dLon = toRad(lon2 - lon1);
+    //                 const a =
+    //                     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    //                     Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+    //                     Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    //                 const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    //                 return R * c;
+    //             };
+
+    //             const rideDistanceKm = calculateDistance(
+    //                 pickupLat,
+    //                 pickupLng,
+    //                 dropLat,
+    //                 dropLng
+    //             );
+
+    //             const bookingPrice = Math.round(rideDistanceKm * 10); // ₹10 per KM
+
     //             // -------- DRIVER FETCH ---------
     //             const driver = await db.users.findOne({
     //                 where: {
@@ -504,21 +702,21 @@ module.exports = {
     //             });
 
     //             if (!driver) {
-    //                 return helper.error(res, 'Driver not found or not available', 404);
+    //                 return helper.failure(res, 'Driver not found or not available',);
     //             }
 
     //             // -------- RADIUS CHECK (0–30 KM) --------
     //             const maxRadius = 30;
 
     //             if (!driver.latitude || !driver.longitude) {
-    //                 return helper.error(res, 'Driver location not available', 404);
+    //                 return helper.failure(res, 'Driver location not available',);
     //             }
 
     //             const driverLat = parseFloat(driver.latitude);
     //             const driverLng = parseFloat(driver.longitude);
 
     //             if (isNaN(driverLat) || isNaN(driverLng)) {
-    //                 return helper.error(res, 'Driver has invalid coordinates', 404);
+    //                 return helper.failure(res, 'Driver has invalid coordinates',);
     //             }
 
     //             const driverDistance = calculateDistance(
@@ -529,10 +727,9 @@ module.exports = {
     //             );
 
     //             if (!(driverDistance >= 0 && driverDistance <= maxRadius)) {
-    //                 return helper.error(
+    //                 return helper.failure(
     //                     res,
     //                     'No drivers available within 30 km of your pickup location',
-    //                     404
     //                 );
     //             }
 
@@ -545,22 +742,21 @@ module.exports = {
     //             });
 
     //             if (existingBooking) {
-    //                 return helper.error(res, 'You already have an active ride request');
+    //                 return helper.failure(res, 'You already have an active ride request');
     //             }
 
     //             const driverActiveBooking = await db.bookings.findOne({
     //                 where: {
     //                     driverId,
     //                     status: { [Sequelize.Op.in]: ['0', '1', '2'] },
-    //                     request: '0'
+    //                     request: '1'
     //                 }
     //             });
 
     //             if (driverActiveBooking) {
-    //                 return helper.error(
+    //                 return helper.failure(
     //                     res,
     //                     'Driver is currently busy with another ride',
-    //                     400
     //                 );
     //             }
 
@@ -592,18 +788,15 @@ module.exports = {
     //                 pickupLongitude: pickupLongitude.toString(),
     //                 dropLatitude: dropLatitude.toString(),
     //                 dropLongitude: dropLongitude.toString(),
-    //                 request: '0'
+    //                 bookingPrice: bookingPrice.toString(),
+    //                 request: '0',
+    //                 rideOpen
     //             });
 
-    //             console.log(
-    //                 `Booking created for user ${userId} with driver ${driverId}, Order ID: ${orderId}`
-    //             );
-
-    //             // ---------------- SOCKET EMIT (FULL SAFE) ----------------
+    //             // -- SOCKET EMIT ---
     //             try {
     //                 let emitted = false;
 
-    //                 // Emit using onlineUsers (old drivers)
     //                 if (io && global.onlineUsers && onlineUsers[driverId]?.length) {
     //                     onlineUsers[driverId].forEach(sockId => {
     //                         io.to(sockId).emit("newRideRequest", {
@@ -618,13 +811,13 @@ module.exports = {
     //                             dropLatitude,
     //                             dropLongitude,
     //                             status: '0',
-    //                             request: '0'
+    //                             request: '0',
+    //                             rideOpen
     //                         });
     //                     });
     //                     emitted = true;
     //                 }
 
-    //                 //  Fallback → DB socketId (NEW DRIVER CASE)
     //                 if (!emitted && driver.socketId) {
     //                     io.to(driver.socketId).emit("newRideRequest", {
     //                         bookingId: newBooking.id,
@@ -638,14 +831,14 @@ module.exports = {
     //                         dropLatitude,
     //                         dropLongitude,
     //                         status: '0',
-    //                         request: '0'
+    //                         request: '0',
+    //                         rideOpen
     //                     });
     //                 }
-
     //             } catch (e) {
     //                 console.log("Socket emit failed:", e);
     //             }
-    //             // ---------------------------------------------------------
+    //             // -----------------
 
     //             return helper.success(
     //                 res,
@@ -657,6 +850,8 @@ module.exports = {
     //                     driverId,
     //                     status: newBooking.status,
     //                     request: newBooking.request,
+    //                     bookingPrice: bookingPrice,          //  SHOWN
+    //                     rideDistanceKm: rideDistanceKm.toFixed(2), //  SHOWN
     //                     pickupLocation: newBooking.pickupLocation,
     //                     dropLocation: newBooking.dropLocation,
     //                     coordinates: {
@@ -694,26 +889,7 @@ module.exports = {
             try {
                 const userId = req.user.id;
 
-                const userStatus = await db.users.findOne({
-                    where: { id: userId },
-                    attributes: ['status', 'block', 'suspend'],
-                    raw: true
-                });
-                if (!userStatus) {
-                    return helper.failure(res, "User not found.");
-                }
-                if (userStatus.status === "0") {
-                    return helper.error2(res, "Your account has been deactivated by admin.");
-                }
-                if (userStatus.block === "1") {
-                    return helper.error1(res, "Your account has been blocked by admin.");
-                }
-                if (userStatus.suspend === "1") {
-                    return helper.error3(res, "Your account has been suspended by admin.");
-                }
-
                 const {
-                    driverId,
                     pickupLocation,
                     dropLocation,
                     pickupLatitude,
@@ -722,10 +898,6 @@ module.exports = {
                     dropLongitude,
                     rideOpen
                 } = req.body;
-
-                if (!driverId) {
-                    return helper.failure(res, 'Driver ID is required.');
-                }
 
                 if (!pickupLocation || !dropLocation) {
                     return helper.failure(res, 'Pickup and drop locations are required.');
@@ -749,19 +921,17 @@ module.exports = {
                     return helper.failure(res, 'Invalid coordinates provided.');
                 }
 
-                // ---------------- DISTANCE + PRICE CALCULATION (NEW) ----------------
-                const toRad = (value) => value * Math.PI / 180;
-
-                const calculateDistance = (lat1, lon1, lat2, lon2) => {
-                    const R = 6371; // KM
-                    const dLat = toRad(lat2 - lat1);
-                    const dLon = toRad(lon2 - lon1);
-                    const a =
-                        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-                        Math.sin(dLon / 2) * Math.sin(dLon / 2);
-                    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-                    return R * c;
+                const toRad = v => v * Math.PI / 180;
+                const calculateDistance = (a, b, c, d) => {
+                    const R = 6371;
+                    const dLat = toRad(c - a);
+                    const dLon = toRad(d - b);
+                    const x =
+                        Math.sin(dLat / 2) ** 2 +
+                        Math.cos(toRad(a)) *
+                        Math.cos(toRad(c)) *
+                        Math.sin(dLon / 2) ** 2;
+                    return R * (2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x)));
                 };
 
                 const rideDistanceKm = calculateDistance(
@@ -771,53 +941,7 @@ module.exports = {
                     dropLng
                 );
 
-                const bookingPrice = Math.round(rideDistanceKm * 10); // ₹10 per KM
-
-                // -------- DRIVER FETCH ---------
-                const driver = await db.users.findOne({
-                    where: {
-                        id: driverId,
-                        role: '2',
-                        online: '1'
-                    },
-                    include: [{
-                        model: db.vehicleDetails,
-                        as: 'vehicleDetail',
-                        required: true
-                    }]
-                });
-
-                if (!driver) {
-                    return helper.failure(res, 'Driver not found or not available',);
-                }
-
-                // -------- RADIUS CHECK (0–30 KM) --------
-                const maxRadius = 30;
-
-                if (!driver.latitude || !driver.longitude) {
-                    return helper.failure(res, 'Driver location not available',);
-                }
-
-                const driverLat = parseFloat(driver.latitude);
-                const driverLng = parseFloat(driver.longitude);
-
-                if (isNaN(driverLat) || isNaN(driverLng)) {
-                    return helper.failure(res, 'Driver has invalid coordinates',);
-                }
-
-                const driverDistance = calculateDistance(
-                    pickupLat,
-                    pickupLng,
-                    driverLat,
-                    driverLng
-                );
-
-                if (!(driverDistance >= 0 && driverDistance <= maxRadius)) {
-                    return helper.failure(
-                        res,
-                        'No drivers available within 30 km of your pickup location',
-                    );
-                }
+                const bookingPrice = Math.round(rideDistanceKm * 10);
 
                 const existingBooking = await db.bookings.findOne({
                     where: {
@@ -831,100 +955,42 @@ module.exports = {
                     return helper.failure(res, 'You already have an active ride request');
                 }
 
-                const driverActiveBooking = await db.bookings.findOne({
-                    where: {
-                        driverId,
-                        status: { [Sequelize.Op.in]: ['0', '1', '2'] },
-                        request: '1'
-                    }
-                });
-
-                if (driverActiveBooking) {
-                    return helper.failure(
-                        res,
-                        'Driver is currently busy with another ride',
-                    );
-                }
-
-                const generateOrderId = () => {
-                    return Math.floor(100000 + Math.random() * 900000).toString();
-                };
-
-                let orderId;
-                let isUnique = false;
-
-                while (!isUnique) {
-                    orderId = generateOrderId();
-                    const existingOrder = await db.bookings.findOne({
-                        where: { orderId }
-                    });
-                    if (!existingOrder) {
-                        isUnique = true;
-                    }
-                }
+                const orderId = Math.floor(100000 + Math.random() * 900000).toString();
 
                 const newBooking = await db.bookings.create({
                     userId,
-                    driverId,
+                    driverId: null, // ✅ MAIN CHANGE
                     orderId,
                     status: '0',
                     pickupLocation,
                     dropLocation,
-                    pickupLatitude: pickupLatitude.toString(),
-                    pickupLongitude: pickupLongitude.toString(),
-                    dropLatitude: dropLatitude.toString(),
-                    dropLongitude: dropLongitude.toString(),
-                    bookingPrice: bookingPrice.toString(),
+                    pickupLatitude,
+                    pickupLongitude,
+                    dropLatitude,
+                    dropLongitude,
+                    bookingPrice,
                     request: '0',
                     rideOpen
                 });
 
-                // -- SOCKET EMIT ---
-                try {
-                    let emitted = false;
+                // 🔔 Emit to nearby drivers (logic SAME – broadcast)
+                const drivers = await db.users.findAll({
+                    where: { role: '2', online: '1' }
+                });
 
-                    if (io && global.onlineUsers && onlineUsers[driverId]?.length) {
-                        onlineUsers[driverId].forEach(sockId => {
+                drivers.forEach(driver => {
+                    if (onlineUsers[driver.id]?.length) {
+                        onlineUsers[driver.id].forEach(sockId => {
                             io.to(sockId).emit("newRideRequest", {
                                 bookingId: newBooking.id,
-                                orderId: newBooking.orderId,
-                                userId,
-                                driverId,
                                 pickupLocation,
                                 dropLocation,
-                                pickupLatitude,
-                                pickupLongitude,
-                                dropLatitude,
-                                dropLongitude,
-                                status: '0',
-                                request: '0',
-                                rideOpen
+                                bookingPrice,
+                                rideDistanceKm: rideDistanceKm.toFixed(2)
                             });
                         });
-                        emitted = true;
                     }
-
-                    if (!emitted && driver.socketId) {
-                        io.to(driver.socketId).emit("newRideRequest", {
-                            bookingId: newBooking.id,
-                            orderId: newBooking.orderId,
-                            userId,
-                            driverId,
-                            pickupLocation,
-                            dropLocation,
-                            pickupLatitude,
-                            pickupLongitude,
-                            dropLatitude,
-                            dropLongitude,
-                            status: '0',
-                            request: '0',
-                            rideOpen
-                        });
-                    }
-                } catch (e) {
-                    console.log("Socket emit failed:", e);
-                }
-                // -----------------
+                });
 
                 return helper.success(
                     res,
@@ -932,45 +998,102 @@ module.exports = {
                     {
                         bookingId: newBooking.id,
                         orderId: newBooking.orderId,
-                        userId,
-                        driverId,
+                        bookingPrice,
+                        rideDistanceKm: rideDistanceKm.toFixed(2),
                         status: newBooking.status,
                         request: newBooking.request,
-                        bookingPrice: bookingPrice,          //  SHOWN
-                        rideDistanceKm: rideDistanceKm.toFixed(2), //  SHOWN
-                        pickupLocation: newBooking.pickupLocation,
-                        dropLocation: newBooking.dropLocation,
-                        coordinates: {
-                            pickup: {
-                                latitude: newBooking.pickupLatitude,
-                                longitude: newBooking.pickupLongitude
-                            },
-                            drop: {
-                                latitude: newBooking.dropLatitude,
-                                longitude: newBooking.dropLongitude
-                            }
-                        },
-                        driverDetails: {
-                            id: driver.id,
-                            fullName: `${driver.firstName} ${driver.lastName}`,
-                            phone: driver.phoneNumber,
-                            profileImage: driver.image,
-                            vehicleDetails: driver.vehicleDetail
-                        },
                         message: 'Waiting for driver to accept your request'
                     }
                 );
 
             } catch (error) {
                 console.error('Booking error:', error);
-                return helper.failure(
-                    res,
-                    "Something went wrong while booking the ride."
-                );
+                return helper.failure(res, 'Something went wrong while booking the ride.');
             }
         };
     },
 
+    // driverAccptReject(main): (io) => {
+    //     return async (req, res) => {
+    //         try {
+    //             const driverId = req.user.id;
+    //             const { bookingId, request } = req.body;
+
+    //             if (!bookingId || !request) {
+    //                 return helper.failure(res, 'Booking ID and request value are required.');
+    //             }
+    //             if (!['1', '2'].includes(request)) {
+    //                 return helper.failure(res, 'Invalid request value. Must be "1" (accept) or "2" (reject).');
+    //             }
+
+    //             const booking = await db.bookings.findOne({
+    //                 where: {
+    //                     id: bookingId,
+    //                     driverId: driverId,
+    //                     status: '0',
+    //                     request: '0'
+    //                 },
+    //                 include: [{
+    //                     model: db.users,
+    //                     as: 'userbook',
+    //                     attributes: ['id', 'socketId']
+    //                 }]
+    //             });
+
+    //             if (!booking) {
+    //                 return helper.failure(res, 'Booking already processed');
+    //             }
+    //             // Accept or reject
+    //             if (request === '1') {
+    //                 await booking.update({ request: request, status: '0' });   // Accept
+    //             } else {
+    //                 await booking.update({ request: request, status: '4' }); // Reject
+    //             }
+    //             // Notify user
+    //             // if (booking.userbook && booking.userbook.socketId) {
+    //             //     io.to(booking.userbook.socketId).emit("rideStatusUpdate", {
+    //             //         bookingId: booking.id,
+    //             //         driverId: driverId,
+    //             //         request: request,
+    //             //         status: request === "1" ? "Driver on the way" : "Booking rejected",
+    //             //         message: request === "1"
+    //             //             ? "Driver accepted your booking and is on the way"
+    //             //             : "Driver rejected your booking"
+    //             //     });
+    //             // }
+    //             if (booking.userbook && booking.userbook.socketId) {
+
+    //                 let statusCode = request === "1" ? "0" : "4";
+    //                 let msg = request === "1"
+    //                     ? "Driver on the way"
+    //                     : "Driver rejected the booking";
+
+    //                 io.to(booking.userbook.socketId).emit("rideStatusUpdate", {
+    //                     bookingId: booking.id,
+    //                     driverId: driverId,
+    //                     request: request,
+    //                     status: statusCode,
+    //                     message: msg
+    //                 });
+    //             }
+    //             const message = request === '1'
+    //                 ? 'Booking accepted successfully. Driver on the way.'
+    //                 : 'Booking rejected successfully';
+
+    //             const actionMessage = request === '1'
+    //                 ? 'You have accepted the ride request. Driver on the way.'
+    //                 : 'You have rejected the ride request';
+
+    //             return helper.success(res, message, {
+    //                 bookingId: booking.id,
+    //                 request: request,
+    //                 message: actionMessage
+    //             });
+    //         } catch (error) {
+    //             return helper.failure(res, "Something went wrong while processing the booking.");
+    //         }
+    //     };
+    // },
     driverAccptReject: (io) => {
         return async (req, res) => {
             try {
@@ -980,179 +1103,194 @@ module.exports = {
                 if (!bookingId || !request) {
                     return helper.failure(res, 'Booking ID and request value are required.');
                 }
+
                 if (!['1', '2'].includes(request)) {
-                    return helper.failure(res, 'Invalid request value. Must be "1" (accept) or "2" (reject).');
+                    return helper.failure(
+                        res,
+                        'Invalid request value. Must be "1" (accept) or "2" (reject).'
+                    );
                 }
 
-                const booking = await db.bookings.findOne({
-                    where: {
-                        id: bookingId,
-                        driverId: driverId,
-                        status: '0',
-                        request: '0'
-                    },
-                    include: [{
-                        model: db.users,
-                        as: 'userbook',
-                        attributes: ['id', 'socketId']
-                    }]
-                });
-
-                if (!booking) {
-                    return helper.failure(res, 'Booking already processed');
-                }
-                // Accept or reject
+                // ---------------- ACCEPT ----------------
                 if (request === '1') {
-                    await booking.update({ request: request, status: '0' });   // Accept
-                } else {
-                    await booking.update({ request: request, status: '4' }); // Reject
-                }
-                // Notify user
-                // if (booking.userbook && booking.userbook.socketId) {
-                //     io.to(booking.userbook.socketId).emit("rideStatusUpdate", {
-                //         bookingId: booking.id,
-                //         driverId: driverId,
-                //         request: request,
-                //         status: request === "1" ? "Driver on the way" : "Booking rejected",
-                //         message: request === "1"
-                //             ? "Driver accepted your booking and is on the way"
-                //             : "Driver rejected your booking"
-                //     });
-                // }
-                if (booking.userbook && booking.userbook.socketId) {
 
-                    let statusCode = request === "1" ? "0" : "4";
-                    let msg = request === "1"
-                        ? "Driver on the way"
-                        : "Driver rejected the booking";
-
-                    io.to(booking.userbook.socketId).emit("rideStatusUpdate", {
-                        bookingId: booking.id,
-                        driverId: driverId,
-                        request: request,
-                        status: statusCode,
-                        message: msg
-                    });
-                }
-                const message = request === '1'
-                    ? 'Booking accepted successfully. Driver on the way.'
-                    : 'Booking rejected successfully';
-
-                const actionMessage = request === '1'
-                    ? 'You have accepted the ride request. Driver on the way.'
-                    : 'You have rejected the ride request';
-
-                return helper.success(res, message, {
-                    bookingId: booking.id,
-                    request: request,
-                    message: actionMessage
-                });
-            } catch (error) {
-                return helper.failure(res, "Something went wrong while processing the booking.");
-            }
-        };
-    },
-
-
-    requestList: (io) => {
-        return async (req, res) => {
-            try {
-                const driverId = req.user.id;
-
-                const driver = await db.users.findOne({
-                    where: { id: driverId },
-                    attributes: ['status', 'block', 'suspend'],
-                    raw: true
-                });
-                if (!driver) {
-                    return helper.failure(res, "driver not found.");
-                }
-                if (driver.status === "0") {
-                    return helper.error2(res, "Your account has been deactivated by admin.");
-                }
-                if (driver.block === "1") {
-                    return helper.error1(res, "Your account has been blocked by admin.");
-                }
-                if (driver.suspend === "1") {
-                    return helper.error3(res, "Your account has been suspended by admin.");
-                }
-
-                const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
-                const expiredBookings = await db.bookings.findAll({
-                    where: {
-                        driverId: driverId,
-                        status: '0',
-                        request: '0',
-                        bookingDate: {
-                            [Sequelize.Op.lt]: oneMinuteAgo
-                        }
-                    },
-                    attributes: ['id', 'userId'],
-                    raw: true
-                });
-                await db.bookings.destroy({
-                    where: {
-                        driverId: driverId,
-                        status: '0',
-                        request: '0',
-                        bookingDate: {
-                            [Sequelize.Op.lt]: oneMinuteAgo
-                        }
-                    }
-                });
-                // USER SOCKET EMIT ONLY
-                if (expiredBookings.length) {
-                    expiredBookings.forEach(b => {
-                        if (global.onlineUsers && onlineUsers[b.userId]?.length) {
-                            onlineUsers[b.userId].forEach(sockId => {
-                                io.to(sockId).emit("rideStatusUpdate", {
-                                    bookingId: b.id,
-                                    message: "Driver did not respond. Please try again."
-                                });
-                            });
-                        }
-                    });
-                }
-                const requests = await db.bookings.findAll({
-                    where: {
-                        driverId: driverId,
-                        status: '0',
-                        request: '0'
-                    },
-                    include: [
+                    // 🔒 atomic update (first driver wins)
+                    const [updated] = await db.bookings.update(
                         {
+                            driverId: driverId,
+                            request: '1',
+                            status: '0' // keeping same status as your logic
+                        },
+                        {
+                            where: {
+                                id: bookingId,
+                                driverId: null,
+                                status: '0',
+                                request: '0'
+                            }
+                        }
+                    );
+
+                    if (!updated) {
+                        return helper.failure(res, 'Booking already processed');
+                    }
+
+                    const booking = await db.bookings.findOne({
+                        where: { id: bookingId },
+                        include: [{
                             model: db.users,
                             as: 'userbook',
+                            attributes: ['id', 'socketId']
+                        }]
+                    });
+
+                    // 🔔 notify user (same socket payload)
+                    if (booking.userbook && booking.userbook.socketId) {
+                        io.to(booking.userbook.socketId).emit("rideStatusUpdate", {
+                            bookingId: booking.id,
+                            driverId: driverId,
+                            request: '1',
+                            status: '0',
+                            message: 'Driver on the way'
+                        });
+                    }
+
+                    return helper.success(
+                        res,
+                        'Booking accepted successfully. Driver on the way.',
+                        {
+                            bookingId: booking.id,
+                            request: '1',
+                            message: 'You have accepted the ride request. Driver on the way.'
                         }
-                    ],
-                    order: [['id', 'DESC']]
-                });
-                return helper.success(res, 'Pending ride requests fetched successfully', {
-                    totalRequests: requests.length,
-                    requests: requests.map(booking => ({
-                        bookingId: booking.id,
-                        userId: booking.userId,
-                        userDetails: booking.userbook,
-                        pickupLocation: booking.pickupLocation,
-                        dropLocation: booking.dropLocation,
-                        pickupLatitude: booking.pickupLatitude,
-                        pickupLongitude: booking.pickupLongitude,
-                        dropLatitude: booking.dropLatitude,
-                        dropLongitude: booking.dropLongitude,
-                        status: booking.status,
-                        request: booking.request,
-                        bookingDate: booking.bookingDate,
-                        orderId: booking.orderId,
-                        rideOpen: booking.rideOpen
-                    }))
-                });
+                    );
+                }
+
+                // ---------------- REJECT ----------------
+                if (request === '2') {
+                    // ❗ Reject me DB update nahi (ride open rehti hai)
+
+                    return helper.success(
+                        res,
+                        'Booking rejected successfully',
+                        {
+                            bookingId,
+                            request: '2',
+                            message: 'You have rejected the ride request'
+                        }
+                    );
+                }
 
             } catch (error) {
-                console.log("requestList error:", error);
-                return helper.failure(res, "Something went wrong while fetching requests.");
+                console.error(error);
+                return helper.failure(
+                    res,
+                    "Something went wrong while processing the booking."
+                );
             }
         };
     },
+
+
+    // requestList(main): (io) => {
+    //     return async (req, res) => {
+    //         try {
+    //             const driverId = req.user.id;
+
+    //             const driver = await db.users.findOne({
+    //                 where: { id: driverId },
+    //                 attributes: ['status', 'block', 'suspend'],
+    //                 raw: true
+    //             });
+    //             if (!driver) {
+    //                 return helper.failure(res, "driver not found.");
+    //             }
+    //             if (driver.status === "0") {
+    //                 return helper.error2(res, "Your account has been deactivated by admin.");
+    //             }
+    //             if (driver.block === "1") {
+    //                 return helper.error1(res, "Your account has been blocked by admin.");
+    //             }
+    //             if (driver.suspend === "1") {
+    //                 return helper.error3(res, "Your account has been suspended by admin.");
+    //             }
+
+    //             const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
+    //             const expiredBookings = await db.bookings.findAll({
+    //                 where: {
+    //                     driverId: driverId,
+    //                     status: '0',
+    //                     request: '0',
+    //                     bookingDate: {
+    //                         [Sequelize.Op.lt]: oneMinuteAgo
+    //                     }
+    //                 },
+    //                 attributes: ['id', 'userId'],
+    //                 raw: true
+    //             });
+    //             await db.bookings.destroy({
+    //                 where: {
+    //                     driverId: driverId,
+    //                     status: '0',
+    //                     request: '0',
+    //                     bookingDate: {
+    //                         [Sequelize.Op.lt]: oneMinuteAgo
+    //                     }
+    //                 }
+    //             });
+    //             // USER SOCKET EMIT ONLY
+    //             if (expiredBookings.length) {
+    //                 expiredBookings.forEach(b => {
+    //                     if (global.onlineUsers && onlineUsers[b.userId]?.length) {
+    //                         onlineUsers[b.userId].forEach(sockId => {
+    //                             io.to(sockId).emit("rideStatusUpdate", {
+    //                                 bookingId: b.id,
+    //                                 message: "Driver did not respond. Please try again."
+    //                             });
+    //                         });
+    //                     }
+    //                 });
+    //             }
+    //             const requests = await db.bookings.findAll({
+    //                 where: {
+    //                     driverId: driverId,
+    //                     status: '0',
+    //                     request: '0'
+    //                 },
+    //                 include: [
+    //                     {
+    //                         model: db.users,
+    //                         as: 'userbook',
+    //                     }
+    //                 ],
+    //                 order: [['id', 'DESC']]
+    //             });
+    //             return helper.success(res, 'Pending ride requests fetched successfully', {
+    //                 totalRequests: requests.length,
+    //                 requests: requests.map(booking => ({
+    //                     bookingId: booking.id,
+    //                     userId: booking.userId,
+    //                     userDetails: booking.userbook,
+    //                     pickupLocation: booking.pickupLocation,
+    //                     dropLocation: booking.dropLocation,
+    //                     pickupLatitude: booking.pickupLatitude,
+    //                     pickupLongitude: booking.pickupLongitude,
+    //                     dropLatitude: booking.dropLatitude,
+    //                     dropLongitude: booking.dropLongitude,
+    //                     status: booking.status,
+    //                     request: booking.request,
+    //                     bookingDate: booking.bookingDate,
+    //                     orderId: booking.orderId,
+    //                     rideOpen: booking.rideOpen
+    //                 }))
+    //             });
+
+    //         } catch (error) {
+    //             console.log("requestList error:", error);
+    //             return helper.failure(res, "Something went wrong while fetching requests.");
+    //         }
+    //     };
+    // },
     // requestList: (io) => {
     //     return async (req, res) => {
     //         try {
@@ -1275,6 +1413,122 @@ module.exports = {
     //         }
     //     };
     // },
+    requestList: (io) => {
+        return async (req, res) => {
+            try {
+                const driverId = req.user.id;
+
+                // ---------------- DRIVER STATUS CHECK ----------------
+                const driver = await db.users.findOne({
+                    where: { id: driverId },
+                    attributes: ['status', 'block', 'suspend'],
+                    raw: true
+                });
+
+                if (!driver) {
+                    return helper.failure(res, "Driver not found.");
+                }
+                if (driver.status === "0") {
+                    return helper.error2(res, "Your account has been deactivated by admin.");
+                }
+                if (driver.block === "1") {
+                    return helper.error1(res, "Your account has been blocked by admin.");
+                }
+                if (driver.suspend === "1") {
+                    return helper.error3(res, "Your account has been suspended by admin.");
+                }
+
+                const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
+                const expiredBookings = await db.bookings.findAll({
+                    where: {
+                        driverId: null,         
+                        status: '0',
+                        request: '0',
+                        bookingDate: {
+                            [Sequelize.Op.lt]: oneMinuteAgo
+                        }
+                    },
+                    attributes: ['id', 'userId'],
+                    raw: true
+                });
+
+                await db.bookings.destroy({
+                    where: {
+                        driverId: null,
+                        status: '0',
+                        request: '0',
+                        bookingDate: {
+                            [Sequelize.Op.lt]: oneMinuteAgo
+                        }
+                    },
+                    force: true   
+                });
+
+
+                // ---------------- USER SOCKET EMIT ----------------
+                if (expiredBookings.length) {
+                    expiredBookings.forEach(b => {
+                        if (global.onlineUsers && onlineUsers[b.userId]?.length) {
+                            onlineUsers[b.userId].forEach(sockId => {
+                                io.to(sockId).emit("rideStatusUpdate", {
+                                    bookingId: b.id,
+                                    message: "Driver did not respond. Please try again."
+                                });
+                            });
+                        }
+                    });
+                }
+
+                // ---------------- PENDING REQUESTS ----------------
+                const requests = await db.bookings.findAll({
+                    where: {
+                        driverId: null,
+                        status: '0',
+                        request: '0'
+                    },
+                    include: [
+                        {
+                            model: db.users,
+                            as: 'userbook'
+                        }
+                    ],
+                    order: [['id', 'DESC']]
+                });
+
+                return helper.success(
+                    res,
+                    'Pending ride requests fetched successfully',
+                    {
+                        totalRequests: requests.length,
+                        requests: requests.map(booking => ({
+                            bookingId: booking.id,
+                            userId: booking.userId,
+                            userDetails: booking.userbook,
+                            pickupLocation: booking.pickupLocation,
+                            dropLocation: booking.dropLocation,
+                            pickupLatitude: booking.pickupLatitude,
+                            pickupLongitude: booking.pickupLongitude,
+                            dropLatitude: booking.dropLatitude,
+                            dropLongitude: booking.dropLongitude,
+                            status: booking.status,
+                            request: booking.request,
+                            bookingDate: booking.bookingDate,
+                            orderId: booking.orderId,
+                            rideOpen: booking.rideOpen
+                        }))
+                    }
+                );
+
+            } catch (error) {
+                console.log("requestList error:", error);
+                return helper.failure(
+                    res,
+                    "Something went wrong while fetching requests."
+                );
+            }
+        };
+    },
+
 
 
 
