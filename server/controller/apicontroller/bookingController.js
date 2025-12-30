@@ -1152,66 +1152,48 @@ module.exports = {
     //         }
     //     };
     // },
-    driverAccptReject: (io) => {
-        return async (req, res) => {
-            try {
-                const driverId = req.user.id;
-                const { bookingId, request } = req.body;
+  driverAccptReject: (io) => {
+    return async (req, res) => {
+        try {
+            const driverId = req.user.id;
+            const { bookingId, request } = req.body;
 
-                if (!bookingId || !request) {
-                    return helper.failure(res, 'Booking ID and request value are required.');
-                }
+            if (!bookingId || !request) {
+                return helper.failure(res, 'Booking ID and request value are required.');
+            }
 
-                if (!['1', '2'].includes(request)) {
-                    return helper.failure(
-                        res,
-                        'Invalid request value. Must be "1" (accept) or "2" (reject).'
-                    );
-                }
+            if (!['1', '2'].includes(request)) {
+                return helper.failure(
+                    res,
+                    'Invalid request value. Must be "1" (accept) or "2" (reject).'
+                );
+            }
 
-                // ---------------- ACCEPT ----------------
-                if (request === '1') {
-                    const [updated] = await db.bookings.update(
-                        {
-                            driverId: driverId,
-                            request: '1',
-                            status: '0'
-                        },
-                        {
-                            where: {
-                                id: bookingId,
-                                driverId: null,
-                                status: '0',
-                                request: '0'
-                            }
+            // ---------------- ACCEPT ----------------
+            if (request === '1') {
+                const [updated] = await db.bookings.update(
+                    {
+                        driverId: driverId,
+                        request: '1',
+                        status: '0'
+                    },
+                    {
+                        where: {
+                            id: bookingId,
+                            driverId: null,
+                            status: '0',
+                            request: '0'
                         }
-                    );
-
-                    if (!updated) {
-                        return helper.failure(res, 'Booking already processed');
                     }
+                );
+
+                if (!updated) {
+                    return helper.failure(res, 'Booking already processed');
                 }
+            }
 
-                // ---------------- REJECT ----------------
-                if (request === '2') {
-                    const booking = await db.bookings.findOne({
-                        where: { id: bookingId },
-                        include: [{
-                            model: db.users,
-                            as: 'userbook',
-                            attributes: ['id', 'socketId']
-                        }]
-                    });
-
-                    if (!booking) {
-                        return helper.failure(res, 'Booking already processed');
-                    }
-
-                    // ❗ Only update status for reject
-                    await booking.update({ request: '2', status: '4' });
-                }
-
-                // ---------------- NOTIFY USER ----------------
+            // ---------------- REJECT ----------------
+            if (request === '2') {
                 const booking = await db.bookings.findOne({
                     where: { id: bookingId },
                     include: [{
@@ -1221,44 +1203,78 @@ module.exports = {
                     }]
                 });
 
-                if (booking.userbook && booking.userbook.socketId) {
-                    const statusCode = request === '1' ? '0' : '4';
-                    const msg = request === '1'
-                        ? 'Driver on the way'
-                        : 'Driver rejected the booking';
-
-                    io.to(booking.userbook.socketId).emit("rideStatusUpdate", {
-                        bookingId: booking.id,
-                        driverId: driverId,
-                        request: request,
-                        status: statusCode,
-                        message: msg
-                    });
+                if (!booking) {
+                    return helper.failure(res, 'Booking already processed');
                 }
 
-                const message = request === '1'
-                    ? 'Booking accepted successfully. Driver on the way.'
-                    : 'Booking rejected successfully';
-
-                const actionMessage = request === '1'
-                    ? 'You have accepted the ride request. Driver on the way.'
-                    : 'You have rejected the ride request';
-
-                return helper.success(res, message, {
-                    bookingId,
-                    request,
-                    message: actionMessage
-                });
-
-            } catch (error) {
-                console.error(error);
-                return helper.failure(
-                    res,
-                    "Something went wrong while processing the booking."
-                );
+                // ❗ Only update status for reject
+                await booking.update({ request: '2', status: '4' });
             }
-        };
-    },
+
+            // ---------------- FETCH BOOKING ----------------
+            const booking = await db.bookings.findOne({
+                where: { id: bookingId },
+                include: [{
+                    model: db.users,
+                    as: 'userbook',
+                    attributes: ['id', 'socketId']
+                }]
+            });
+
+            const statusCode = request === '1' ? '0' : '4';
+            const msg = request === '1'
+                ? 'Driver on the way'
+                : 'Driver rejected the booking';
+
+            // ---------------- EMIT TO USER ----------------
+            if (booking.userbook && booking.userbook.socketId) {
+                io.to(booking.userbook.socketId).emit("rideStatusUpdate", {
+                    bookingId: booking.id,
+                    driverId: driverId,
+                    request: request,
+                    status: statusCode,
+                    message: msg
+                });
+            }
+
+            // ---------------- EMIT TO DRIVER ----------------
+            if (global.onlineUsers && onlineUsers[driverId]?.length) {
+                onlineUsers[driverId].forEach(sockId => {
+                    io.to(sockId).emit("rideStatusUpdate", {
+                        bookingId: booking.id,
+                        request: request,
+                        status: statusCode,
+                        message: request === '1'
+                            ? 'You accepted the ride request'
+                            : 'You rejected the ride request'
+                    });
+                });
+            }
+
+            const message = request === '1'
+                ? 'Booking accepted successfully. Driver on the way.'
+                : 'Booking rejected successfully';
+
+            const actionMessage = request === '1'
+                ? 'You have accepted the ride request. Driver on the way.'
+                : 'You have rejected the ride request';
+
+            return helper.success(res, message, {
+                bookingId,
+                request,
+                message: actionMessage
+            });
+
+        } catch (error) {
+            console.error(error);
+            return helper.failure(
+                res,
+                "Something went wrong while processing the booking."
+            );
+        }
+    };
+},
+
 
 
 
