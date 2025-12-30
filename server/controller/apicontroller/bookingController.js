@@ -1171,13 +1171,11 @@ module.exports = {
 
                 // ---------------- ACCEPT ----------------
                 if (request === '1') {
-
-                    // 🔒 atomic update (first driver wins)
                     const [updated] = await db.bookings.update(
                         {
                             driverId: driverId,
                             request: '1',
-                            status: '0' // keeping same status as your logic
+                            status: '0'
                         },
                         {
                             where: {
@@ -1192,7 +1190,10 @@ module.exports = {
                     if (!updated) {
                         return helper.failure(res, 'Booking already processed');
                     }
+                }
 
+                // ---------------- REJECT ----------------
+                if (request === '2') {
                     const booking = await db.bookings.findOne({
                         where: { id: bookingId },
                         include: [{
@@ -1202,42 +1203,52 @@ module.exports = {
                         }]
                     });
 
-                    // 🔔 notify user (same socket payload)
-                    if (booking.userbook && booking.userbook.socketId) {
-                        io.to(booking.userbook.socketId).emit("rideStatusUpdate", {
-                            bookingId: booking.id,
-                            driverId: driverId,
-                            request: '1',
-                            status: '0',
-                            message: 'Driver on the way'
-                        });
+                    if (!booking) {
+                        return helper.failure(res, 'Booking already processed');
                     }
 
-                    return helper.success(
-                        res,
-                        'Booking accepted successfully. Driver on the way.',
-                        {
-                            bookingId: booking.id,
-                            request: '1',
-                            message: 'You have accepted the ride request. Driver on the way.'
-                        }
-                    );
+                    // ❗ Only update status for reject
+                    await booking.update({ request: '2', status: '4' });
                 }
 
-                // ---------------- REJECT ----------------
-                if (request === '2') {
-                    // ❗ Reject me DB update nahi (ride open rehti hai)
+                // ---------------- NOTIFY USER ----------------
+                const booking = await db.bookings.findOne({
+                    where: { id: bookingId },
+                    include: [{
+                        model: db.users,
+                        as: 'userbook',
+                        attributes: ['id', 'socketId']
+                    }]
+                });
 
-                    return helper.success(
-                        res,
-                        'Booking rejected successfully',
-                        {
-                            bookingId,
-                            request: '2',
-                            message: 'You have rejected the ride request'
-                        }
-                    );
+                if (booking.userbook && booking.userbook.socketId) {
+                    const statusCode = request === '1' ? '0' : '4';
+                    const msg = request === '1'
+                        ? 'Driver on the way'
+                        : 'Driver rejected the booking';
+
+                    io.to(booking.userbook.socketId).emit("rideStatusUpdate", {
+                        bookingId: booking.id,
+                        driverId: driverId,
+                        request: request,
+                        status: statusCode,
+                        message: msg
+                    });
                 }
+
+                const message = request === '1'
+                    ? 'Booking accepted successfully. Driver on the way.'
+                    : 'Booking rejected successfully';
+
+                const actionMessage = request === '1'
+                    ? 'You have accepted the ride request. Driver on the way.'
+                    : 'You have rejected the ride request';
+
+                return helper.success(res, message, {
+                    bookingId,
+                    request,
+                    message: actionMessage
+                });
 
             } catch (error) {
                 console.error(error);
@@ -1248,6 +1259,7 @@ module.exports = {
             }
         };
     },
+
 
 
     // requestList(main): (io) => {
