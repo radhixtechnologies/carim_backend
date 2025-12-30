@@ -1136,7 +1136,12 @@ module.exports = {
                         return helper.failure(res, 'Booking already processed');
                     }
 
-                    await booking.update({ request: '2', status: '4' });
+                    // await booking.update({ request: '2', status: '4' });
+                    await booking.update({
+                        driverId: null,
+                        request: '0',
+                        status: '0'
+                    });
                 }
 
                 // ---------------- FETCH BOOKING ----------------
