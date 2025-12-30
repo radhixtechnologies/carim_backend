@@ -883,192 +883,192 @@ module.exports = {
     //     };
     // },
     bookRide: (io) => {
-    return async (req, res) => {
-        try {
-            const userId = req.user.id;
+        return async (req, res) => {
+            try {
+                const userId = req.user.id;
 
-            // ---------------- USER STATUS CHECK ----------------
-            const userStatus = await db.users.findOne({
-                where: { id: userId },
-                attributes: ['status', 'block', 'suspend'],
-                raw: true
-            });
+                // ---------------- USER STATUS CHECK ----------------
+                const userStatus = await db.users.findOne({
+                    where: { id: userId },
+                    attributes: ['status', 'block', 'suspend'],
+                    raw: true
+                });
 
-            if (!userStatus) return helper.failure(res, "User not found.");
-            if (userStatus.status === "0") return helper.error2(res, "Your account has been deactivated by admin.");
-            if (userStatus.block === "1") return helper.error1(res, "Your account has been blocked by admin.");
-            if (userStatus.suspend === "1") return helper.error3(res, "Your account has been suspended by admin.");
+                if (!userStatus) return helper.failure(res, "User not found.");
+                if (userStatus.status === "0") return helper.error2(res, "Your account has been deactivated by admin.");
+                if (userStatus.block === "1") return helper.error1(res, "Your account has been blocked by admin.");
+                if (userStatus.suspend === "1") return helper.error3(res, "Your account has been suspended by admin.");
 
-            // ---------------- BODY ----------------
-            const {
-                pickupLocation,
-                dropLocation,
-                pickupLatitude,
-                pickupLongitude,
-                dropLatitude,
-                dropLongitude,
-                rideOpen
-            } = req.body;
+                // ---------------- BODY ----------------
+                const {
+                    pickupLocation,
+                    dropLocation,
+                    pickupLatitude,
+                    pickupLongitude,
+                    dropLatitude,
+                    dropLongitude,
+                    rideOpen
+                } = req.body;
 
-            if (!pickupLocation || !dropLocation) {
-                return helper.failure(res, 'Pickup and drop locations are required.');
-            }
-
-            if (!pickupLatitude || !pickupLongitude || !dropLatitude || !dropLongitude) {
-                return helper.failure(res, 'All coordinates are required.');
-            }
-
-            const pickupLat = parseFloat(pickupLatitude);
-            const pickupLng = parseFloat(pickupLongitude);
-            const dropLat = parseFloat(dropLatitude);
-            const dropLng = parseFloat(dropLongitude);
-
-            if (
-                isNaN(pickupLat) ||
-                isNaN(pickupLng) ||
-                isNaN(dropLat) ||
-                isNaN(dropLng)
-            ) {
-                return helper.failure(res, 'Invalid coordinates provided.');
-            }
-
-            // ---------------- DISTANCE UTILS ----------------
-            const toRad = v => v * Math.PI / 180;
-            const calculateDistance = (a, b, c, d) => {
-                const R = 6371;
-                const dLat = toRad(c - a);
-                const dLon = toRad(d - b);
-                const x =
-                    Math.sin(dLat / 2) ** 2 +
-                    Math.cos(toRad(a)) *
-                    Math.cos(toRad(c)) *
-                    Math.sin(dLon / 2) ** 2;
-                return R * (2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x)));
-            };
-
-            // ---------------- RIDE DISTANCE + PRICE ----------------
-            const rideDistanceKm = calculateDistance(
-                pickupLat,
-                pickupLng,
-                dropLat,
-                dropLng
-            );
-
-            const bookingPrice = Math.round(rideDistanceKm * 10);
-
-            // ---------------- EXISTING USER RIDE CHECK ----------------
-            const existingBooking = await db.bookings.findOne({
-                where: {
-                    userId,
-                    status: { [Sequelize.Op.in]: ['0', '1', '2'] },
-                    request: '0'
+                if (!pickupLocation || !dropLocation) {
+                    return helper.failure(res, 'Pickup and drop locations are required.');
                 }
-            });
 
-            if (existingBooking) {
-                return helper.failure(res, 'You already have an active ride request');
-            }
+                if (!pickupLatitude || !pickupLongitude || !dropLatitude || !dropLongitude) {
+                    return helper.failure(res, 'All coordinates are required.');
+                }
 
-            // ---------------- DRIVER AVAILABILITY CHECK (OLD LOGIC) ----------------
-            const maxRadius = 30;
+                const pickupLat = parseFloat(pickupLatitude);
+                const pickupLng = parseFloat(pickupLongitude);
+                const dropLat = parseFloat(dropLatitude);
+                const dropLng = parseFloat(dropLongitude);
 
-            const drivers = await db.users.findAll({
-                where: {
-                    role: '2',
-                    online: '1'
-                },
-                attributes: ['id', 'latitude', 'longitude'],
-                raw: true
-            });
+                if (
+                    isNaN(pickupLat) ||
+                    isNaN(pickupLng) ||
+                    isNaN(dropLat) ||
+                    isNaN(dropLng)
+                ) {
+                    return helper.failure(res, 'Invalid coordinates provided.');
+                }
 
-            let driverAvailable = false;
+                // ---------------- DISTANCE UTILS ----------------
+                const toRad = v => v * Math.PI / 180;
+                const calculateDistance = (a, b, c, d) => {
+                    const R = 6371;
+                    const dLat = toRad(c - a);
+                    const dLon = toRad(d - b);
+                    const x =
+                        Math.sin(dLat / 2) ** 2 +
+                        Math.cos(toRad(a)) *
+                        Math.cos(toRad(c)) *
+                        Math.sin(dLon / 2) ** 2;
+                    return R * (2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x)));
+                };
 
-            for (const driver of drivers) {
-                if (!driver.latitude || !driver.longitude) continue;
-
-                const driverLat = parseFloat(driver.latitude);
-                const driverLng = parseFloat(driver.longitude);
-                if (isNaN(driverLat) || isNaN(driverLng)) continue;
-
-                const driverDistance = calculateDistance(
+                // ---------------- RIDE DISTANCE + PRICE ----------------
+                const rideDistanceKm = calculateDistance(
                     pickupLat,
                     pickupLng,
-                    driverLat,
-                    driverLng
+                    dropLat,
+                    dropLng
                 );
 
-                // ✅ SAME CHECK AS OLD bookRide(main)
-                if (driverDistance >= 0 && driverDistance <= maxRadius) {
-                    driverAvailable = true;
-                    break;
+                const bookingPrice = Math.round(rideDistanceKm * 10);
+
+                // ---------------- EXISTING USER RIDE CHECK ----------------
+                const existingBooking = await db.bookings.findOne({
+                    where: {
+                        userId,
+                        status: { [Sequelize.Op.in]: ['0', '1', '2'] },
+                        request: '0'
+                    }
+                });
+
+                if (existingBooking) {
+                    return helper.failure(res, 'You already have an active ride request');
                 }
-            }
 
-            if (!driverAvailable) {
-                return helper.failure(
-                    res,
-                    'No drivers available within 30 km of your pickup location'
-                );
-            }
+                // ---------------- DRIVER AVAILABILITY CHECK (OLD LOGIC) ----------------
+                const maxRadius = 30;
 
-            // ---------------- ORDER ID ----------------
-            const orderId = Math.floor(100000 + Math.random() * 900000).toString();
+                const drivers = await db.users.findAll({
+                    where: {
+                        role: '2',
+                        online: '1'
+                    },
+                    attributes: ['id', 'latitude', 'longitude'],
+                    raw: true
+                });
 
-            // ---------------- CREATE BOOKING ----------------
-            const newBooking = await db.bookings.create({
-                userId,
-                driverId: null, // ✅ IMPORTANT
-                orderId,
-                status: '0',
-                pickupLocation,
-                dropLocation,
-                pickupLatitude: pickupLatitude.toString(),
-                pickupLongitude: pickupLongitude.toString(),
-                dropLatitude: dropLatitude.toString(),
-                dropLongitude: dropLongitude.toString(),
-                bookingPrice: bookingPrice.toString(),
-                request: '0',
-                rideOpen
-            });
+                let driverAvailable = false;
 
-            // ---------------- SOCKET EMIT (BROADCAST) ----------------
-            drivers.forEach(driver => {
-                if (global.onlineUsers && onlineUsers[driver.id]?.length) {
-                    onlineUsers[driver.id].forEach(sockId => {
-                        io.to(sockId).emit("newRideRequest", {
-                            bookingId: newBooking.id,
-                            orderId: newBooking.orderId,
-                            pickupLocation,
-                            dropLocation,
-                            pickupLatitude,
-                            pickupLongitude,
-                            dropLatitude,
-                            dropLongitude,
-                            status: '0',
-                            request: '0',
-                            rideOpen
+                for (const driver of drivers) {
+                    if (!driver.latitude || !driver.longitude) continue;
+
+                    const driverLat = parseFloat(driver.latitude);
+                    const driverLng = parseFloat(driver.longitude);
+                    if (isNaN(driverLat) || isNaN(driverLng)) continue;
+
+                    const driverDistance = calculateDistance(
+                        pickupLat,
+                        pickupLng,
+                        driverLat,
+                        driverLng
+                    );
+
+                    // ✅ SAME CHECK AS OLD bookRide(main)
+                    if (driverDistance >= 0 && driverDistance <= maxRadius) {
+                        driverAvailable = true;
+                        break;
+                    }
+                }
+
+                if (!driverAvailable) {
+                    return helper.failure(
+                        res,
+                        'No drivers available within 30 km of your pickup location'
+                    );
+                }
+
+                // ---------------- ORDER ID ----------------
+                const orderId = Math.floor(100000 + Math.random() * 900000).toString();
+
+                // ---------------- CREATE BOOKING ----------------
+                const newBooking = await db.bookings.create({
+                    userId,
+                    driverId: null, // ✅ IMPORTANT
+                    orderId,
+                    status: '0',
+                    pickupLocation,
+                    dropLocation,
+                    pickupLatitude: pickupLatitude.toString(),
+                    pickupLongitude: pickupLongitude.toString(),
+                    dropLatitude: dropLatitude.toString(),
+                    dropLongitude: dropLongitude.toString(),
+                    bookingPrice: bookingPrice.toString(),
+                    request: '0',
+                    rideOpen
+                });
+
+                // ---------------- SOCKET EMIT (BROADCAST) ----------------
+                drivers.forEach(driver => {
+                    if (global.onlineUsers && onlineUsers[driver.id]?.length) {
+                        onlineUsers[driver.id].forEach(sockId => {
+                            io.to(sockId).emit("newRideRequest", {
+                                bookingId: newBooking.id,
+                                orderId: newBooking.orderId,
+                                pickupLocation,
+                                dropLocation,
+                                pickupLatitude,
+                                pickupLongitude,
+                                dropLatitude,
+                                dropLongitude,
+                                status: '0',
+                                request: '0',
+                                rideOpen
+                            });
                         });
-                    });
-                }
-            });
+                    }
+                });
 
-            // ---------------- RESPONSE ----------------
-            return helper.success(res, 'Ride booking request sent successfully', {
-                bookingId: newBooking.id,
-                orderId: newBooking.orderId,
-                status: newBooking.status,
-                request: newBooking.request,
-                bookingPrice,
-                rideDistanceKm: rideDistanceKm.toFixed(2),
-                message: 'Waiting for driver to accept your request'
-            });
+                // ---------------- RESPONSE ----------------
+                return helper.success(res, 'Ride booking request sent successfully', {
+                    bookingId: newBooking.id,
+                    orderId: newBooking.orderId,
+                    status: newBooking.status,
+                    request: newBooking.request,
+                    bookingPrice,
+                    rideDistanceKm: rideDistanceKm.toFixed(2),
+                    message: 'Waiting for driver to accept your request'
+                });
 
-        } catch (error) {
-            console.error('Booking error:', error);
-            return helper.failure(res, "Something went wrong while booking the ride.");
-        }
-    };
-},
+            } catch (error) {
+                console.error('Booking error:', error);
+                return helper.failure(res, "Something went wrong while booking the ride.");
+            }
+        };
+    },
 
 
     // driverAccptReject(main): (io) => {
@@ -1499,7 +1499,7 @@ module.exports = {
                 const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
                 const expiredBookings = await db.bookings.findAll({
                     where: {
-                        driverId: null,         
+                        driverId: null,
                         status: '0',
                         request: '0',
                         bookingDate: {
@@ -1519,7 +1519,7 @@ module.exports = {
                             [Sequelize.Op.lt]: oneMinuteAgo
                         }
                     },
-                    force: true   
+                    force: true
                 });
 
 
