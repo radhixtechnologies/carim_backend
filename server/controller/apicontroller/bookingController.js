@@ -958,7 +958,7 @@ module.exports = {
     //         }
     //     };
     // },
-    driverAccptReject: (io) => {
+    driverAccptReject1: (io) => {
         return async (req, res) => {
             try {
                 const driverId = req.user.id;
@@ -1080,6 +1080,177 @@ module.exports = {
             }
         };
     },
+    driverAccptReject: (io) => {
+    return async (req, res) => {
+        try {
+            const driverId = req.user.id;
+            const { bookingId, request } = req.body;
+
+            if (!bookingId || !request) {
+                return helper.failure(res, 'Booking ID and request value are required.');
+            }
+
+            if (!['1', '2'].includes(request)) {
+                return helper.failure(
+                    res,
+                    'Invalid request value. Must be "1" (accept) or "2" (reject).'
+                );
+            }
+
+            // ---------------- ACCEPT ----------------
+            if (request === '1') {
+                const [updated] = await db.bookings.update(
+                    {
+                        driverId: driverId,
+                        request: '1',
+                        status: '0'
+                    },
+                    {
+                        where: {
+                            id: bookingId,
+                            driverId: null,
+                            status: '0',
+                            request: '0'
+                        }
+                    }
+                );
+
+                if (!updated) {
+                    return helper.failure(res, 'Booking already processed');
+                }
+            }
+
+            // ---------------- REJECT ----------------
+            if (request === '2') {
+                const booking = await db.bookings.findOne({
+                    where: { id: bookingId }
+                });
+
+                if (!booking) {
+                    return helper.failure(res, 'Booking already processed');
+                }
+
+                await booking.update({ request: '2', status: '4' });
+            }
+
+            // ---------------- FETCH BOOKING ----------------
+            const booking = await db.bookings.findOne({
+                where: { id: bookingId },
+                include: [{
+                    model: db.users,
+                    as: 'userbook',
+                    attributes: ['id', 'socketId']
+                }]
+            });
+
+            const statusCode = request === '1' ? '0' : '4';
+            const msg = request === '1'
+                ? 'Driver on the way'
+                : 'Driver rejected the booking';
+
+            // ---------------- EMIT TO USER ----------------
+            if (booking.userbook && booking.userbook.socketId) {
+                io.to(booking.userbook.socketId).emit("rideStatusUpdate", {
+                    bookingId: booking.id,
+                    driverId: driverId,
+                    request: request,
+                    status: statusCode,
+                    message: msg
+                });
+            }
+
+            // ---------------- EMIT TO ACCEPTED DRIVER ----------------
+            if (global.onlineUsers && global.onlineUsers[driverId]?.length) {
+                global.onlineUsers[driverId].forEach(sockId => {
+                    io.to(sockId).emit("rideStatusUpdate", {
+                        bookingId: booking.id,
+                        request: request,
+                        status: statusCode,
+                        message:
+                            request === '1'
+                                ? 'You accepted the ride request'
+                                : 'You rejected the ride request'
+                    });
+                });
+            }
+
+            // ================= NEW PART (IMPORTANT) =================
+            // ACCEPT ke baad bhi 30 KM ke andar ke drivers ko emit
+            if (request === '1') {
+                const pickupLat = parseFloat(booking.pickupLatitude);
+                const pickupLng = parseFloat(booking.pickupLongitude);
+                const MAX_DISTANCE = 30;
+
+                const drivers = await db.users.findAll({
+                    where: {
+                        role: '2',
+                        online: '1'
+                    },
+                    attributes: ['id', 'latitude', 'longitude'],
+                    raw: true
+                });
+
+                const toRad = v => (v * Math.PI) / 180;
+                const distanceInKm = (lat1, lon1, lat2, lon2) => {
+                    const R = 6371;
+                    const dLat = toRad(lat2 - lat1);
+                    const dLon = toRad(lon2 - lon1);
+                    const a =
+                        Math.sin(dLat / 2) ** 2 +
+                        Math.cos(toRad(lat1)) *
+                        Math.cos(toRad(lat2)) *
+                        Math.sin(dLon / 2) ** 2;
+                    return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+                };
+
+                for (const d of drivers) {
+                    if (!d.latitude || !d.longitude) continue;
+
+                    const dist = distanceInKm(
+                        pickupLat,
+                        pickupLng,
+                        parseFloat(d.latitude),
+                        parseFloat(d.longitude)
+                    );
+
+                    if (dist <= MAX_DISTANCE && global.onlineUsers?.[d.id]) {
+                        global.onlineUsers[d.id].forEach(sockId => {
+                            io.to(sockId).emit("rideStatusUpdate", {
+                                bookingId: booking.id,
+                                status: '0',
+                                request: '1',
+                                message: 'Ride has been accepted by another driver'
+                            });
+                        });
+                    }
+                }
+            }
+            // ================= END NEW PART =================
+
+            const message = request === '1'
+                ? 'Booking accepted successfully. Driver on the way.'
+                : 'Booking rejected successfully';
+
+            const actionMessage = request === '1'
+                ? 'You have accepted the ride request. Driver on the way.'
+                : 'You have rejected the ride request';
+
+            return helper.success(res, message, {
+                bookingId,
+                request,
+                message: actionMessage
+            });
+
+        } catch (error) {
+            console.error(error);
+            return helper.failure(
+                res,
+                "Something went wrong while processing the booking."
+            );
+        }
+    };
+},
+
 
 
 
