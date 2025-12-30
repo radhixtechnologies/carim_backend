@@ -1127,53 +1127,53 @@ module.exports = {
                 }
 
                 // ---------------- REJECT ----------------
-                // if (request === '2') {
-                //     const booking = await db.bookings.findOne({
-                //         where: { id: bookingId }
-                //     });
-                //     if (!booking) {
-                //         return helper.failure(res, 'Booking already processed');
-                //     }
-                // // await booking.update({ driverId: null,request: '2', status: '4',rejectCount:'1' });
-                // }
-                /* ================= REJECT ================= */
                 if (request === '2') {
                     const booking = await db.bookings.findOne({
-                        where: { id: bookingId },
-                        include: [{
-                            model: db.users,
-                            as: 'userbook',
-                            attributes: ['socketId']
-                        }]
+                        where: { id: bookingId }
                     });
-
                     if (!booking) {
                         return helper.failure(res, 'Booking already processed');
                     }
-
-                    await booking.increment('rejectCount', { by: 1 });
-
-                    // total nearby online drivers
-                    const totalDrivers = await db.users.count({
-                        where: { role: '2', online: '1' }
-                    });
-
-                    if (booking.rejectCount + 1 >= totalDrivers) {
-                        await booking.update({
-                            status: '4',   // no driver available
-                            request: '2'
-                        });
-                        // user  emit
-                        if (booking.userbook?.socketId) {
-                            io.to(booking.userbook.socketId).emit("rideStatusUpdate", {
-                                bookingId: booking.id,
-                                status: '4',
-                                request: '2',
-                                message: 'No drivers available right now'
-                            });
-                        }
-                    }
+                await booking.update({ request: '2', status: '4',rejectCount:'1' });
                 }
+                /* ================= REJECT ================= */
+                // if (request === '2') {
+                //     const booking = await db.bookings.findOne({
+                //         where: { id: bookingId },
+                //         include: [{
+                //             model: db.users,
+                //             as: 'userbook',
+                //             attributes: ['socketId']
+                //         }]
+                //     });
+
+                //     if (!booking) {
+                //         return helper.failure(res, 'Booking already processed');
+                //     }
+
+                //     await booking.increment('rejectCount', { by: 1 });
+
+                //     // total nearby online drivers
+                //     const totalDrivers = await db.users.count({
+                //         where: { role: '2', online: '1' }
+                //     });
+
+                //     if (booking.rejectCount + 1 >= totalDrivers) {
+                //         await booking.update({
+                //             status: '4',   // no driver available
+                //             request: '2'
+                //         });
+                //         // user  emit
+                //         if (booking.userbook?.socketId) {
+                //             io.to(booking.userbook.socketId).emit("rideStatusUpdate", {
+                //                 bookingId: booking.id,
+                //                 status: '4',
+                //                 request: '2',
+                //                 message: 'No drivers available right now'
+                //             });
+                //         }
+                //     }
+                // }
 
                 // ---------------- FETCH BOOKING ----------------
                 const booking = await db.bookings.findOne({
