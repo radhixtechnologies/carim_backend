@@ -1127,20 +1127,20 @@ module.exports = {
                 }
 
                 // ---------------- REJECT ----------------
-                // if (request === '2') {
-                //     const booking = await db.bookings.findOne({
-                //         where: { id: bookingId }
-                //     });
-                //     if (!booking) {
-                //         return helper.failure(res, 'Booking already processed');
-                //     }
+                if (request === '2') {
+                    const booking = await db.bookings.findOne({
+                        where: { id: bookingId }
+                    });
+                    if (!booking) {
+                        return helper.failure(res, 'Booking already processed');
+                    }
                 // await booking.update({ request: '2', status: '4' });
-                //     await booking.update({
-                //         driverId: null,
-                //         request: '0',
-                //         status: '0'
-                //     });
-                // }
+                    await booking.update({
+                        driverId: null,
+                        request: '0',
+                        status: '0'
+                    });
+                }
                 /* ================= REJECT ================= */
                 if (request === '2') {
                     const booking = await db.bookings.findOne({
@@ -1168,8 +1168,7 @@ module.exports = {
                             status: '6',   // no driver available
                             request: '2'
                         });
-
-                        // user ko emit
+                        // user  emit
                         if (booking.userbook?.socketId) {
                             io.to(booking.userbook.socketId).emit("rideStatusUpdate", {
                                 bookingId: booking.id,
