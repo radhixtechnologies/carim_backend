@@ -116,7 +116,7 @@ module.exports = {
   verifyUser: async (req, res, next) => {
     try {
       if (!req.headers.authorization) {
-        return helper.failure(res, "Token missing.",);
+        return helper.error(res, "Token missing.",);
       }
 
       const tokenParts = req.headers.authorization.split(' ');
