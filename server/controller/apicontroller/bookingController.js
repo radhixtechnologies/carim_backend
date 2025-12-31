@@ -470,10 +470,21 @@ module.exports = {
                     }]
                 });
 
-                const statusCode = request === '1' ? '0' : '4';
-                const msg = request === '1'
-                    ? 'Driver on the way'
-                    : 'Driver rejected the booking';
+                // const statusCode = request === '1' ? '0' : '4';
+                // const msg = request === '1'
+                //     ? 'Driver on the way'
+                //     : 'Driver rejected the booking';
+                let statusCode = '0';
+                if (booking.status === '4') {
+                    statusCode = '4';
+                }
+                const msg =
+                    request === '1'
+                        ? 'Driver on the way'
+                        : booking.status === '4'
+                            ? 'No drivers available'
+                            : 'Driver rejected the booking';
+
 
                 // ---------------- EMIT TO USER ----------------
                 if (booking.userbook && booking.userbook.socketId) {
@@ -577,7 +588,9 @@ module.exports = {
             }
         };
     },
-   
+  
+
+
 
     // requestList(main): (io) => {
     //     return async (req, res) => {
