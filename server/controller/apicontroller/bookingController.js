@@ -648,7 +648,7 @@ module.exports = {
                 if (global.onlineUsers) {
                     Object.keys(onlineUsers).forEach(driverId => {
                         onlineUsers[driverId].forEach(sockId => {
-                            io.to(sockId).emit("rideDestinationUpdated", {
+                            io.to(sockId).emit("rideStatusUpdate", {
                                 bookingId: booking.id,
                                 dropLocation,
                                 dropLatitude,
