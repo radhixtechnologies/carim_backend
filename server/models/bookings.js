@@ -110,6 +110,22 @@ module.exports = function (sequelize, DataTypes) {
     rejectCount: {
       type: DataTypes.INTEGER(11),
       defaultValue: 0
+    },
+
+    travelledDistance: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      defaultValue: ""
+    },
+    lastLatitude: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      defaultValue: ""
+    },
+    lastLongitude: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      defaultValue: ""
     }
   }, {
     sequelize,

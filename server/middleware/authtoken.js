@@ -155,9 +155,7 @@ module.exports = {
       //   return helper.failure(res, "Your account is not approved by admin.");
       // }
       req.user = userData;
-
       next();
-
     } catch (error) {
       return helper.failure(res, "Token not found", 400);
     }
