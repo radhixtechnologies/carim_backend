@@ -431,6 +431,20 @@ module.exports = {
 
                 let rideDistanceKm = null;
                 let bookingPrice = "";
+                // ---------------- ADMIN PRICE PER KM ----------------
+                const adminData = await db.users.findOne({
+                    where: { role: '0' },
+                    attributes: ['rideAmount'],
+                    raw: true
+                });
+
+                const pricePerKm = adminData?.rideAmount
+                    ? parseFloat(adminData.rideAmount)
+                    : 10; // fallback
+
+                if (isNaN(pricePerKm) || pricePerKm <= 0) {
+                    return helper.failure(res, 'Invalid ride amount set by admin');
+                }
 
                 // ---------------- PRICE CALCULATION ----------------
                 // ✔ rideOpen = 0 → always
@@ -460,7 +474,7 @@ module.exports = {
                         );
                     }
 
-                    bookingPrice = Math.round(rideDistanceKm * 10).toString();
+                    bookingPrice = Math.round(rideDistanceKm * pricePerKm).toString();
                 }
 
                 // ---------------- EXISTING ACTIVE RIDE CHECK ----------------
@@ -601,8 +615,14 @@ module.exports = {
 
                 if (!booking) return helper.failure(res, 'Active open ride booking not found.');
 
-                const startLat = booking.lastLatitude ? parseFloat(booking.lastLatitude) : parseFloat(booking.pickupLatitude);
-                const startLng = booking.lastLongitude ? parseFloat(booking.lastLongitude) : parseFloat(booking.pickupLongitude);
+                const startLat = booking.lastLatitude
+                    ? parseFloat(booking.lastLatitude)
+                    : parseFloat(booking.pickupLatitude);
+
+                const startLng = booking.lastLongitude
+                    ? parseFloat(booking.lastLongitude)
+                    : parseFloat(booking.pickupLongitude);
+
                 const dropLat = parseFloat(dropLatitude);
                 const dropLng = parseFloat(dropLongitude);
 
@@ -623,15 +643,39 @@ module.exports = {
                     return R * (2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x)));
                 };
 
-                const segmentDistanceKm = calculateDistance(startLat, startLng, dropLat, dropLng);
+                const segmentDistanceKm = calculateDistance(
+                    startLat,
+                    startLng,
+                    dropLat,
+                    dropLng
+                );
 
                 if (segmentDistanceKm > 30) {
                     return helper.failure(res, 'Drop location must be within 30 km of your current location');
                 }
 
-                // Accumulate distance
-                const totalDistanceKm = (parseFloat(booking.travelledDistance || 0) + segmentDistanceKm);
-                const newBookingPrice = Math.round(totalDistanceKm * 10).toString();
+                // ---------------- ADMIN PRICE PER KM ----------------
+                const adminData = await db.users.findOne({
+                    where: { role: '0' },
+                    attributes: ['rideAmount'],
+                    raw: true
+                });
+
+                const pricePerKm = adminData?.rideAmount
+                    ? parseFloat(adminData.rideAmount)
+                    : 10; // safety fallback
+
+                if (isNaN(pricePerKm) || pricePerKm <= 0) {
+                    return helper.failure(res, 'Invalid ride amount set by admin');
+                }
+
+                // ---------------- ACCUMULATE DISTANCE & PRICE ----------------
+                const totalDistanceKm =
+                    parseFloat(booking.travelledDistance || 0) + segmentDistanceKm;
+
+                const newBookingPrice = Math.round(
+                    totalDistanceKm * pricePerKm
+                ).toString();
 
                 // ---------------- UPDATE BOOKING ----------------
                 await booking.update({
@@ -660,6 +704,7 @@ module.exports = {
                     });
                 }
 
+                // ---------------- RESPONSE ----------------
                 return helper.success(res, 'Drop location updated successfully', {
                     bookingId: booking.id,
                     dropLocation,
@@ -675,6 +720,7 @@ module.exports = {
             }
         };
     },
+
 
 
     // driverAccptReject1: (io) => {
