@@ -416,6 +416,7 @@ const Profile = () => {
                               value={data.rideAmount}
                               onChange={handleRideAmount}
                               placeholder="Enter ride Amount"
+                              maxLength={5}
                             />
                           </div>
                           {errors.rideAmount && (
