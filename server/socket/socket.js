@@ -1458,6 +1458,88 @@ module.exports = function (io) {
         });
       }
     });
+    socket.on("driverUpdateDrop", async (data) => {
+      try {
+        const { bookingId, driverId, dropLatitude, dropLongitude, dropLocation } = data;
+
+        if (!bookingId || !driverId || !dropLatitude || !dropLongitude) {
+          return socket.emit("driverUpdateDrop", {
+            success: false,
+            message: "Booking ID, driver ID, and drop coordinates are required."
+          });
+        }
+
+        const booking = await db.bookings.findOne({ where: { id: bookingId, driverId, rideOpen: 1, request:"1", status: '0' } });
+        if (!booking) return socket.emit("driverUpdateDrop", { success: false, message: "Ride not found or not started." });
+
+        const startLat = booking.lastLatitude ? parseFloat(booking.lastLatitude) : parseFloat(booking.pickupLatitude);
+        const startLng = booking.lastLongitude ? parseFloat(booking.lastLongitude) : parseFloat(booking.pickupLongitude);
+        const dropLat = parseFloat(dropLatitude);
+        const dropLng = parseFloat(dropLongitude);
+
+        const toRad = v => v * Math.PI / 180;
+        const calculateDistance = (a, b, c, d) => {
+          const R = 6371;
+          const dLat = toRad(c - a);
+          const dLon = toRad(d - b);
+          const x =
+            Math.sin(dLat / 2) ** 2 +
+            Math.cos(toRad(a)) * Math.cos(toRad(c)) *
+            Math.sin(dLon / 2) ** 2;
+          return R * (2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x)));
+        };
+
+        const segmentDistanceKm = calculateDistance(startLat, startLng, dropLat, dropLng);
+        const totalDistanceKm = (parseFloat(booking.travelledDistance || 0) + segmentDistanceKm);
+        const newBookingPrice = Math.round(totalDistanceKm * 10).toString();
+
+        await booking.update({
+          dropLocation: dropLocation || booking.dropLocation,
+          dropLatitude: dropLat.toString(),
+          dropLongitude: dropLng.toString(),
+          travelledDistance: totalDistanceKm.toString(),
+          bookingPrice: newBookingPrice,
+          lastLatitude: dropLat.toString(),
+          lastLongitude: dropLng.toString()
+        });
+
+        // Emit update to user and driver
+        const userId = booking.userId;
+        if (userId && onlineUsers[userId]) {
+          onlineUsers[userId].forEach(sid => {
+            io.to(sid).emit("rideStatusUpdate", {
+              success: true,
+              message: "Drop location updated by driver",
+              bookingId,
+              dropLatitude,
+              dropLongitude,
+              dropLocation,
+              bookingPrice: newBookingPrice,
+              rideDistanceKm: totalDistanceKm.toFixed(2)
+            });
+          });
+        }
+
+        if (driverId && onlineUsers[driverId]) {
+          onlineUsers[driverId].forEach(sid => {
+            io.to(sid).emit("rideStatusUpdate", {
+              success: true,
+              message: "Drop location updated",
+              bookingId,
+              dropLatitude,
+              dropLongitude,
+              dropLocation,
+              bookingPrice: newBookingPrice,
+              rideDistanceKm: totalDistanceKm.toFixed(2)
+            });
+          });
+        }
+
+      } catch (err) {
+        console.error("Driver update drop error:", err);
+        return socket.emit("driverUpdateDrop", { success: false, message: err.message });
+      }
+    });
 
 
 

@@ -13,6 +13,7 @@ const Profile = () => {
     image: "",
     countryCode: "",
     adminCommission: "",
+    rideAmount: "",
   });
   const [imagePreview, setImagePreview] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
@@ -26,12 +27,12 @@ const Profile = () => {
 
         if (response.data && response.data.body) {
           const profileData = response.data.body;
-          
+
           if (profileData.name) {
             const nameParts = profileData.name.trim().split(' ');
             const firstName = nameParts[0] || '';
             const lastName = nameParts.slice(1).join(' ') || '';
-            
+
             setData({
               ...profileData,
               firstName,
@@ -40,7 +41,7 @@ const Profile = () => {
           } else {
             setData(profileData);
           }
-          
+
           const imageUrl = profileData.image && profileData.image.startsWith("http")
             ? profileData.image
             : `${BASE_URL}/${profileData.image}`;
@@ -67,18 +68,18 @@ const Profile = () => {
     if (firstName.startsWith(" ")) return "First name cannot start with a space";
     if (firstName.length < 2 || firstName.length > 20)
       return "First name must be between 2 and 20 characters";
-    if (!/^[a-zA-Z\s'-]+$/.test(firstName)) 
+    if (!/^[a-zA-Z\s'-]+$/.test(firstName))
       return "First name can only contain letters, spaces, hyphens, and apostrophes";
     return "";
   };
 
   const validateLastName = (lastName) => {
-    if (lastName.trim() === "") return ""; 
-    
+    if (lastName.trim() === "") return "";
+
     if (lastName.startsWith(" ")) return "Last name cannot start with a space";
     if (lastName.length > 20)
       return "Last name must be less than 20 characters";
-    if (!/^[a-zA-Z\s'-]+$/.test(lastName)) 
+    if (!/^[a-zA-Z\s'-]+$/.test(lastName))
       return "Last name can only contain letters, spaces, hyphens, and apostrophes";
     return "";
   };
@@ -132,9 +133,7 @@ const Profile = () => {
 
   const handleAdminCommissionChange = (e) => {
     const { value } = e.target;
-
     const cleanedValue = value.replace(/\s/g, "");
-
     if (cleanedValue === "" || /^[0-9]+$/.test(cleanedValue)) {
       setData((prevData) => ({ ...prevData, adminCommission: cleanedValue }));
       const commissionError = validateAdminCommission(cleanedValue);
@@ -142,6 +141,19 @@ const Profile = () => {
         ...prevErrors,
         adminCommission: commissionError,
       }));
+    }
+  };
+
+  const handleRideAmount = (e) => {
+    const { value } = e.target;
+    const cleanedValue = value.replace(/\s/g, "");
+    if (cleanedValue === "" || /^[0-9]+$/.test(cleanedValue)) {
+      setData((prevData) => ({ ...prevData, rideAmount: cleanedValue }));
+      // const rideAmountError = validateAdminCommission(cleanedValue);
+      // setErrors((prevErrors) => ({
+      //   ...prevErrors,
+      //   rideAmount: rideAmountError,
+      // }));
     }
   };
 
@@ -171,17 +183,19 @@ const Profile = () => {
       return;
     }
 
-    const fullName = data.lastName.trim() === "" 
+    const fullName = data.lastName.trim() === ""
       ? data.firstName.trim()
       : `${data.firstName.trim()} ${data.lastName.trim()}`.trim();
 
     const formData = new FormData();
     formData.append("name", fullName);
     formData.append("firstName", data.firstName.trim());
-    formData.append("lastName", data.lastName.trim()); 
+    formData.append("lastName", data.lastName.trim());
     formData.append("email", data.email);
     formData.append("phoneNumber", data.phoneNumber);
     formData.append("adminCommission", data.adminCommission);
+    formData.append("rideAmount", data.rideAmount);
+
     if (selectedImage) {
       formData.append("image", selectedImage);
     }
@@ -195,12 +209,12 @@ const Profile = () => {
       });
 
       const updatedData = response.data.body;
-      
+
       if (updatedData.name) {
         const nameParts = updatedData.name.trim().split(' ');
         const firstName = nameParts[0] || '';
         const lastName = nameParts.slice(1).join(' ') || '';
-        
+
         setData(prev => ({
           ...prev,
           ...updatedData,
@@ -211,10 +225,10 @@ const Profile = () => {
         setData(prev => ({
           ...prev,
           ...updatedData,
-          lastName: updatedData.lastName || "" 
+          lastName: updatedData.lastName || ""
         }));
       }
-      
+
       if (updatedData.image) {
         const imageUrl = updatedData.image.startsWith("http")
           ? updatedData.image
@@ -226,7 +240,7 @@ const Profile = () => {
       navigate("/profile", { state: { updated: true } });
     } catch (error) {
       console.error("Update error:", error);
-      
+
       if (error.response) {
         if (error.response.status === 400) {
           toast.error("Invalid data. Please check your inputs.");
@@ -362,7 +376,7 @@ const Profile = () => {
                             )}
                           </div>
                         </div>
-                        
+
                         <div style={{ marginBottom: "16px" }}>
                           <label htmlFor="adminCommission" className="mb-1 fw-medium">
                             Admin Commission*
@@ -388,6 +402,28 @@ const Profile = () => {
                             Commission must be a number between 0 and 99 (no
                             spaces or special characters allowed)
                           </div>
+                        </div>
+
+                        <div style={{ marginBottom: "16px" }}>
+                          <label htmlFor="rideAmount" className="mb-1 fw-medium">
+                            Ride Amount
+                          </label>
+                          <div className="input-group">
+                            <input
+                              type="text"
+                              className="form-control"
+                              name="rideAmount"
+                              value={data.rideAmount}
+                              onChange={handleRideAmount}
+                              placeholder="Enter ride Amount"
+                            />
+                          </div>
+                          {errors.rideAmount && (
+                            <div className="text-danger">
+                              {errors.rideAmount}
+                            </div>
+                          )}
+
                         </div>
 
                         <div className="text-end mb-2">

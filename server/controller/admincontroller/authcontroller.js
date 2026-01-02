@@ -87,7 +87,8 @@ module.exports = {
                     phoneNumber: req.body.phoneNumber || find_user.phoneNumber,
                     countryCode: req.body.countryCode || find_user.countryCode,
                     image: imagePath,
-                    adminCommission: req.body.adminCommission || find_user.adminCommission
+                    adminCommission: req.body.adminCommission || find_user.adminCommission,
+                    rideAmount: req.body.rideAmount || find_user.rideAmount
                 },
                 { where: { id: userId } }
             );
