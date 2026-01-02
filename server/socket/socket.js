@@ -339,7 +339,7 @@ module.exports = function (io) {
             driverId: userId,
             rideOpen: 1,
             status: '2', // ride started
-            request:"1"
+            request: "1"
           }
         });
 
@@ -433,7 +433,7 @@ module.exports = function (io) {
           }
         }
 
-        // ---------------- DRIVER RESPONSE (UNCHANGED) ----------------
+        // ---------------- DRIVER RESPONSE----------------
         const updatedDriver = await db.users.findOne({
           where: { id: userId }
         });
@@ -858,7 +858,8 @@ module.exports = function (io) {
               status: booking.status,
               request: booking.request,
               bookingDate: booking.bookingDate,
-              bookingPrice: booking.bookingPrice
+              bookingPrice: booking.bookingPrice,
+              rideOpen: booking.rideOpen
             }))
           }
         });
