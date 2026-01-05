@@ -10,11 +10,7 @@ module.exports = function(sequelize, DataTypes) {
     userId: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      defaultValue: 0,
-      references: {
-        model: 'users',
-        key: 'id'
-      }
+      defaultValue: 0
     },
     accountType: {
       type: DataTypes.ENUM('0','1'),

@@ -1,5 +1,5 @@
 const Sequelize = require('sequelize');
-module.exports = function (sequelize, DataTypes) {
+module.exports = function(sequelize, DataTypes) {
   return sequelize.define('bookings', {
     id: {
       autoIncrement: true,
@@ -9,19 +9,11 @@ module.exports = function (sequelize, DataTypes) {
     },
     userId: {
       type: DataTypes.INTEGER,
-      allowNull: true,
-      references: {
-        model: 'users',
-        key: 'id'
-      }
+      allowNull: true
     },
     driverId: {
       type: DataTypes.INTEGER,
-      allowNull: true,
-      references: {
-        model: 'users',
-        key: 'id'
-      }
+      allowNull: true
     },
     orderId: {
       type: DataTypes.STRING(255),
@@ -29,13 +21,13 @@ module.exports = function (sequelize, DataTypes) {
       defaultValue: ""
     },
     status: {
-      type: DataTypes.ENUM('0', '1', '2', '3', '4', '5'),
+      type: DataTypes.ENUM('0','1','2','3','4','5'),
       allowNull: false,
       defaultValue: "0",
       comment: "0=>driver on the way,1=>arrived,2=>ride started,3=> completed,4=>cancel"
     },
     request: {
-      type: DataTypes.ENUM('0', '1', '2'),
+      type: DataTypes.ENUM('0','1','2'),
       allowNull: false,
       defaultValue: "0"
     },
@@ -80,7 +72,7 @@ module.exports = function (sequelize, DataTypes) {
       defaultValue: ""
     },
     rideType: {
-      type: DataTypes.ENUM('0', '1'),
+      type: DataTypes.ENUM('0','1'),
       allowNull: false,
       defaultValue: "0",
       comment: "0=>single ride,1=>pool ride"
@@ -91,7 +83,7 @@ module.exports = function (sequelize, DataTypes) {
       defaultValue: ""
     },
     paymentMethod: {
-      type: DataTypes.ENUM('0', '1'),
+      type: DataTypes.ENUM('0','1'),
       allowNull: false,
       defaultValue: "0",
       comment: "0=>cash,1=>online"
@@ -104,14 +96,13 @@ module.exports = function (sequelize, DataTypes) {
     rideOpen: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      defaultValue: 0,
-      comment: "0-normal , 1=Open"
-    },
-    rejectCount: {
-      type: DataTypes.INTEGER(11),
       defaultValue: 0
     },
-
+    rejectCount: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0
+    },
     travelledDistance: {
       type: DataTypes.STRING(255),
       allowNull: false,

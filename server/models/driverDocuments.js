@@ -15,11 +15,7 @@ module.exports = function(sequelize, DataTypes) {
     driverId: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      defaultValue: 0,
-      references: {
-        model: 'users',
-        key: 'id'
-      }
+      defaultValue: 0
     }
   }, {
     sequelize,

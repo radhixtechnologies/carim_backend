@@ -9,6 +9,7 @@ var _faqs = require("./faqs");
 var _message = require("./message");
 var _reports = require("./reports");
 var _reviewrating = require("./reviewrating");
+var _rideRequest = require("./rideRequest");
 var _transactions = require("./transactions");
 var _transferscreenshot = require("./transferscreenshot");
 var _userBanks = require("./userBanks");
@@ -26,22 +27,13 @@ function initModels(sequelize) {
   var message = _message(sequelize, DataTypes);
   var reports = _reports(sequelize, DataTypes);
   var reviewrating = _reviewrating(sequelize, DataTypes);
+  var rideRequest = _rideRequest(sequelize, DataTypes);
   var transactions = _transactions(sequelize, DataTypes);
   var transferscreenshot = _transferscreenshot(sequelize, DataTypes);
   var userBanks = _userBanks(sequelize, DataTypes);
   var users = _users(sequelize, DataTypes);
   var vehicleDetails = _vehicleDetails(sequelize, DataTypes);
 
-  bookings.belongsTo(users, { as: "user", foreignKey: "userId"});
-  users.hasMany(bookings, { as: "bookings", foreignKey: "userId"});
-  bookings.belongsTo(users, { as: "driver", foreignKey: "driverId"});
-  users.hasMany(bookings, { as: "driver_bookings", foreignKey: "driverId"});
-  driverDocuments.belongsTo(users, { as: "driver", foreignKey: "driverId"});
-  users.hasMany(driverDocuments, { as: "driverDocuments", foreignKey: "driverId"});
-  transferscreenshot.belongsTo(users, { as: "driver", foreignKey: "driverId"});
-  users.hasMany(transferscreenshot, { as: "transferscreenshots", foreignKey: "driverId"});
-  userBanks.belongsTo(users, { as: "user", foreignKey: "userId"});
-  users.hasMany(userBanks, { as: "userBanks", foreignKey: "userId"});
 
   return {
     banners,
@@ -54,6 +46,7 @@ function initModels(sequelize) {
     message,
     reports,
     reviewrating,
+    rideRequest,
     transactions,
     transferscreenshot,
     userBanks,
