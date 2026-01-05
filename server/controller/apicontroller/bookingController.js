@@ -571,11 +571,7 @@ module.exports = {
                     rideOpen
                 });
 
-                /* =====================================================
-                   ✅ ONLY NEW LOGIC ADDED (rideRequest TABLE)
-                ====================================================== */
                 const rideRequestData = [];
-
                 for (const driver of drivers) {
                     if (!driver.latitude || !driver.longitude) continue;
 
@@ -981,7 +977,6 @@ module.exports = {
                         'Invalid request value. Must be "1" (accept) or "2" (reject).'
                     );
                 }
-
                 // ================= ACCEPT =================
                 if (request === '1') {
 
@@ -1004,8 +999,6 @@ module.exports = {
                     if (!updated) {
                         return helper.failure(res, 'Booking already processed');
                     }
-
-                    /* ================= ONLY ADDITION ================= */
                     await db.rideRequest.update(
                         { status: 1 }, // ACCEPT
                         {
@@ -1015,7 +1008,6 @@ module.exports = {
                             }
                         }
                     );
-                    /* ================= END ================= */
                 }
 
                 // ================= REJECT =================
@@ -1036,7 +1028,6 @@ module.exports = {
 
                     await booking.increment('rejectCount', { by: 1 });
 
-                    /* ================= ONLY ADDITION ================= */
                     await db.rideRequest.update(
                         { status: 2 }, // REJECT
                         {
@@ -1046,7 +1037,6 @@ module.exports = {
                             }
                         }
                     );
-                    /* ================= END ================= */
 
                     const totalDrivers = await db.users.count({
                         where: { role: '2', online: '1' }
@@ -1164,8 +1154,6 @@ module.exports = {
                         }
                     }
                 }
-
-                // ================= RESPONSE (UNCHANGED) =================
                 return helper.success(res,
                     request === '1'
                         ? 'Booking accepted successfully. Driver on the way.'
@@ -1363,11 +1351,6 @@ module.exports = {
                         }
                     });
                 }
-
-                /* =====================================================
-                   ✅ ONLY CHANGE: exclude rejected rideRequest (status=2)
-                ====================================================== */
-
                 // get bookingIds rejected by THIS driver
                 const rejectedRequests = await db.rideRequest.findAll({
                     where: {
@@ -1399,7 +1382,6 @@ module.exports = {
                     order: [['id', 'DESC']]
                 });
 
-                // ---------------- RESPONSE (UNCHANGED) ----------------
                 return helper.success(
                     res,
                     'Pending ride requests fetched successfully',
