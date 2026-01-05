@@ -410,6 +410,7 @@ module.exports = function (io) {
                 await booking.update({
                   dropLatitude: currLat.toString(),
                   dropLongitude: currLng.toString(),
+                  dropLocation: location || booking.dropLocation,
                   travelledDistance: totalDistanceKm.toString(),
                   bookingPrice: newBookingPrice,
                   lastLatitude: currLat.toString(),

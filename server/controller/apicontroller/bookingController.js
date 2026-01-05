@@ -1297,8 +1297,7 @@ module.exports = {
         return async (req, res) => {
             try {
                 const driverId = req.user.id;
-
-                // ---------------- DRIVER STATUS CHECK ----------------
+                // -- DRIVER STATUS CHECK --
                 const driver = await db.users.findOne({
                     where: { id: driverId },
                     attributes: ['status', 'block', 'suspend'],
@@ -1338,7 +1337,7 @@ module.exports = {
                     force: true
                 });
 
-                // ---------------- USER SOCKET EMIT ----------------
+                // -- USER SOCKET EMIT --
                 if (expiredBookings.length) {
                     expiredBookings.forEach(b => {
                         if (global.onlineUsers && onlineUsers[b.userId]?.length) {
@@ -1363,7 +1362,7 @@ module.exports = {
 
                 const rejectedBookingIds = rejectedRequests.map(r => r.bookingId);
 
-                // ---------------- PENDING REQUESTS ----------------
+                // - PENDING REQUESTS --
                 const requests = await db.bookings.findAll({
                     where: {
                         driverId: null,
