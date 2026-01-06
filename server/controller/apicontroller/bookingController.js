@@ -782,8 +782,10 @@ module.exports = {
     //                 );
     //             }
 
+
     //             // ================= ACCEPT =================
     //             if (request === '1') {
+
     //                 const [updated] = await db.bookings.update(
     //                     {
     //                         driverId,
@@ -803,10 +805,20 @@ module.exports = {
     //                 if (!updated) {
     //                     return helper.failure(res, 'Booking already processed');
     //                 }
+    //                 await db.rideRequest.update(
+    //                     { status: 1 }, // ACCEPT
+    //                     {
+    //                         where: {
+    //                             bookingId,
+    //                             driverId
+    //                         }
+    //                     }
+    //                 );
     //             }
 
     //             // ================= REJECT =================
     //             if (request === '2') {
+
     //                 const booking = await db.bookings.findOne({
     //                     where: { id: bookingId },
     //                     include: [{
@@ -822,7 +834,16 @@ module.exports = {
 
     //                 await booking.increment('rejectCount', { by: 1 });
 
-    //                 // nearby online drivers (30km logic later)
+    //                 await db.rideRequest.update(
+    //                     { status: 2 }, // REJECT
+    //                     {
+    //                         where: {
+    //                             bookingId,
+    //                             driverId
+    //                         }
+    //                     }
+    //                 );
+
     //                 const totalDrivers = await db.users.count({
     //                     where: { role: '2', online: '1' }
     //                 });
@@ -939,8 +960,6 @@ module.exports = {
     //                     }
     //                 }
     //             }
-
-    //             // ================= RESPONSE =================
     //             return helper.success(res,
     //                 request === '1'
     //                     ? 'Booking accepted successfully. Driver on the way.'
@@ -977,6 +996,19 @@ module.exports = {
                         'Invalid request value. Must be "1" (accept) or "2" (reject).'
                     );
                 }
+
+                // ================= DRIVER BUSY CHECK =================
+                const activeRide = await db.bookings.findOne({
+                    where: {
+                        driverId,
+                        status: { [Sequelize.Op.in]: ['0', '1', '2'] }
+                    }
+                });
+
+                if (activeRide) {
+                    return helper.failure(res, 'You already have an active ride.');
+                }
+
                 // ================= ACCEPT =================
                 if (request === '1') {
 
@@ -999,6 +1031,7 @@ module.exports = {
                     if (!updated) {
                         return helper.failure(res, 'Booking already processed');
                     }
+
                     await db.rideRequest.update(
                         { status: 1 }, // ACCEPT
                         {
@@ -1135,6 +1168,16 @@ module.exports = {
                         if (String(d.id) === String(driverId)) continue;
                         if (!d.latitude || !d.longitude) continue;
 
+                        //  BUSY DRIVER SKIP
+                        const busy = await db.bookings.findOne({
+                            where: {
+                                driverId: d.id,
+                                status: { [Sequelize.Op.in]: ['0', '1', '2'] }
+                            }
+                        });
+
+                        if (busy) continue;
+
                         const dist = distanceInKm(
                             pickupLat,
                             pickupLng,
@@ -1154,7 +1197,9 @@ module.exports = {
                         }
                     }
                 }
-                return helper.success(res,
+
+                return helper.success(
+                    res,
                     request === '1'
                         ? 'Booking accepted successfully. Driver on the way.'
                         : 'Booking rejected successfully',
@@ -1177,32 +1222,25 @@ module.exports = {
 
 
 
+
     // requestList: (io) => {
     //     return async (req, res) => {
     //         try {
     //             const driverId = req.user.id;
-
-    //             // ---------------- DRIVER STATUS CHECK ----------------
+    //             // -- DRIVER STATUS CHECK --
     //             const driver = await db.users.findOne({
     //                 where: { id: driverId },
     //                 attributes: ['status', 'block', 'suspend'],
     //                 raw: true
     //             });
 
-    //             if (!driver) {
-    //                 return helper.error(res, "Driver not found.");
-    //             }
-    //             if (driver.status === "0") {
-    //                 return helper.error2(res, "Your account has been deactivated by admin.");
-    //             }
-    //             if (driver.block === "1") {
-    //                 return helper.error1(res, "Your account has been blocked by admin.");
-    //             }
-    //             if (driver.suspend === "1") {
-    //                 return helper.error3(res, "Your account has been suspended by admin.");
-    //             }
+    //             if (!driver) return helper.error(res, "Driver not found.");
+    //             if (driver.status === "0") return helper.error2(res, "Your account has been deactivated by admin.");
+    //             if (driver.block === "1") return helper.error1(res, "Your account has been blocked by admin.");
+    //             if (driver.suspend === "1") return helper.error3(res, "Your account has been suspended by admin.");
 
     //             const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
+
     //             const expiredBookings = await db.bookings.findAll({
     //                 where: {
     //                     driverId: null,
@@ -1229,8 +1267,7 @@ module.exports = {
     //                 force: true
     //             });
 
-
-    //             // ---------------- USER SOCKET EMIT ----------------
+    //             // -- USER SOCKET EMIT --
     //             if (expiredBookings.length) {
     //                 expiredBookings.forEach(b => {
     //                     if (global.onlineUsers && onlineUsers[b.userId]?.length) {
@@ -1243,13 +1280,27 @@ module.exports = {
     //                     }
     //                 });
     //             }
+    //             // get bookingIds rejected by THIS driver
+    //             const rejectedRequests = await db.rideRequest.findAll({
+    //                 where: {
+    //                     driverId,
+    //                     status: 2
+    //                 },
+    //                 attributes: ['bookingId'],
+    //                 raw: true
+    //             });
 
-    //             // ---------------- PENDING REQUESTS ----------------
+    //             const rejectedBookingIds = rejectedRequests.map(r => r.bookingId);
+
+    //             // - PENDING REQUESTS --
     //             const requests = await db.bookings.findAll({
     //                 where: {
     //                     driverId: null,
     //                     status: '0',
-    //                     request: '0'
+    //                     request: '0',
+    //                     ...(rejectedBookingIds.length && {
+    //                         id: { [Sequelize.Op.notIn]: rejectedBookingIds }
+    //                     })
     //                 },
     //                 include: [
     //                     {
@@ -1297,10 +1348,11 @@ module.exports = {
         return async (req, res) => {
             try {
                 const driverId = req.user.id;
-                // -- DRIVER STATUS CHECK --
+
+                // ================= DRIVER STATUS CHECK =================
                 const driver = await db.users.findOne({
                     where: { id: driverId },
-                    attributes: ['status', 'block', 'suspend'],
+                    attributes: ['status', 'block', 'suspend', "approve"],
                     raw: true
                 });
 
@@ -1308,7 +1360,12 @@ module.exports = {
                 if (driver.status === "0") return helper.error2(res, "Your account has been deactivated by admin.");
                 if (driver.block === "1") return helper.error1(res, "Your account has been blocked by admin.");
                 if (driver.suspend === "1") return helper.error3(res, "Your account has been suspended by admin.");
-
+                if (driver.approve !== "1") {
+                    return helper.success(res, "Your account is not approved by admin yet.", {
+                        totalRequests: 0, requests: []
+                    });
+                }
+                // ================= EXPIRED BOOKINGS CLEANUP =================
                 const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
 
                 const expiredBookings = await db.bookings.findAll({
@@ -1337,11 +1394,26 @@ module.exports = {
                     force: true
                 });
 
-                // -- USER SOCKET EMIT --
+                // ================= BUSY DRIVER CHECK =================
+                const activeRide = await db.bookings.findOne({
+                    where: {
+                        driverId,
+                        status: { [Sequelize.Op.in]: ['0', '1', '2'] }
+                    }
+                });
+
+                if (activeRide) {
+                    return helper.success(res, 'You are currently on a ride', {
+                        totalRequests: 0,
+                        requests: []
+                    });
+                }
+
+                // ================= USER SOCKET EMIT (EXPIRED CASE) =================
                 if (expiredBookings.length) {
                     expiredBookings.forEach(b => {
-                        if (global.onlineUsers && onlineUsers[b.userId]?.length) {
-                            onlineUsers[b.userId].forEach(sockId => {
+                        if (global.onlineUsers && global.onlineUsers[b.userId]?.length) {
+                            global.onlineUsers[b.userId].forEach(sockId => {
                                 io.to(sockId).emit("rideStatusUpdate", {
                                     bookingId: b.id,
                                     message: "Driver did not respond. Please try again."
@@ -1350,7 +1422,8 @@ module.exports = {
                         }
                     });
                 }
-                // get bookingIds rejected by THIS driver
+
+                // ================= REJECTED REQUESTS BY THIS DRIVER =================
                 const rejectedRequests = await db.rideRequest.findAll({
                     where: {
                         driverId,
@@ -1362,7 +1435,7 @@ module.exports = {
 
                 const rejectedBookingIds = rejectedRequests.map(r => r.bookingId);
 
-                // - PENDING REQUESTS --
+                // ================= PENDING REQUESTS =================
                 const requests = await db.bookings.findAll({
                     where: {
                         driverId: null,
