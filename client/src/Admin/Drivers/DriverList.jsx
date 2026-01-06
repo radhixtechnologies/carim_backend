@@ -730,12 +730,7 @@ const DriverList = () => {
                   <tr>
                     <td>Location:</td>
                     <td className="text-end text-black fw-medium">
-                      {`${selectedUser.location || ""}${selectedUser.location && selectedUser.location ? ", " : ""
-                        }${selectedUser.location || ""}${(selectedUser.location || selectedUser.location) &&
-                          selectedUser.location
-                          ? ", "
-                          : ""
-                        }${selectedUser.location || ""}`}
+                      {`${selectedUser.location || ""}`}
                     </td>
                   </tr>
                   <tr>
