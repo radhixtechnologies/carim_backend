@@ -997,6 +997,25 @@ module.exports = {
                     );
                 }
 
+                const driver = await db.users.findOne({
+                    where: { id: driverId },
+                    attributes: ['approve', 'status', 'block', 'suspend'],
+                    raw: true
+                });
+                if (driver.status === "0") {
+                    return helper.failure(res, 'Your account has been deactivated by admin.');
+                }
+
+                if (driver.block === "1") {
+                    return helper.failure(res, 'Your account has been blocked by admin.');
+                }
+
+                if (driver.suspend === "1") {
+                    return helper.failure(res, 'Your account has been suspended by admin.');
+                }
+                if (driver.approve !== "1") {
+                    return helper.failure(res, 'Your account is not approved by admin yet.');
+                }
                 // ================= DRIVER BUSY CHECK =================
                 const activeRide = await db.bookings.findOne({
                     where: {
@@ -1004,7 +1023,6 @@ module.exports = {
                         status: { [Sequelize.Op.in]: ['0', '1', '2'] }
                     }
                 });
-
                 if (activeRide) {
                     return helper.failure(res, 'You already have an active ride.');
                 }
@@ -1072,7 +1090,7 @@ module.exports = {
                     );
 
                     const totalDrivers = await db.users.count({
-                        where: { role: '2', online: '1' }
+                        where: { role: '2', online: '1', approve: '1' }
                     });
 
                     if (booking.rejectCount + 1 >= totalDrivers) {
@@ -1145,7 +1163,7 @@ module.exports = {
                     const MAX_DISTANCE = 30;
 
                     const drivers = await db.users.findAll({
-                        where: { role: '2', online: '1' },
+                        where: { role: '2', online: '1', approve: '1' },
                         attributes: ['id', 'latitude', 'longitude'],
                         raw: true
                     });
@@ -1348,7 +1366,6 @@ module.exports = {
         return async (req, res) => {
             try {
                 const driverId = req.user.id;
-
                 // ================= DRIVER STATUS CHECK =================
                 const driver = await db.users.findOne({
                     where: { id: driverId },
