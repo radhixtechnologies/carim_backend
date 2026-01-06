@@ -416,7 +416,7 @@ const ScreenShotList = () => {
                             <th>Sr no.</th>
                             <th>Image</th>
                             <th>Driver Name</th>
-                            <th>Driver Email</th>
+                            {/* <th>Driver Email</th> */}
                             <th>Driver Balance($)</th>
                             <th>Status</th>
                             <th className="text-end">Action</th>
@@ -449,9 +449,9 @@ const ScreenShotList = () => {
                                   <td>
                                     {transaction.screenshotdriver?.firstName || ""}
                                   </td>
-                                   <td>
+                                   {/* <td>
                                     {transaction.screenshotdriver?.email || ""}
-                                  </td>
+                                  </td> */}
                                   <td>
                                     {formatCurrency(
                                       transaction.screenshotdriver
@@ -772,15 +772,16 @@ const ScreenShotList = () => {
                   <tr>
                     <td>Driver Name:</td>
                     <td className="text-end text-black fw-medium">
-                      {selectedTransaction.screenshotdriver?.name || ""}
+                      {selectedTransaction.screenshotdriver?.firstName || ""}
+                       {selectedTransaction.screenshotdriver?.lastName || ""}
                     </td>
                   </tr>
-                  <tr>
+                  {/* <tr>
                     <td>Driver Email:</td>
                     <td className="text-end text-black fw-medium">
                       {selectedTransaction.screenshotdriver?.email || ""}
                     </td>
-                  </tr>
+                  </tr> */}
                   <tr>
                     <td>Driver Balance:</td>
                     <td className="text-end text-black fw-medium">

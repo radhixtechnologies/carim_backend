@@ -278,7 +278,7 @@ function Sidebar({ isOpen }) {
               )}
             </li>
 
-            <li className={activeMenu === "rating" ? "mm-active" : ""}>
+            {/* <li className={activeMenu === "rating" ? "mm-active" : ""}>
               <Link
                 className="has-arrow waves-effect"
                 onClick={() => toggleMenu("rating")}
@@ -321,7 +321,7 @@ function Sidebar({ isOpen }) {
                   </li>
                 </ul>
               )}
-            </li>
+            </li> */}
             <li className={activeMenu === "banner" ? "mm-active" : ""}>
               <Link
                 className="has-arrow waves-effect"

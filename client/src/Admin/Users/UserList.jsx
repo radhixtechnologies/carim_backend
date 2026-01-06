@@ -212,11 +212,11 @@ const UserList = () => {
                         <thead>
                           <tr>
                             <th>Sr no.</th>
-                            <th>Image</th>
+                            {/* <th>Image</th> */}
                             <th>Phone Number</th>
                             {/* <th>Last Name</th>
                             <th>Email Address</th> */}
-                            <th>Location</th>
+                            {/* <th>Location</th> */}
                             <th>Blocked</th>
                             <th>Suspended</th>
                             <th>Status</th>
@@ -228,7 +228,7 @@ const UserList = () => {
                             users.map((user, index) => (
                               <tr key={user.id}>
                                 <td>{(currentPage - 1) * limit + index + 1}</td>
-                                <td>
+                                {/* <td>
                                   {user.image ? (
                                     <img
                                       src={`${BASE_URL}/${user.image}`}
@@ -242,15 +242,15 @@ const UserList = () => {
                                   ) : (
                                     "No Image"
                                   )}
-                                </td>
+                                </td> */}
                                 <td>({user.countryCode || ""}) {user.phoneNumber || ""}</td>
                                 {/* <td>{user.lastName || ""}</td>
                                 <td>{user.email || ""}</td> */}
-                                <td>
+                                {/* <td> */}
                                   {/* {user.city && `${user.city} `} */}
-                                  {user.location && `${user.location}, `}
+                                  {/* {user.location && `${user.location}, `} */}
                                   {/* {user.country || ""} */}
-                                </td>
+                                {/* </td> */}
                                 <td>
                                   <div className="form-check form-switch">
                                     <input
@@ -410,7 +410,7 @@ const UserList = () => {
         <div className="offcanvas-body">
           {selectedUser ? (
             <>
-              <div className="scroll-room mb-3" id="scrollRoom">
+              {/* <div className="scroll-room mb-3" id="scrollRoom">
                 {selectedUser.image ? (
                   <a
                     href={`${BASE_URL}/${selectedUser.image}`}
@@ -436,12 +436,12 @@ const UserList = () => {
                     <span className="text-muted">No Image Available</span>
                   </div>
                 )}
-              </div>
+              </div> */}
               <div>
                 <div className="border-bottom mb-2 pb-1">
-                  <h5 className="fw-semibold font-size-17 mb-1">
-                    {selectedUser.name || "No Name"}
-                  </h5>
+                  {/* <h5 className="fw-semibold font-size-17 mb-1">
+                    {selectedUser.firstName || "No Name"}
+                  </h5> */}
                   <p className="mb-0 text-lowdark">
                     {`${selectedUser.country || ""}${
                       selectedUser.country && selectedUser.city ? ", " : ""
@@ -472,7 +472,7 @@ const UserList = () => {
                     </span>
                   </div>
                 </div>
-                <div className="d-flex align-items-center border-bottom pt-1 pb-3">
+                {/* <div className="d-flex align-items-center border-bottom pt-1 pb-3">
                   {selectedUser.image ? (
                     <img
                       src={`${BASE_URL}/${selectedUser.image}`}
@@ -494,7 +494,7 @@ const UserList = () => {
                       <span className="me-2">User</span>
                       <span className="line-circle"></span>
                       <span className="ms-2 font-size-15 fw-semibold">
-                        {selectedUser.name || "No Name"}
+                        {selectedUser.firstName || "No Name"}
                       </span>
                     </div>
                     <div className="d-flex align-items-center position-relative mb-1">
@@ -503,7 +503,7 @@ const UserList = () => {
                       </span>
                     </div>
                   </div>
-                </div>
+                </div> */}
               </div>
               <div className="font-size-16 fw-medium pt-3 mt-1 mb-2">
                 User Information
@@ -549,7 +549,7 @@ const UserList = () => {
                       {selectedUser.phoneNumber || ""}
                     </td>
                   </tr>
-                  <tr>
+                  {/* <tr>
                     <td>Location:</td>
                     <td className="text-end text-black fw-medium">
                       {`${selectedUser.country || ""}${
@@ -561,7 +561,7 @@ const UserList = () => {
                           : ""
                       }${selectedUser.state || ""}`}
                     </td>
-                  </tr>
+                  </tr> */}
                   <tr>
                     <td>Blocked Status :</td>
                     <td className="text-end text-black fw-medium">
@@ -608,7 +608,7 @@ const UserList = () => {
                   </tr>
                 </tbody>
               </table>
-              <div className="mt-3">
+              {/* <div className="mt-3">
                 <div className="font-size-16 fw-medium mb-2">Bio:</div>
                 <div className="bg-light">
                   {selectedUser.bio ? (
@@ -627,7 +627,7 @@ const UserList = () => {
                     "No bio available"
                   )}
                 </div>
-              </div>
+              </div> */}
             </>
           ) : (
             <div className="text-center py-5">

@@ -344,7 +344,6 @@ module.exports = function (io) {
         });
 
         if (booking) {
-
           const startLat = booking.lastLatitude
             ? parseFloat(booking.lastLatitude)
             : parseFloat(booking.pickupLatitude);

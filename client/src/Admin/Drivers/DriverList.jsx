@@ -263,7 +263,7 @@ const DriverList = () => {
                         <thead>
                           <tr>
                             <th>Sr no.</th>
-                            <th>Image</th>
+                            {/* <th>Image</th> */}
                             <th>First Name</th>
                             <th>Last Name</th>
                             {/* <th>Email Address</th> */}
@@ -281,7 +281,7 @@ const DriverList = () => {
                             users.map((user, index) => (
                               <tr key={user.id}>
                                 <td>{(currentPage - 1) * limit + index + 1}</td>
-                                <td>
+                                {/* <td>
                                   {user.image ? (
                                     <img
                                       src={`${BASE_URL}/${user.image}`}
@@ -295,7 +295,7 @@ const DriverList = () => {
                                   ) : (
                                     "No Image"
                                   )}
-                                </td>
+                                </td> */}
                                 <td>{user.firstName || ""}</td>
                                 <td>{user.lastName || ""}</td>
                                 {/* <td>{user.email || ""}</td> */}
@@ -420,10 +420,10 @@ const DriverList = () => {
                                   {user.documentVerify === "1"
                                     ? "Verified"
                                     : user.documentVerify === "0"
-                                    ? "Pending"
-                                    : user.documentVerify === "2"
-                                    ? "Rejected"
-                                    : "Unknown Status"}
+                                      ? "Pending"
+                                      : user.documentVerify === "2"
+                                        ? "Rejected"
+                                        : "Unknown Status"}
                                 </td>
 
                                 <td>
@@ -559,7 +559,7 @@ const DriverList = () => {
         <div className="offcanvas-body">
           {selectedUser ? (
             <>
-              <div className="scroll-room mb-3" id="scrollRoom">
+              {/* <div className="scroll-room mb-3" id="scrollRoom">
                 {selectedUser.image ? (
                   <a
                     href={`${BASE_URL}/${selectedUser.image}`}
@@ -585,21 +585,19 @@ const DriverList = () => {
                     <span className="text-muted">No Image Available</span>
                   </div>
                 )}
-              </div>
+              </div> */}
               <div>
                 <div className="border-bottom mb-2 pb-1">
-                  <h5 className="fw-semibold font-size-17 mb-1">
-                    {selectedUser.name || "No Name"}
-                  </h5>
+                  {/* <h5 className="fw-semibold font-size-17 mb-1">
+                    {selectedUser.firstName || "No Name"}
+                  </h5> */}
                   <p className="mb-0 text-lowdark">
-                    {`${selectedUser.country || ""}${
-                      selectedUser.country && selectedUser.city ? ", " : ""
-                    }${selectedUser.city || ""}${
-                      (selectedUser.city || selectedUser.country) &&
-                      selectedUser.state
+                    {`${selectedUser.country || ""}${selectedUser.country && selectedUser.city ? ", " : ""
+                      }${selectedUser.city || ""}${(selectedUser.city || selectedUser.country) &&
+                        selectedUser.state
                         ? ", "
                         : ""
-                    }${selectedUser.state || ""}`}
+                      }${selectedUser.state || ""}`}
                   </p>
 
                   <div className="mb-2">
@@ -622,7 +620,7 @@ const DriverList = () => {
                   </div>
                 </div>
                 <div className="d-flex align-items-center border-bottom pt-1 pb-3">
-                  {selectedUser.image ? (
+                  {/* {selectedUser.image ? (
                     <img
                       src={`${BASE_URL}/${selectedUser.image}`}
                       className="rounded-circle me-3"
@@ -637,21 +635,22 @@ const DriverList = () => {
                     >
                       <i className="ri-user-line font-size-20 text-muted"></i>
                     </div>
-                  )}
+                  )} */}
                   <div>
                     <div className="d-flex align-items-center position-relative mb-1">
                       <span className="me-2">Driver</span>
                       <span className="line-circle"></span>
                       <span className="ms-2 font-size-15 fw-semibold">
-                        {selectedUser.name || "No Name"}
+                        {selectedUser.firstName || "No Name"}
+                        {selectedUser.lastName || "No Name"}
                       </span>
                     </div>
-                    <div className="d-flex align-items-center position-relative mb-1">
+                    {/* <div className="d-flex align-items-center position-relative mb-1">
                       <span className="me-2">
                         Email: {selectedUser.email || "No Email"}
                       </span>
-                    </div>
-                    <div className="d-flex align-items-center position-relative">
+                    </div> */}
+                    {/* <div className="d-flex align-items-center position-relative">
                       <span className="me-2">
                         {[...Array(5)].map((_, i) => (
                           <i
@@ -668,7 +667,7 @@ const DriverList = () => {
                         {selectedUser.averageRating || "0.00"} (
                         {selectedUser.totalReviews || 0} reviews)
                       </span>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               </div>
@@ -722,34 +721,31 @@ const DriverList = () => {
                       {selectedUser.gender === "0"
                         ? "Male"
                         : selectedUser.gender === "1"
-                        ? "Female"
-                        : selectedUser.gender === "2"
-                        ? "Other"
-                        : "Not specified"}
+                          ? "Female"
+                          : selectedUser.gender === "2"
+                            ? "Other"
+                            : "Not specified"}
                     </td>
                   </tr>
                   <tr>
                     <td>Location:</td>
                     <td className="text-end text-black fw-medium">
-                      {`${selectedUser.location || ""}${
-                        selectedUser.location && selectedUser.location ? ", " : ""
-                      }${selectedUser.location || ""}${
-                        (selectedUser.location || selectedUser.location) &&
-                        selectedUser.location
+                      {`${selectedUser.location || ""}${selectedUser.location && selectedUser.location ? ", " : ""
+                        }${selectedUser.location || ""}${(selectedUser.location || selectedUser.location) &&
+                          selectedUser.location
                           ? ", "
                           : ""
-                      }${selectedUser.location || ""}`}
+                        }${selectedUser.location || ""}`}
                     </td>
                   </tr>
                   <tr>
                     <td>Blocked Status :</td>
                     <td className="text-end text-black fw-medium">
                       <span
-                        className={`badge ${
-                          selectedUser.block === "1"
+                        className={`badge ${selectedUser.block === "1"
                             ? "bg-danger"
                             : "bg-success"
-                        }`}
+                          }`}
                       >
                         {selectedUser.block === "1" ? "Blocked" : "Not Blocked"}
                       </span>
@@ -759,11 +755,10 @@ const DriverList = () => {
                     <td>Suspended Status :</td>
                     <td className="text-end text-black fw-medium">
                       <span
-                        className={`badge ${
-                          selectedUser.suspend === "1"
+                        className={`badge ${selectedUser.suspend === "1"
                             ? "bg-danger"
                             : "bg-success"
-                        }`}
+                          }`}
                       >
                         {selectedUser.suspend === "1"
                           ? "Suspended"
@@ -787,11 +782,10 @@ const DriverList = () => {
                     <td>Account Status :</td>
                     <td className="text-end text-black fw-medium">
                       <span
-                        className={`badge ${
-                          selectedUser.status === "1"
+                        className={`badge ${selectedUser.status === "1"
                             ? "bg-success"
                             : "bg-danger"
-                        }`}
+                          }`}
                       >
                         {selectedUser.status === "1" ? "Active" : "Inactive"}
                       </span>

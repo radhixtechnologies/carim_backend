@@ -331,7 +331,7 @@ const DriverDocuments = () => {
                         <thead>
                           <tr>
                             <th>Sr no.</th>
-                            <th>Image</th>
+                            {/* <th>Image</th> */}
                             <th>first Name</th>
                             <th>Last Name</th>
                             {/* <th>Email</th> */}
@@ -346,7 +346,7 @@ const DriverDocuments = () => {
                             displayUsers.map((user, index) => (
                               <tr key={user.id}>
                                 <td>{index + 1}</td>
-                                <td>
+                                {/* <td>
                                   {user.image ? (
                                     <img
                                       src={`${BASE_URL}/${user.image}`}
@@ -365,7 +365,7 @@ const DriverDocuments = () => {
                                       <i className="ri-user-line text-muted"></i>
                                     </div>
                                   )}
-                                </td>
+                                </td> */}
                                 <td>{user.firstName || ""}</td>
                                 <td>{user.lastName || ""}</td>
 
@@ -847,12 +847,12 @@ const DriverDocuments = () => {
                       {selectedUser.lastName || ""}
                     </td>
                   </tr>
-                  <tr>
+                  {/* <tr>
                     <td>Email:</td>
                     <td className="text-end text-black fw-medium">
                       {selectedUser.email || ""}
                     </td>
-                  </tr>
+                  </tr> */}
                   <tr>
                     <td>Country Code :</td>
                     <td className="text-end text-black fw-medium">

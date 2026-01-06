@@ -161,7 +161,7 @@ const Dashboard = () => {
                         </Link>
                       </div>
 
-                      <div className="col">
+                      {/* <div className="col">
                         <Link to="/ratinglist">
                           <div className="card bg-soft-blue">
                             <div
@@ -184,7 +184,7 @@ const Dashboard = () => {
                             </div>
                           </div>
                         </Link>
-                      </div>
+                      </div> */}
 
                       <div className="col">
                         <Link to="/contactlist">
