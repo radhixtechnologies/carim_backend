@@ -1092,6 +1092,11 @@ module.exports = {
                     const totalDrivers = await db.users.count({
                         where: { role: '2', online: '1', approve: '1' }
                     });
+                    // ================== DRIVER lastFreeTime UPDATE ==================
+                    await db.users.update(
+                        { lastFreeTime: new Date() },
+                        { where: { id: driverId } }
+                    );
 
                     if (booking.rejectCount + 1 >= totalDrivers) {
                         await booking.update({
