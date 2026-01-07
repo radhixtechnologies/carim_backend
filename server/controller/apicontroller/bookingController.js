@@ -521,7 +521,7 @@ module.exports = {
 
                 // ---------------- GET DRIVERS (BUSY FILTERED) ----------------
                 const drivers = await db.users.findAll({
-                    where: { role: '2', online: '1' },
+                    where: { role: '2', online: '1' ,approve : '1'},
                     attributes: ['id', 'latitude', 'longitude'],
                     include: [{
                         model: db.bookings,
