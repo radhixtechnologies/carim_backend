@@ -212,7 +212,7 @@ const BookingCompleted = () => {
                         <thead>
                           <tr>
                             <th>Sr no.</th>
-                            <th>User Name</th>
+                            <th>User Phone Number</th>
                             <th>Driver Name</th>
                             <th>Price($)</th>
                             <th>Admin Amount($)</th>
@@ -233,8 +233,8 @@ const BookingCompleted = () => {
                                     {(currentPage - 1) * limit + index + 1}
                                   </td>
                                   <td>
-                                    {`${match.userbook?.firstName || ""} ${
-                                      match.userbook?.lastName || ""
+                                    ({`${match.userbook?.countryCode || ""}) ${
+                                      match.userbook?.phoneNumber || ""
                                     }`}
                                   </td>
                                   <td>

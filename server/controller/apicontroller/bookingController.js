@@ -2134,7 +2134,6 @@ module.exports = {
         }
     },
 
-
     blockUser: (io) => {
         return async (req, res) => {
             try {
