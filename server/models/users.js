@@ -210,6 +210,10 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.ENUM('0','1'),
       allowNull: false,
       defaultValue: "0"
+    },
+    lastFreeTime: {
+      type: DataTypes.DATE,
+      allowNull: true
     }
   }, {
     sequelize,

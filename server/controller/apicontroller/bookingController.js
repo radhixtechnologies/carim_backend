@@ -1241,7 +1241,7 @@ module.exports = {
 
 
 
-    // requestList: (io) => {
+    // requestList: (io1) => {
     //     return async (req, res) => {
     //         try {
     //             const driverId = req.user.id;
@@ -1362,14 +1362,157 @@ module.exports = {
     //         }
     //     };
     // },
+    // requestList: (io) => {
+    //     return async (req, res) => {
+    //         try {
+    //             const driverId = req.user.id;
+    //             // ================= DRIVER STATUS CHECK =================
+    //             const driver = await db.users.findOne({
+    //                 where: { id: driverId },
+    //                 attributes: ['status', 'block', 'suspend', "approve"],
+    //                 raw: true
+    //             });
+
+    //             if (!driver) return helper.error(res, "Driver not found.");
+    //             if (driver.status === "0") return helper.error2(res, "Your account has been deactivated by admin.");
+    //             if (driver.block === "1") return helper.error1(res, "Your account has been blocked by admin.");
+    //             if (driver.suspend === "1") return helper.error3(res, "Your account has been suspended by admin.");
+    //             if (driver.approve !== "1") {
+    //                 return helper.success(res, "Your account is not approved by admin yet.", {
+    //                     totalRequests: 0, requests: []
+    //                 });
+    //             }
+    //             // ================= EXPIRED BOOKINGS CLEANUP =================
+    //             const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
+
+    //             const expiredBookings = await db.bookings.findAll({
+    //                 where: {
+    //                     driverId: null,
+    //                     status: '0',
+    //                     request: '0',
+    //                     bookingDate: {
+    //                         [Sequelize.Op.lt]: oneMinuteAgo
+    //                     }
+    //                 },
+    //                 attributes: ['id', 'userId'],
+    //                 raw: true
+    //             });
+
+    //             await db.bookings.destroy({
+    //                 where: {
+    //                     driverId: null,
+    //                     status: '0',
+    //                     request: '0',
+    //                     rejectCount: '0',
+    //                     bookingDate: {
+    //                         [Sequelize.Op.lt]: oneMinuteAgo
+    //                     }
+    //                 },
+    //                 force: true
+    //             });
+
+    //             // ================= BUSY DRIVER CHECK =================
+    //             const activeRide = await db.bookings.findOne({
+    //                 where: {
+    //                     driverId,
+    //                     status: { [Sequelize.Op.in]: ['0', '1', '2'] }
+    //                 }
+    //             });
+
+    //             if (activeRide) {
+    //                 return helper.success(res, 'You are currently on a ride', {
+    //                     totalRequests: 0,
+    //                     requests: []
+    //                 });
+    //             }
+
+    //             // ================= USER SOCKET EMIT (EXPIRED CASE) =================
+    //             if (expiredBookings.length) {
+    //                 expiredBookings.forEach(b => {
+    //                     if (global.onlineUsers && global.onlineUsers[b.userId]?.length) {
+    //                         global.onlineUsers[b.userId].forEach(sockId => {
+    //                             io.to(sockId).emit("rideStatusUpdate", {
+    //                                 bookingId: b.id,
+    //                                 message: "Driver did not respond. Please try again."
+    //                             });
+    //                         });
+    //                     }
+    //                 });
+    //             }
+
+    //             // ================= REJECTED REQUESTS BY THIS DRIVER =================
+    //             const rejectedRequests = await db.rideRequest.findAll({
+    //                 where: {
+    //                     driverId,
+    //                     status: 2
+    //                 },
+    //                 attributes: ['bookingId'],
+    //                 raw: true
+    //             });
+
+    //             const rejectedBookingIds = rejectedRequests.map(r => r.bookingId);
+
+    //             // ================= PENDING REQUESTS =================
+    //             const requests = await db.bookings.findAll({
+    //                 where: {
+    //                     driverId: null,
+    //                     status: '0',
+    //                     request: '0',
+    //                     ...(rejectedBookingIds.length && {
+    //                         id: { [Sequelize.Op.notIn]: rejectedBookingIds }
+    //                     })
+    //                 },
+    //                 include: [
+    //                     {
+    //                         model: db.users,
+    //                         as: 'userbook'
+    //                     }
+    //                 ],
+    //                 order: [['id', 'DESC']]
+    //             });
+
+    //             return helper.success(
+    //                 res,
+    //                 'Pending ride requests fetched successfully',
+    //                 {
+    //                     totalRequests: requests.length,
+    //                     requests: requests.map(booking => ({
+    //                         bookingId: booking.id,
+    //                         userId: booking.userId,
+    //                         userDetails: booking.userbook,
+    //                         pickupLocation: booking.pickupLocation,
+    //                         dropLocation: booking.dropLocation,
+    //                         pickupLatitude: booking.pickupLatitude,
+    //                         pickupLongitude: booking.pickupLongitude,
+    //                         dropLatitude: booking.dropLatitude,
+    //                         dropLongitude: booking.dropLongitude,
+    //                         status: booking.status,
+    //                         request: booking.request,
+    //                         bookingDate: booking.bookingDate,
+    //                         orderId: booking.orderId,
+    //                         rideOpen: booking.rideOpen
+    //                     }))
+    //                 }
+    //             );
+
+    //         } catch (error) {
+    //             console.log("requestList error:", error);
+    //             return helper.error(
+    //                 res,
+    //                 "Something went wrong while fetching requests."
+    //             );
+    //         }
+    //     };
+    // },
     requestList: (io) => {
         return async (req, res) => {
             try {
                 const driverId = req.user.id;
-                // ================= DRIVER STATUS CHECK =================
+
+                // ===== DRIVER CHECK =====
                 const driver = await db.users.findOne({
                     where: { id: driverId },
-                    attributes: ['status', 'block', 'suspend', "approve"],
+                    attributes: ['status', 'block', 'suspend', "approve", "lastFreeTime"],
                     raw: true
                 });
 
@@ -1382,21 +1525,9 @@ module.exports = {
                         totalRequests: 0, requests: []
                     });
                 }
-                // ================= EXPIRED BOOKINGS CLEANUP =================
-                const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
 
-                const expiredBookings = await db.bookings.findAll({
-                    where: {
-                        driverId: null,
-                        status: '0',
-                        request: '0',
-                        bookingDate: {
-                            [Sequelize.Op.lt]: oneMinuteAgo
-                        }
-                    },
-                    attributes: ['id', 'userId'],
-                    raw: true
-                });
+                // ===== CLEAN EXPIRED BOOKINGS =====
+                const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
 
                 await db.bookings.destroy({
                     where: {
@@ -1404,19 +1535,14 @@ module.exports = {
                         status: '0',
                         request: '0',
                         rejectCount: '0',
-                        bookingDate: {
-                            [Sequelize.Op.lt]: oneMinuteAgo
-                        }
+                        bookingDate: { [Sequelize.Op.lt]: oneMinuteAgo }
                     },
                     force: true
                 });
 
-                // ================= BUSY DRIVER CHECK =================
+                // ===== ACTIVE RIDE CHECK =====
                 const activeRide = await db.bookings.findOne({
-                    where: {
-                        driverId,
-                        status: { [Sequelize.Op.in]: ['0', '1', '2'] }
-                    }
+                    where: { driverId, status: { [Sequelize.Op.in]: ['0', '1', '2'] } }
                 });
 
                 if (activeRide) {
@@ -1426,47 +1552,36 @@ module.exports = {
                     });
                 }
 
-                // ================= USER SOCKET EMIT (EXPIRED CASE) =================
-                if (expiredBookings.length) {
-                    expiredBookings.forEach(b => {
-                        if (global.onlineUsers && global.onlineUsers[b.userId]?.length) {
-                            global.onlineUsers[b.userId].forEach(sockId => {
-                                io.to(sockId).emit("rideStatusUpdate", {
-                                    bookingId: b.id,
-                                    message: "Driver did not respond. Please try again."
-                                });
-                            });
-                        }
-                    });
-                }
+                // ===== GET DRIVER LAST FREE TIME =====
+                let lastFreeTime = driver.lastFreeTime
+                    ? new Date(driver.lastFreeTime)
+                    : new Date(Date.now() - 10 * 1000);  // default 10 sec
 
-                // ================= REJECTED REQUESTS BY THIS DRIVER =================
+                // ===== REJECTED REQUESTS FILTER =====
                 const rejectedRequests = await db.rideRequest.findAll({
-                    where: {
-                        driverId,
-                        status: 2
-                    },
+                    where: { driverId, status: 2 },
                     attributes: ['bookingId'],
                     raw: true
                 });
 
                 const rejectedBookingIds = rejectedRequests.map(r => r.bookingId);
 
-                // ================= PENDING REQUESTS =================
+                // ===== FETCH REQUESTS WITH lastFreeTime FILTER =====
                 const requests = await db.bookings.findAll({
                     where: {
                         driverId: null,
                         status: '0',
                         request: '0',
+
+                        // Do NOT show old bookings
+                        bookingDate: { [Sequelize.Op.gt]: lastFreeTime },
+
                         ...(rejectedBookingIds.length && {
                             id: { [Sequelize.Op.notIn]: rejectedBookingIds }
                         })
                     },
                     include: [
-                        {
-                            model: db.users,
-                            as: 'userbook'
-                        }
+                        { model: db.users, as: 'userbook' }
                     ],
                     order: [['id', 'DESC']]
                 });
@@ -1497,10 +1612,7 @@ module.exports = {
 
             } catch (error) {
                 console.log("requestList error:", error);
-                return helper.error(
-                    res,
-                    "Something went wrong while fetching requests."
-                );
+                return helper.error(res, "Something went wrong while fetching requests.");
             }
         };
     },
