@@ -56,6 +56,10 @@ module.exports = db;
 
 //for booking
 db.bookings.belongsTo(db.users, { foreignKey: 'userId', as: 'userbook' });
+db.users.hasMany(db.bookings, {
+    foreignKey: "driverId",
+    as: "driverbook"
+});
 db.bookings.belongsTo(db.users, { foreignKey: 'driverId', as: 'driverbook' });
 
 

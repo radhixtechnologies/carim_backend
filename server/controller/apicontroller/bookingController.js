@@ -21,6 +21,7 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 
     return distance; // in km
 }
+
 module.exports = {
     findRide: async (req, res) => {
         try {
@@ -177,8 +178,7 @@ module.exports = {
         }
     },
 
-
-    // bookRide: (io) => {
+    // bookRide1: (io) => {
     //     return async (req, res) => {
     //         try {
     //             const userId = req.user.id;
@@ -205,12 +205,11 @@ module.exports = {
     //                 rideOpen
     //             } = req.body;
 
-    //             // ---------------- PICKUP (ALWAYS REQUIRED) ----------------
+    //             // ---------------- PICKUP REQUIRED ----------------
     //             if (!pickupLocation || !pickupLatitude || !pickupLongitude) {
     //                 return helper.failure(res, 'Pickup location and coordinates are required.');
     //             }
 
-    //             // ---------------- OLD LOGIC (rideOpen = 0) ----------------
     //             if (rideOpen == 0) {
     //                 if (!dropLocation || !dropLatitude || !dropLongitude) {
     //                     return helper.failure(res, 'Pickup and drop locations are required.');
@@ -239,7 +238,8 @@ module.exports = {
 
     //             let rideDistanceKm = null;
     //             let bookingPrice = "";
-    //             // ---------------- ADMIN PRICE PER KM ----------------
+
+    //             // ---------------- ADMIN PRICE ----------------
     //             const adminData = await db.users.findOne({
     //                 where: { role: '0' },
     //                 attributes: ['rideAmount'],
@@ -248,15 +248,12 @@ module.exports = {
 
     //             const pricePerKm = adminData?.rideAmount
     //                 ? parseFloat(adminData.rideAmount)
-    //                 : 10; // fallback
+    //                 : 10;
 
     //             if (isNaN(pricePerKm) || pricePerKm <= 0) {
     //                 return helper.failure(res, 'Invalid ride amount set by admin');
     //             }
 
-    //             // ---------------- PRICE CALCULATION ----------------
-    //             // ✔ rideOpen = 0 → always
-    //             // ✔ rideOpen = 1 → only if drop exists
     //             if (
     //                 rideOpen == 0 ||
     //                 (rideOpen == 1 && dropLatitude && dropLongitude)
@@ -276,16 +273,13 @@ module.exports = {
     //                 );
 
     //                 if (rideDistanceKm > 30) {
-    //                     return helper.failure(
-    //                         res,
-    //                         'Drop location must be within 30 km of pickup location'
-    //                     );
+    //                     return helper.failure(res, 'Drop location must be within 30 km');
     //                 }
 
     //                 bookingPrice = Math.round(rideDistanceKm * pricePerKm).toString();
     //             }
 
-    //             // ---------------- EXISTING ACTIVE RIDE CHECK ----------------
+    //             // ---------------- ACTIVE RIDE CHECK ----------------
     //             const existingBooking = await db.bookings.findOne({
     //                 where: {
     //                     userId,
@@ -298,7 +292,7 @@ module.exports = {
     //                 return helper.failure(res, 'You already have an active ride request');
     //             }
 
-    //             // ---------------- DRIVER AVAILABILITY (OLD LOGIC) ----------------
+    //             // ---------------- GET ONLINE DRIVERS ----------------
     //             const drivers = await db.users.findAll({
     //                 where: { role: '2', online: '1' },
     //                 attributes: ['id', 'latitude', 'longitude'],
@@ -310,14 +304,11 @@ module.exports = {
     //             for (const driver of drivers) {
     //                 if (!driver.latitude || !driver.longitude) continue;
 
-    //                 const driverLat = parseFloat(driver.latitude);
-    //                 const driverLng = parseFloat(driver.longitude);
-
     //                 const driverDistance = calculateDistance(
     //                     pickupLat,
     //                     pickupLng,
-    //                     driverLat,
-    //                     driverLng
+    //                     parseFloat(driver.latitude),
+    //                     parseFloat(driver.longitude)
     //                 );
 
     //                 if (driverDistance <= 30) {
@@ -327,22 +318,18 @@ module.exports = {
     //             }
 
     //             if (!driverAvailable) {
-    //                 return helper.failure(
-    //                     res,
-    //                     'No drivers available within 30 km of your pickup location'
-    //                 );
+    //                 return helper.failure(res, 'No drivers available within 30 km');
     //             }
 
     //             // ---------------- ORDER ID ----------------
     //             const orderId = Math.floor(100000 + Math.random() * 900000).toString();
 
-    //             // ---------------- FINAL VALUES (MODEL SAFE) ----------------
     //             const isOpenRideWithoutDrop =
     //                 rideOpen == 1 && (!dropLatitude || !dropLongitude);
 
     //             const finalDropLocation = isOpenRideWithoutDrop ? "" : dropLocation;
-    //             const finalDropLatitude = isOpenRideWithoutDrop ? "" : dropLatitude.toString();
-    //             const finalDropLongitude = isOpenRideWithoutDrop ? "" : dropLongitude.toString();
+    //             const finalDropLatitude = isOpenRideWithoutDrop ? "" : dropLatitude?.toString();
+    //             const finalDropLongitude = isOpenRideWithoutDrop ? "" : dropLongitude?.toString();
     //             const finalBookingPrice = isOpenRideWithoutDrop ? "" : bookingPrice;
 
     //             // ---------------- CREATE BOOKING ----------------
@@ -361,6 +348,32 @@ module.exports = {
     //                 request: '0',
     //                 rideOpen
     //             });
+
+    //             const rideRequestData = [];
+    //             for (const driver of drivers) {
+    //                 if (!driver.latitude || !driver.longitude) continue;
+
+    //                 const driverDistance = calculateDistance(
+    //                     pickupLat,
+    //                     pickupLng,
+    //                     parseFloat(driver.latitude),
+    //                     parseFloat(driver.longitude)
+    //                 );
+
+    //                 if (driverDistance <= 30) {
+    //                     rideRequestData.push({
+    //                         bookingId: newBooking.id,
+    //                         userId: userId,
+    //                         driverId: driver.id,
+    //                         status: 0
+    //                     });
+    //                 }
+    //             }
+
+    //             if (rideRequestData.length > 0) {
+    //                 await db.rideRequest.bulkCreate(rideRequestData);
+    //             }
+    //             /* ================= END ================= */
 
     //             // ---------------- SOCKET EMIT (UNCHANGED) ----------------
     //             drivers.forEach(driver => {
@@ -415,7 +428,7 @@ module.exports = {
                 if (!userStatus) return helper.failure(res, "User not found.");
                 if (userStatus.status === "0") return helper.error2(res, "Your account has been deactivated by admin.");
                 if (userStatus.block === "1") return helper.error1(res, "Your account has been blocked by admin.");
-                if (userStatus.suspend === "1") return helper.error3(res, "Your account has been suspended by admin.");
+                if (userStatus.suspend === "1") return helper.error3(res, "Your account has been suspended.");
 
                 const {
                     pickupLocation,
@@ -445,7 +458,7 @@ module.exports = {
                     return helper.failure(res, 'Invalid pickup coordinates.');
                 }
 
-                // ---------------- DISTANCE UTILS ----------------
+                // ---------------- DISTANCE CALCULATION ----------------
                 const toRad = v => v * Math.PI / 180;
                 const calculateDistance = (a, b, c, d) => {
                     const R = 6371;
@@ -476,10 +489,7 @@ module.exports = {
                     return helper.failure(res, 'Invalid ride amount set by admin');
                 }
 
-                if (
-                    rideOpen == 0 ||
-                    (rideOpen == 1 && dropLatitude && dropLongitude)
-                ) {
+                if (rideOpen == 0 || (rideOpen == 1 && dropLatitude && dropLongitude)) {
                     const dropLat = parseFloat(dropLatitude);
                     const dropLng = parseFloat(dropLongitude);
 
@@ -487,12 +497,7 @@ module.exports = {
                         return helper.failure(res, 'Invalid drop coordinates.');
                     }
 
-                    rideDistanceKm = calculateDistance(
-                        pickupLat,
-                        pickupLng,
-                        dropLat,
-                        dropLng
-                    );
+                    rideDistanceKm = calculateDistance(pickupLat, pickupLng, dropLat, dropLng);
 
                     if (rideDistanceKm > 30) {
                         return helper.failure(res, 'Drop location must be within 30 km');
@@ -514,16 +519,27 @@ module.exports = {
                     return helper.failure(res, 'You already have an active ride request');
                 }
 
-                // ---------------- GET ONLINE DRIVERS ----------------
+                // ---------------- GET DRIVERS (BUSY FILTERED) ----------------
                 const drivers = await db.users.findAll({
                     where: { role: '2', online: '1' },
                     attributes: ['id', 'latitude', 'longitude'],
-                    raw: true
+                    include: [{
+                        model: db.bookings,
+                        as: "driverbook", // HASMANY alias
+                        required: false,
+                        where: {
+                            status: { [Sequelize.Op.in]: ['0', '1', '2',] },
+                            request: '1'
+                        }
+                    }]
                 });
 
-                let driverAvailable = false;
+                // REMOVE BUSY DRIVERS
+                const freeDrivers = drivers.filter(d => !d.driverbook || d.driverbook.length === 0);
 
-                for (const driver of drivers) {
+                // CHECK FREE DRIVERS WITHIN 30 KM
+                let driverAvailable = false;
+                for (const driver of freeDrivers) {
                     if (!driver.latitude || !driver.longitude) continue;
 
                     const driverDistance = calculateDistance(
@@ -546,9 +562,7 @@ module.exports = {
                 // ---------------- ORDER ID ----------------
                 const orderId = Math.floor(100000 + Math.random() * 900000).toString();
 
-                const isOpenRideWithoutDrop =
-                    rideOpen == 1 && (!dropLatitude || !dropLongitude);
-
+                const isOpenRideWithoutDrop = rideOpen == 1 && (!dropLatitude || !dropLongitude);
                 const finalDropLocation = isOpenRideWithoutDrop ? "" : dropLocation;
                 const finalDropLatitude = isOpenRideWithoutDrop ? "" : dropLatitude?.toString();
                 const finalDropLongitude = isOpenRideWithoutDrop ? "" : dropLongitude?.toString();
@@ -571,8 +585,9 @@ module.exports = {
                     rideOpen
                 });
 
+                // ---------------- CREATE RIDE REQUEST FOR FREE DRIVERS ----------------
                 const rideRequestData = [];
-                for (const driver of drivers) {
+                for (const driver of freeDrivers) {
                     if (!driver.latitude || !driver.longitude) continue;
 
                     const driverDistance = calculateDistance(
@@ -595,10 +610,9 @@ module.exports = {
                 if (rideRequestData.length > 0) {
                     await db.rideRequest.bulkCreate(rideRequestData);
                 }
-                /* ================= END ================= */
 
-                // ---------------- SOCKET EMIT (UNCHANGED) ----------------
-                drivers.forEach(driver => {
+                // ---------------- SOCKET EMIT ----------------
+                freeDrivers.forEach(driver => {
                     if (global.onlineUsers && onlineUsers[driver.id]?.length) {
                         onlineUsers[driver.id].forEach(sockId => {
                             io.to(sockId).emit("newRideRequest", {
@@ -618,7 +632,7 @@ module.exports = {
                     }
                 });
 
-                // ---------------- RESPONSE (UNCHANGED) ----------------
+                // ---------------- RESPONSE ----------------
                 return helper.success(res, 'Ride booking request sent successfully', {
                     bookingId: newBooking.id,
                     orderId: newBooking.orderId,
@@ -635,6 +649,8 @@ module.exports = {
             }
         };
     },
+
+
 
 
     updateDropLocationAndPrice: (io) => {
@@ -1860,92 +1876,7 @@ module.exports = {
         }
     },
 
-    // cancelRide: (io) => {
-    //     return async (req, res) => {
-    //         try {
-    //             const loggedInUserId = req.user.id;
-    //             const loggedInUserRole = req.user.role; // "1" = user, "2" = driver
-    //             const { bookingId } = req.body;
 
-    //             if (!bookingId) {
-    //                 return helper.failure(res, "Booking ID is required.");
-    //             }
-
-    //             // Only pending / accepted rides can be cancelled
-    //             const cancellableStatus = ["0", "1"];
-
-    //             const whereCond = {
-    //                 id: bookingId,
-    //                 status: { [Op.in]: cancellableStatus }
-    //             };
-
-    //             // Role based ownership check
-    //             if (loggedInUserRole === "1") {
-    //                 whereCond.userId = loggedInUserId;
-    //             } else if (loggedInUserRole === "2") {
-    //                 whereCond.driverId = loggedInUserId;
-    //             } else {
-    //                 return helper.failure(res, "Only users or drivers can cancel a ride.");
-    //             }
-    //             const booking = await db.bookings.findOne({ where: whereCond });
-    //             if (!booking) {
-    //                 return helper.failure(res, "Ride cannot be cancelled or already processed.");
-    //             }
-
-    //             // 5 = cancelled by user
-    //             // 4 = cancelled by driver
-    //             const newStatus = loggedInUserRole === "1" ? "5" : "4";
-    //             await booking.update({ status: newStatus });
-
-    //             // USER cancelled → notify DRIVER
-    //             if (loggedInUserRole === "1") {
-    //                 const driverId = booking.driverId;
-
-    //                 if (driverId && global.onlineUsers?.[driverId]) {
-    //                     global.onlineUsers[driverId].forEach(socketId => {
-    //                         io.to(socketId).emit("rideStatusUpdate", {
-    //                             success: true,
-    //                             message: "Ride cancelled by user",
-    //                             bookingId: booking.id,
-    //                             status: "5",
-    //                             cancelledBy: "user"
-    //                         });
-    //                     });
-    //                 }
-    //             }
-    //             // DRIVER cancelled → notify USER
-    //             if (loggedInUserRole === "2") {
-    //                 const userId = booking.userId;
-
-    //                 if (userId && global.onlineUsers?.[userId]) {
-    //                     global.onlineUsers[userId].forEach(socketId => {
-    //                         io.to(socketId).emit("rideStatusUpdate", {
-    //                             success: true,
-    //                             message: "Ride cancelled by driver",
-    //                             bookingId: booking.id,
-    //                             status: "4",
-    //                             cancelledBy: "driver"
-    //                         });
-    //                     });
-    //                 }
-    //             }
-    //             const msg =
-    //                 loggedInUserRole === "1"
-    //                     ? "Ride cancelled by user successfully."
-    //                     : "Ride cancelled by driver successfully.";
-
-    //             return helper.success(res, msg, {
-    //                 bookingId: booking.id,
-    //                 cancelledBy: loggedInUserRole === "1" ? "user" : "driver",
-    //                 status: newStatus,
-    //                 message: "Ride has been cancelled."
-    //             });
-    //         } catch (error) {
-    //             console.error(error);
-    //             return helper.failure(res, "Something went wrong while cancelling the ride.");
-    //         }
-    //     };
-    // },
     cancelRide: (io) => {
         return async (req, res) => {
             try {
