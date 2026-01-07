@@ -249,7 +249,7 @@ const ContactList = () => {
                                 <td>{contact.name || ""}</td>
                                 <td>{contact.email || ""}</td>
                                 <td>
-                                  {contact.countryCode || ""}{" "}
+                                  ({contact.countryCode || ""}{" "})
                                   {contact.phoneNumber || ""}
                                 </td>
 
@@ -364,7 +364,7 @@ const ContactList = () => {
                   <tr>
                     <td>Contact Mobile Number :</td>
                     <td className="text-end text-black fw-medium">
-                      {selectedContact.countryCode || ""}{" "}
+                      ({selectedContact.countryCode || ""}{" "})
                       {selectedContact.phoneNumber || ""}
                     </td>
                   </tr>

@@ -354,10 +354,10 @@ const BookingCompleted = () => {
                     </td>
                   </tr>
                   <tr>
-                    <td>User Name :</td>
+                    <td>User PhoneNumber :</td>
                     <td className="text-end text-black fw-medium">
-                      {`${selectedMatch.userbook?.firstName || ""} ${
-                        selectedMatch.userbook?.lastName || ""
+                      ({`${selectedMatch.userbook?.countryCode || ""}) ${
+                        selectedMatch.userbook?.phoneNumber || ""
                       }`}
                     </td>
                   </tr>
