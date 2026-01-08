@@ -133,10 +133,28 @@ module.exports = {
     userStatus: async (req, res) => {
         try {
             const { id, status } = req.body;
-            const user = await db.users.findOne({ where: { id } });
+               const user = await db.users.findOne({ where: { id } });
+            if (!user) {
+                return helper.error(res, "User not found");
+            }
+            const ongoingRide = await db.bookings.findOne({
+                where: {
+                    driverId: id,
+                    status: { [Op.in]: ['0', '1', '2'] }
+                }
+            });
+            if (ongoingRide) {
+                return helper.failure(
+                    res,
+                    "You cannot suspend this driver while a ride is ongoing"
+                );
+            };
             await db.users.update({ status }, { where: { id } });
-            const updatedUser = await db.users.findOne({ where: { id } });
-            return helper.success(res, "User status updated successfully", { id: updatedUser.id, status: updatedUser.status });
+             return helper.success(res, " status updated successfully", {
+                id,
+                status
+            });
+          
         } catch (error) {
             return helper.error(res, error.message);
         }
@@ -261,34 +279,34 @@ module.exports = {
     //         return helper.error(res, error.message);
     //     }
     // },
-   block: async (req, res) => {
-    try {
-        const { id, block } = req.body;
-        const user = await db.users.findOne({ where: { id } });
-        if (!user) {
-            return helper.failure(res, "User not found");
-        }
-        const ongoingRide = await db.bookings.findOne({
-            where: {
-                driverId: id,
-                status: { [Op.in]: ['0', '1', '2'] }
+    block: async (req, res) => {
+        try {
+            const { id, block } = req.body;
+            const user = await db.users.findOne({ where: { id } });
+            if (!user) {
+                return helper.failure(res, "User not found");
             }
-        });
-        if (ongoingRide) {
-            return helper.failure(
-                res,
-                "You cannot block this driver while a ride is ongoing"
-            );
+            const ongoingRide = await db.bookings.findOne({
+                where: {
+                    driverId: id,
+                    status: { [Op.in]: ['0', '1', '2'] }
+                }
+            });
+            if (ongoingRide) {
+                return helper.failure(
+                    res,
+                    "You cannot block this driver while a ride is ongoing"
+                );
+            }
+            await db.users.update({ block }, { where: { id } });
+            return helper.success(res, "Block status updated successfully", {
+                id,
+                block
+            });
+        } catch (error) {
+            return helper.error(res, error.message);
         }
-        await db.users.update({ block }, { where: { id } });
-        return helper.success(res, "Block status updated successfully", {
-            id,
-            block
-        });
-    } catch (error) {
-        return helper.error(res, error.message);
-    }
-},
+    },
 
     suspend: async (req, res) => {
         try {
@@ -297,14 +315,24 @@ module.exports = {
             if (!user) {
                 return helper.error(res, "User not found");
             }
-            await db.users.update({ suspend }, { where: { id } });
-            const updatedUser = await db.users.findOne({ where: { id } });
-
-            return helper.success(res, "Suspend status updated successfully", {
-                id: updatedUser.id,
-                suspend: updatedUser.suspend,
-                success: true
+            const ongoingRide = await db.bookings.findOne({
+                where: {
+                    driverId: id,
+                    status: { [Op.in]: ['0', '1', '2'] }
+                }
             });
+            if (ongoingRide) {
+                return helper.failure(
+                    res,
+                    "You cannot suspend this driver while a ride is ongoing"
+                );
+            }
+            await db.users.update({ suspend }, { where: { id } });
+            return helper.success(res, "Suspend status updated successfully", {
+                id,
+                suspend
+            });
+
         } catch (error) {
             return helper.error(res, error.message);
         }

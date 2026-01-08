@@ -23,15 +23,23 @@ export const deleteUser = createAsyncThunk("users/deleteUser", async (id) => {
 
 export const toggleUserStatus = createAsyncThunk(
   "users/toggleUserStatus",
-  async ({ id, currentStatus }) => {
-    const newStatus = currentStatus === "0" ? "1" : "0";
-    const response = await axiosInstance.post("/userStatus", {
-      id,
-      status: newStatus,
-    });
-    return response.data.success
-      ? { id, newStatus }
-      : { id, newStatus: currentStatus };
+  async ({ id, currentStatus }, { rejectWithValue }) => {
+    try {
+      const newStatus = currentStatus === "0" ? "1" : "0";
+      const response = await axiosInstance.post("/userStatus", {
+        id,
+        status: newStatus,
+      });
+      if (!response.data.success) {
+        return rejectWithValue(response.data.message);
+      }
+
+      return { id, newStatus };
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message || "Something went wrong"
+      );
+    }
   }
 );
 // export const toggleUserBlock = createAsyncThunk(
@@ -75,17 +83,25 @@ export const toggleUserBlock = createAsyncThunk(
 
 export const toggleUserSuspend = createAsyncThunk(
   "users/toggleUserSuspend",
-  async ({ id, currentStatus }) => {
-    const newStatus = currentStatus === "0" ? "1" : "0";
-    const response = await axiosInstance.post("/suspendstatus", {
-      id,
-      suspend: newStatus,
-    });
-    return response.data.success
-      ? { id, newStatus }
-      : { id, newStatus: currentStatus };
+  async ({ id, currentStatus }, { rejectWithValue }) => {
+    try {
+      const newStatus = currentStatus === "0" ? "1" : "0";
+      const response = await axiosInstance.post("/suspendstatus", {
+        id,
+        suspend: newStatus,
+      });
+      if (!response.data.success) {
+        return rejectWithValue(response.data.message);
+      }
+      return { id, newStatus };
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message || "Something went wrong"
+      );
+    }
   }
 );
+
 export const approveDriver = createAsyncThunk(
   "users/approveDriver",
   async ({ id, approve }) => {

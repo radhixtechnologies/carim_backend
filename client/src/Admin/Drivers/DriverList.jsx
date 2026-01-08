@@ -109,7 +109,13 @@ const DriverList = () => {
       await dispatch(toggleUserStatus({ id, currentStatus })).unwrap();
       toast.success("Status updated successfully");
     } catch (error) {
-      toast.error("Failed to update status");
+      const message =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        "You cannot inactive this driver while a ride is ongoing";
+
+      toast.error(message);
     }
   };
 
@@ -137,13 +143,18 @@ const DriverList = () => {
   };
 
 
-
   const toggleSuspend = async (id, currentStatus) => {
     try {
       await dispatch(toggleUserSuspend({ id, currentStatus })).unwrap();
-      toast.success("Suspend Status updated successfully");
+      toast.success("Suspend status updated successfully");
     } catch (error) {
-      toast.error("Failed to update suspend status");
+      const message =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        "You cannot suspend this driver while a ride is ongoing";
+
+      toast.error(message);
     }
   };
 
