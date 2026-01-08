@@ -1219,7 +1219,7 @@ module.exports = {
                                     bookingId: booking.id,
                                     status: '0',
                                     request: '0',
-                                    message: 'New ride available'
+                                    message: 'No ride available'
                                 });
                             });
                         }

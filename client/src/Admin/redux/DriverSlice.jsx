@@ -34,19 +34,44 @@ export const toggleUserStatus = createAsyncThunk(
       : { id, newStatus: currentStatus };
   }
 );
+// export const toggleUserBlock = createAsyncThunk(
+//   "users/toggleUserBlock",
+//   async ({ id, currentStatus }) => {
+//     const newStatus = currentStatus === "0" ? "1" : "0";
+//     const response = await axiosInstance.post("/blockstatus", {
+//       id,
+//       block: newStatus,
+//     });
+//     return response.data.success
+//       ? { id, newStatus }
+//       : { id, newStatus: currentStatus };
+//   }
+// );
+
 export const toggleUserBlock = createAsyncThunk(
   "users/toggleUserBlock",
-  async ({ id, currentStatus }) => {
-    const newStatus = currentStatus === "0" ? "1" : "0";
-    const response = await axiosInstance.post("/blockstatus", {
-      id,
-      block: newStatus,
-    });
-    return response.data.success
-      ? { id, newStatus }
-      : { id, newStatus: currentStatus };
+  async ({ id, currentStatus }, { rejectWithValue }) => {
+    try {
+      const newStatus = currentStatus === "0" ? "1" : "0";
+      const response = await axiosInstance.post("/blockstatus", {
+        id,
+        block: newStatus,
+      });
+
+      if (!response.data.success) {
+        return rejectWithValue(response.data.message);
+      }
+
+      return { id, newStatus };
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data?.message || "Something went wrong"
+      );
+    }
   }
 );
+
+
 
 export const toggleUserSuspend = createAsyncThunk(
   "users/toggleUserSuspend",

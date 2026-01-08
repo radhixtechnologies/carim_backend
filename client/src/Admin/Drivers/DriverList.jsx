@@ -113,14 +113,30 @@ const DriverList = () => {
     }
   };
 
+  // const toggleBlock = async (id, currentStatus) => {
+  //   try {
+  //     await dispatch(toggleUserBlock({ id, currentStatus })).unwrap();
+  //     toast.success("Block Status updated successfully");
+  //   } catch (error) {
+  //     toast.error("Failed to update block status");
+  //   }
+  // };
   const toggleBlock = async (id, currentStatus) => {
     try {
       await dispatch(toggleUserBlock({ id, currentStatus })).unwrap();
-      toast.success("Block Status updated successfully");
+      toast.success("Block status updated successfully");
     } catch (error) {
-      toast.error("Failed to update block status");
+      const message =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        "You cannot block this driver while a ride is ongoing";
+
+      toast.error(message);
     }
   };
+
+
 
   const toggleSuspend = async (id, currentStatus) => {
     try {
@@ -738,8 +754,8 @@ const DriverList = () => {
                     <td className="text-end text-black fw-medium">
                       <span
                         className={`badge ${selectedUser.block === "1"
-                            ? "bg-danger"
-                            : "bg-success"
+                          ? "bg-danger"
+                          : "bg-success"
                           }`}
                       >
                         {selectedUser.block === "1" ? "Blocked" : "Not Blocked"}
@@ -751,8 +767,8 @@ const DriverList = () => {
                     <td className="text-end text-black fw-medium">
                       <span
                         className={`badge ${selectedUser.suspend === "1"
-                            ? "bg-danger"
-                            : "bg-success"
+                          ? "bg-danger"
+                          : "bg-success"
                           }`}
                       >
                         {selectedUser.suspend === "1"
@@ -778,8 +794,8 @@ const DriverList = () => {
                     <td className="text-end text-black fw-medium">
                       <span
                         className={`badge ${selectedUser.status === "1"
-                            ? "bg-success"
-                            : "bg-danger"
+                          ? "bg-success"
+                          : "bg-danger"
                           }`}
                       >
                         {selectedUser.status === "1" ? "Active" : "Inactive"}

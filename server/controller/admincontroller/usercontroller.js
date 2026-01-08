@@ -243,24 +243,53 @@ module.exports = {
             return helper.error(res, error.message);
         }
     },
-    block: async (req, res) => {
-        try {
-            const { id, block } = req.body;
-            const user = await db.users.findOne({ where: { id } });
-            if (!user) {
-                return helper.error(res, "User not found");
-            }
-            await db.users.update({ block }, { where: { id } });
-            const updatedUser = await db.users.findOne({ where: { id } });
-            return helper.success(res, "Block status updated successfully", {
-                id: updatedUser.id,
-                block: updatedUser.block,
-                success: true
-            });
-        } catch (error) {
-            return helper.error(res, error.message);
+    // block: async (req, res) => {
+    //     try {
+    //         const { id, block } = req.body;
+    //         const user = await db.users.findOne({ where: { id } });
+    //         if (!user) {
+    //             return helper.error(res, "User not found");
+    //         }
+    //         await db.users.update({ block }, { where: { id } });
+    //         const updatedUser = await db.users.findOne({ where: { id } });
+    //         return helper.success(res, "Block status updated successfully", {
+    //             id: updatedUser.id,
+    //             block: updatedUser.block,
+    //             success: true
+    //         });
+    //     } catch (error) {
+    //         return helper.error(res, error.message);
+    //     }
+    // },
+   block: async (req, res) => {
+    try {
+        const { id, block } = req.body;
+        const user = await db.users.findOne({ where: { id } });
+        if (!user) {
+            return helper.failure(res, "User not found");
         }
-    },
+        const ongoingRide = await db.bookings.findOne({
+            where: {
+                driverId: id,
+                status: { [Op.in]: ['0', '1', '2'] }
+            }
+        });
+        if (ongoingRide) {
+            return helper.failure(
+                res,
+                "You cannot block this driver while a ride is ongoing"
+            );
+        }
+        await db.users.update({ block }, { where: { id } });
+        return helper.success(res, "Block status updated successfully", {
+            id,
+            block
+        });
+    } catch (error) {
+        return helper.error(res, error.message);
+    }
+},
+
     suspend: async (req, res) => {
         try {
             const { id, suspend } = req.body;
