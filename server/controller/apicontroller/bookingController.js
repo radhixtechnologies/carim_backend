@@ -2060,7 +2060,7 @@ module.exports = {
                     return await db.bookings.findOne({
                         where: {
                             driverId: id,
-                            status: { [Op.in]: ["0", "1", "2", "3"] } // consistent with driverAccptReject
+                            status: { [Op.in]: ["0", "1", "2",] }
                         }
                     });
                 }

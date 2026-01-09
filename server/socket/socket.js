@@ -610,6 +610,7 @@ module.exports = function (io) {
           if (currentStatus !== "0") {
             return socket.emit("rideStatusUpdate", {
               success: false,
+              status: currentStatus,
               message: "Driver can mark arrived only when status is 0."
             });
           }
@@ -630,6 +631,7 @@ module.exports = function (io) {
           if (currentStatus === '2') {
             return socket.emit("rideStatusUpdate", {
               success: false,
+              status: currentStatus,
               message: "Ride already started."
             });
           }
@@ -677,6 +679,7 @@ module.exports = function (io) {
             const action = status === '3' ? 'finish' : 'cancel';
             return socket.emit("rideStatusUpdate", {
               success: false,
+              status: currentStatus,
               message: `Cannot ${action} ride. Ride must be started first (status 2).`
             });
           }
@@ -697,6 +700,7 @@ module.exports = function (io) {
           if (currentStatus >= "2") {
             return socket.emit("rideStatusUpdate", {
               success: false,
+              status: currentStatus,
               message: "Cannot change status to 0 after ride has started."
             });
           }
