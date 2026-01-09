@@ -37,20 +37,41 @@ const BannerEdit = () => {
     fetchData();
   }, [id]);
 
+  // const validateTitle = (title) => {
+  //   const trimmedTitle = title.trim();
+  //   const errors = [];
+
+  //   if (!trimmedTitle) {
+  //     errors.push("Banner title is required.");
+  //   } else {
+  //     if (trimmedTitle.length < 3 || trimmedTitle.length > 50)
+  //       errors.push("Title must be between 3 and 50 characters.");
+  //     if (!/^[A-Za-z0-9@#&!()_\-., ]+$/.test(trimmedTitle))
+  //       errors.push(
+  //         "Title contains invalid characters. Only letters, numbers, spaces, and @#&!()_-., are allowed."
+  //       );
+  //   }
+
+  //   setTitleError(errors.join(" "));
+  //   return errors.length === 0;
+  // };
   const validateTitle = (title) => {
     const trimmedTitle = title.trim();
+
+    // ------ EMPTY IS SAFE ------
+    if (!trimmedTitle) {
+      setTitleError("");
+      return true; // empty allowed
+    }
+
+    // ------ VALIDATE ONLY IF NOT EMPTY ------
     const errors = [];
 
-    if (!trimmedTitle) {
-      errors.push("Banner title is required.");
-    } else {
-      if (trimmedTitle.length < 3 || trimmedTitle.length > 50)
-        errors.push("Title must be between 3 and 50 characters.");
-      if (!/^[A-Za-z0-9@#&!()_\-., ]+$/.test(trimmedTitle))
-        errors.push(
-          "Title contains invalid characters. Only letters, numbers, spaces, and @#&!()_-., are allowed."
-        );
-    }
+    if (trimmedTitle.length < 3 || trimmedTitle.length > 50)
+      errors.push("Title must be between 3 and 50 characters.");
+
+    if (!/^[A-Za-z0-9@#&!()_\-., ]+$/.test(trimmedTitle))
+      errors.push("Title contains invalid characters.");
 
     setTitleError(errors.join(" "));
     return errors.length === 0;
@@ -69,7 +90,7 @@ const BannerEdit = () => {
       if (allowedTypes.includes(file.type)) {
         setNewImage(file);
         setImagePreview(URL.createObjectURL(file));
-        setImageError(""); 
+        setImageError("");
       } else {
         setNewImage(null);
         setImageError("Only JPG and PNG images are allowed.");
