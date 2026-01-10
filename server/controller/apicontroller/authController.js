@@ -55,13 +55,13 @@ module.exports = {
                 }
                 if (existingUser.role == '2' && existingUser.otpVerify == "1") {
 
-                    if (existingUser.isProfileComplete != "1") {
-                        return helper.failure(res, "Please complete your profile first.");
-                    }
+                    // if (existingUser.isProfileComplete != "1") {
+                    //     return helper.failure(res, "Please complete your profile first.");
+                    // }
 
-                    if (existingUser.vehicle != "1") {
-                        return helper.failure(res, "Please add your vehicle details first.");
-                    }
+                    // if (existingUser.vehicle != "1") {
+                    //     return helper.failure(res, "Please add your vehicle details first.");
+                    // }
 
                     if (existingUser.approve != "1") {
                         return helper.failure(res, "Your driver account is not approved yet.");

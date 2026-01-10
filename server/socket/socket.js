@@ -1366,61 +1366,7 @@ module.exports = function (io) {
       }
     });
 
-    // socket.on('user_blocked_status', async (data) => {
-    //   try {
-    //     const { constantId } = data;
-
-    //     if (!constantId) {
-    //       return socket.emit("user_blocked_status", {
-    //         success: false,
-    //         message: "Constant ID is required"
-    //       });
-    //     }
-
-    //     const chatConst = await db.chat_constant.findOne({
-    //       where: { id: constantId },
-    //       attributes: ["id", "sender_id", "reciever_id"]
-    //     });
-
-    //     if (!chatConst) {
-    //       return socket.emit("user_blocked_status", {
-    //         success: false,
-    //         message: "Chat constant not found"
-    //       });
-    //     }
-
-    //     const userIds = [chatConst.sender_id, chatConst.reciever_id];
-
-    //     const users = await db.users.findAll({
-    //       where: { id: userIds },
-    //       attributes: ["id", "block"]
-    //     });
-
-    //     let statusMap = {};
-    //     users.forEach(u => {
-    //       statusMap[u.id] = u.block === "1" ? true : false;
-    //     });
-
-    //     socket.emit("user_blocked_status", {
-    //       success: true,
-    //       message: "Users block status fetched successfully",
-    //       data: {
-    //         constantId: chatConst.id,
-    //         senderId: chatConst.sender_id,
-    //         receiverId: chatConst.reciever_id,
-    //         senderBlocked: statusMap[chatConst.sender_id] || false,
-    //         receiverBlocked: statusMap[chatConst.reciever_id] || false
-    //       }
-    //     });
-
-    //   } catch (error) {
-    //     console.error("Error checking block status:", error);
-    //     socket.emit("user_blocked_status", {
-    //       success: false,
-    //       message: "Something went wrong"
-    //     });
-    //   }
-    // });
+  
     socket.on('user_blocked_status', async (data) => {
       try {
         const { bookingId } = data;
@@ -1432,13 +1378,11 @@ module.exports = function (io) {
           });
         }
 
-        // 1️⃣ Find chat constant using bookingId
         let chatConst = await db.chat_constant.findOne({
           where: { bookingId },
           attributes: ["id", "sender_id", "reciever_id", "bookingId"]
         });
 
-        // 2️⃣ If chat not created yet, try to get booking relation
         if (!chatConst) {
           const booking = await db.bookings.findOne({
             where: { id: bookingId },
@@ -1452,7 +1396,6 @@ module.exports = function (io) {
             });
           }
 
-          // Create temporary chat mapping
           chatConst = {
             id: null,
             sender_id: booking.userId,
@@ -1461,7 +1404,6 @@ module.exports = function (io) {
           };
         }
 
-        // 3️⃣ Get block status for both users
         const users = await db.users.findAll({
           where: { id: [chatConst.sender_id, chatConst.reciever_id] },
           attributes: ["id", "block"]
@@ -1472,12 +1414,11 @@ module.exports = function (io) {
           statusMap[u.id] = u.block === "1";
         });
 
-        // 4️⃣ Response
         socket.emit("user_blocked_status", {
           success: true,
           message: "Block status fetched successfully",
           data: {
-            constantId: chatConst.id,   // null if chat not created yet
+            constantId: chatConst.id,   
             bookingId: chatConst.bookingId,
             senderId: chatConst.sender_id,
             receiverId: chatConst.reciever_id,
