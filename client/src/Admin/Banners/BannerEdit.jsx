@@ -165,7 +165,7 @@ const BannerEdit = () => {
                         </div>
                       </div>
                       <form onSubmit={handleSubmit}>
-                        <div className="mb-3">
+                        {/* <div className="mb-3">
                           <label className="mb-1 fw-medium">Title</label>
                           <input
                             type="text"
@@ -178,7 +178,7 @@ const BannerEdit = () => {
                           {titleError && (
                             <div className="text-danger">{titleError}</div>
                           )}
-                        </div>
+                        </div> */}
 
                         <div className="d-flex justify-content-end">
                           <Link

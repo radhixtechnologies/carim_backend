@@ -186,14 +186,14 @@ const BannerList = () => {
                       ))}
                     </ul>
                   </div>
-                  <div className="d-flex justify-content-end ms-auto">
+                  {/* <div className="d-flex justify-content-end ms-auto">
                     <Link
                       to="/addbanner"
                       className="btn btn-soft-primary px-2 btn-sm me-1"
                     >
                       <i className="ri-add-fill font-size-16"></i>
                     </Link>
-                  </div>
+                  </div> */}
                 </div>
 
                 <div className="table-responsive table-card border-top">
@@ -201,7 +201,7 @@ const BannerList = () => {
                     <thead>
                       <tr>
                         <th>Sr no.</th>
-                        <th>Title</th>
+                        {/* <th>Title</th> */}
                         <th>Image</th>
                         <th className="text-end">Action</th>
                       </tr>
@@ -211,7 +211,7 @@ const BannerList = () => {
                         banners.map((banner, index) => (
                           <tr key={banner.id}>
                             <td>{(currentPage - 1) * limit + index + 1}</td>
-                            <td>{truncateText(banner.title)}</td>
+                            {/* <td>{truncateText(banner.title)}</td> */}
                             <td>
                               {banner.image ? (
                                 <img
