@@ -63,8 +63,10 @@ module.exports = {
                     //     return helper.failure(res, "Please add your vehicle details first.");
                     // }
 
-                    if (existingUser.approve != "1") {
-                        return helper.failure(res, "Your driver account is not approved yet.");
+                    if (existingUser.isProfileComplete == "1" && existingUser.vehicle == "1") {
+                        if (existingUser.approve != "1") {
+                            return helper.failure(res, "Your driver account is not approved yet.");
+                        }
                     }
                 }
 
