@@ -467,6 +467,269 @@ module.exports = function (io) {
     });
 
 
+    // socket.on("rideStatusUpdate", async (data) => {
+    //   try {
+    //     const { bookingId, status, otp, driverId } = data;
+
+    //     if (!bookingId || !status || !driverId) {
+    //       return socket.emit("rideStatusUpdate", {
+    //         success: false,
+    //         message: "Booking ID, status, and driver ID are required."
+    //       });
+    //     }
+
+    //     if (!['0', '1', '2', '3', '4'].includes(status)) {
+    //       return socket.emit("rideStatusUpdate", {
+    //         success: false,
+    //         message: "Invalid status value."
+    //       });
+    //     }
+
+
+
+    //     // --- FETCH BOOKING WITH USER ---
+    //     const booking = await db.bookings.findOne({
+    //       where: { id: bookingId, driverId },
+    //       include: [{
+    //         model: db.users,
+    //         as: 'userbook',
+    //         attributes: ['id', 'rideOtp', 'socketId', 'status', 'block', 'suspend']
+    //       }]
+    //     });
+
+    //     if (!booking) {
+    //       return socket.emit("rideStatusUpdate", {
+    //         success: false,
+    //         message: "Booking not found",
+    //         code: 404
+    //       });
+    //     }
+
+    //     const currentStatus = booking.status;
+
+    //     // --- DRIVER STATUS CHECK ---
+    //     const driverStatus = await db.users.findOne({
+    //       where: { id: driverId },
+    //       attributes: ['status', 'block', 'suspend'],
+    //       raw: true
+    //     });
+
+    //     if (!driverStatus) {
+    //       return socket.emit("rideStatusUpdate", {
+    //         success: false,
+    //         message: "Driver not found."
+    //       });
+    //     }
+
+    //     if (driverStatus.status === "0") {
+    //       return socket.emit("rideStatusUpdate", {
+    //         success: false,
+    //         message: "Your account has been deactivated by admin."
+    //       });
+    //     }
+
+    //     if (driverStatus.block === "1") {
+    //       return socket.emit("rideStatusUpdate", {
+    //         success: false,
+    //         message: "Your account has been blocked by admin."
+    //       });
+    //     }
+
+    //     if (driverStatus.suspend === "1") {
+    //       return socket.emit("rideStatusUpdate", {
+    //         success: false,
+    //         message: "Your account has been suspended by admin."
+    //       });
+    //     }
+
+    //     // --- USER STATUS CHECK ---
+    //     const user = booking.userbook;
+    //     if (!user) {
+    //       return socket.emit("rideStatusUpdate", {
+    //         success: false,
+    //         message: "User not found for this booking."
+    //       });
+    //     }
+
+    //     if (user.status === "0") {
+    //       return socket.emit("rideStatusUpdate", {
+    //         success: false,
+    //         message: "User account has been deactivated by admin."
+    //       });
+    //     }
+
+    //     if (user.block === "1") {
+    //       return socket.emit("rideStatusUpdate", {
+    //         success: false,
+    //         message: "User account has been blocked by admin."
+    //       });
+    //     }
+
+    //     if (user.suspend === "1") {
+    //       return socket.emit("rideStatusUpdate", {
+    //         success: false,
+    //         message: "User account has been suspended by admin."
+    //       });
+    //     }
+
+
+    //     // Function to emit to both driver and user
+    //     const emitToBoth = (message, statusData, otpVerified = false) => {
+
+    //       //  Emit to user (multiple sockets)
+    //       const userId = booking.userbook?.id;
+    //       if (userId && onlineUsers[userId]) {
+    //         onlineUsers[userId].forEach(sid => {
+    //           io.to(sid).emit("rideStatusUpdate", {
+    //             success: true,
+    //             message,
+    //             bookingId: booking.id,
+    //             status: statusData,
+    //             otpVerified
+    //           });
+    //         });
+    //       }
+
+    //       //  Emit to driver (current socket)
+    //       if (driverId && onlineUsers[driverId]) {
+    //         onlineUsers[driverId].forEach(sid => {
+    //           io.to(sid).emit("rideStatusUpdate", {
+    //             success: true,
+    //             message,
+    //             bookingId: booking.id,
+    //             status: statusData,
+    //             otpVerified
+    //           });
+    //         });
+    //       }
+    //     };
+
+
+    //     //  STATUS 1 → DRIVER ARRIVED AT PICKUP
+    //     if (status === "1") {
+    //       if (currentStatus !== "0") {
+    //         return socket.emit("rideStatusUpdate", {
+    //           success: false,
+    //           status: currentStatus,
+    //           message: "Driver can mark arrived only when status is 0."
+    //         });
+    //       }
+
+    //       await booking.update({ status: "1" });
+
+    //       emitToBoth("Driver arrived", "1");
+
+    //       return socket.emit("rideStatusUpdate", {
+    //         success: true,
+    //         message: "Driver arrived successfully",
+    //         data: { bookingId: booking.id, status: "1" }
+    //       });
+    //     }
+
+    //     // STATUS 2 → START RIDE (OTP VERIFY)
+    //     if (status === '2') {
+    //       if (currentStatus === '2') {
+    //         return socket.emit("rideStatusUpdate", {
+    //           success: false,
+    //           status: currentStatus,
+    //           message: "Ride already started."
+    //         });
+    //       }
+
+    //       if (!otp) {
+    //         return socket.emit("rideStatusUpdate", {
+    //           success: false,
+    //           message: "OTP is required to start the ride."
+    //         });
+    //       }
+
+    //       if (!booking.userbook) {
+    //         return socket.emit("rideStatusUpdate", {
+    //           success: false,
+    //           message: "User not found for this booking."
+    //         });
+    //       }
+
+    //       if (booking.userbook.rideOtp !== otp) {
+    //         return socket.emit("rideStatusUpdate", {
+    //           success: false,
+    //           message: "OTP does not match. Please enter correct OTP."
+    //         });
+    //       }
+
+    //       await db.bookings.update({
+    //         status: status,
+    //         otpbooking: otp
+    //       }, {
+    //         where: { id: bookingId }
+    //       });
+
+    //       emitToBoth("Ride has started", status, true);
+
+    //       return socket.emit("rideStatusUpdate", {
+    //         success: true,
+    //         message: "Ride started successfully",
+    //         data: { bookingId: booking.id, status: status, otpVerified: true }
+    //       });
+    //     }
+
+    //     // STATUS 3 → FINISHED, STATUS 4 → CANCELLED
+    //     if (status === '3' || status === '4') {
+    //       if (currentStatus !== '2') {
+    //         const action = status === '3' ? 'finish' : 'cancel';
+    //         return socket.emit("rideStatusUpdate", {
+    //           success: false,
+    //           status: currentStatus,
+    //           message: `Cannot ${action} ride. Ride must be started first (status 2).`
+    //         });
+    //       }
+
+    //       await booking.update({ status: status });
+
+    //       emitToBoth(`Ride ${status === '3' ? 'finished' : 'cancelled'} successfully`, status);
+
+    //       return socket.emit("rideStatusUpdate", {
+    //         success: true,
+    //         message: `Ride ${status === '3' ? 'finished' : 'cancelled'} successfully`,
+    //         data: { bookingId: booking.id, status: status }
+    //       });
+    //     }
+
+    //     // STATUS 0 → DRIVER ON THE WAY
+    //     if (status === "0") {
+    //       if (currentStatus >= "2") {
+    //         return socket.emit("rideStatusUpdate", {
+    //           success: false,
+    //           status: currentStatus,
+    //           message: "Cannot change status to 0 after ride has started."
+    //         });
+    //       }
+
+    //       await booking.update({ status: "0" });
+
+    //       emitToBoth("Driver on the way", "0");
+
+    //       return socket.emit("rideStatusUpdate", {
+    //         success: true,
+    //         message: "Driver on the way",
+    //         data: { bookingId: booking.id, status: "0" }
+    //       });
+    //     }
+
+    //     return socket.emit("rideStatusUpdate", {
+    //       success: false,
+    //       message: "Invalid status operation."
+    //     });
+
+    //   } catch (error) {
+    //     console.error("Error updating ride status:", error);
+    //     return socket.emit("rideStatusUpdate", {
+    //       success: false,
+    //       message: "Something went wrong while updating ride status.",
+    //       error: error.message
+    //     });
+    //   }
+    // });
     socket.on("rideStatusUpdate", async (data) => {
       try {
         const { bookingId, status, otp, driverId } = data;
@@ -485,15 +748,12 @@ module.exports = function (io) {
           });
         }
 
-
-
-        // --- FETCH BOOKING WITH USER ---
         const booking = await db.bookings.findOne({
           where: { id: bookingId, driverId },
           include: [{
             model: db.users,
             as: 'userbook',
-            attributes: ['id', 'rideOtp', 'socketId', 'status', 'block', 'suspend']
+            attributes: ['id', 'rideOtp', 'socketId', 'device_token', 'status', 'block', 'suspend']
           }]
         });
 
@@ -507,10 +767,10 @@ module.exports = function (io) {
 
         const currentStatus = booking.status;
 
-        // --- DRIVER STATUS CHECK ---
+        // DRIVER CHECK
         const driverStatus = await db.users.findOne({
           where: { id: driverId },
-          attributes: ['status', 'block', 'suspend'],
+          attributes: ['device_token', 'status', 'block', 'suspend'],
           raw: true
         });
 
@@ -521,62 +781,19 @@ module.exports = function (io) {
           });
         }
 
-        if (driverStatus.status === "0") {
-          return socket.emit("rideStatusUpdate", {
-            success: false,
-            message: "Your account has been deactivated by admin."
-          });
-        }
+        if (driverStatus.status === "0") return socket.emit("rideStatusUpdate", { success: false, message: "Driver deactivated" });
+        if (driverStatus.block === "1") return socket.emit("rideStatusUpdate", { success: false, message: "Driver blocked" });
+        if (driverStatus.suspend === "1") return socket.emit("rideStatusUpdate", { success: false, message: "Driver suspended" });
 
-        if (driverStatus.block === "1") {
-          return socket.emit("rideStatusUpdate", {
-            success: false,
-            message: "Your account has been blocked by admin."
-          });
-        }
-
-        if (driverStatus.suspend === "1") {
-          return socket.emit("rideStatusUpdate", {
-            success: false,
-            message: "Your account has been suspended by admin."
-          });
-        }
-
-        // --- USER STATUS CHECK ---
         const user = booking.userbook;
-        if (!user) {
-          return socket.emit("rideStatusUpdate", {
-            success: false,
-            message: "User not found for this booking."
-          });
-        }
 
-        if (user.status === "0") {
-          return socket.emit("rideStatusUpdate", {
-            success: false,
-            message: "User account has been deactivated by admin."
-          });
-        }
+        if (!user) return socket.emit("rideStatusUpdate", { success: false, message: "User not found" });
 
-        if (user.block === "1") {
-          return socket.emit("rideStatusUpdate", {
-            success: false,
-            message: "User account has been blocked by admin."
-          });
-        }
+        if (user.status === "0") return socket.emit("rideStatusUpdate", { success: false, message: "User deactivated" });
+        if (user.block === "1") return socket.emit("rideStatusUpdate", { success: false, message: "User blocked" });
+        if (user.suspend === "1") return socket.emit("rideStatusUpdate", { success: false, message: "User suspended" });
 
-        if (user.suspend === "1") {
-          return socket.emit("rideStatusUpdate", {
-            success: false,
-            message: "User account has been suspended by admin."
-          });
-        }
-
-
-        // Function to emit to both driver and user
         const emitToBoth = (message, statusData, otpVerified = false) => {
-
-          //  Emit to user (multiple sockets)
           const userId = booking.userbook?.id;
           if (userId && onlineUsers[userId]) {
             onlineUsers[userId].forEach(sid => {
@@ -590,7 +807,6 @@ module.exports = function (io) {
             });
           }
 
-          //  Emit to driver (current socket)
           if (driverId && onlineUsers[driverId]) {
             onlineUsers[driverId].forEach(sid => {
               io.to(sid).emit("rideStatusUpdate", {
@@ -605,7 +821,9 @@ module.exports = function (io) {
         };
 
 
-        //  STATUS 1 → DRIVER ARRIVED AT PICKUP
+        // -------------------------
+        // STATUS 1 → DRIVER ARRIVED
+        // -------------------------
         if (status === "1") {
           if (currentStatus !== "0") {
             return socket.emit("rideStatusUpdate", {
@@ -619,6 +837,17 @@ module.exports = function (io) {
 
           emitToBoth("Driver arrived", "1");
 
+          // 🔥 PUSH NOTIFICATION TO USER
+          if (user.device_token) {
+            sendNotification_android(user.device_token, {
+              message: "Your driver has arrived.",
+              type: "ride_arrived",
+              senderId: driverId,
+              sender_name: "Driver",
+              sender_image: ""
+            });
+          }
+
           return socket.emit("rideStatusUpdate", {
             success: true,
             message: "Driver arrived successfully",
@@ -626,7 +855,10 @@ module.exports = function (io) {
           });
         }
 
-        // STATUS 2 → START RIDE (OTP VERIFY)
+
+        // ---------------------
+        // STATUS 2 → START RIDE
+        // ---------------------
         if (status === '2') {
           if (currentStatus === '2') {
             return socket.emit("rideStatusUpdate", {
@@ -643,28 +875,30 @@ module.exports = function (io) {
             });
           }
 
-          if (!booking.userbook) {
-            return socket.emit("rideStatusUpdate", {
-              success: false,
-              message: "User not found for this booking."
-            });
-          }
-
           if (booking.userbook.rideOtp !== otp) {
             return socket.emit("rideStatusUpdate", {
               success: false,
-              message: "OTP does not match. Please enter correct OTP."
+              message: "OTP does not match."
             });
           }
 
           await db.bookings.update({
             status: status,
             otpbooking: otp
-          }, {
-            where: { id: bookingId }
-          });
+          }, { where: { id: bookingId } });
 
           emitToBoth("Ride has started", status, true);
+
+          // 🔥 PUSH TO USER
+          if (user.device_token) {
+            sendNotification_android(user.device_token, {
+              message: "Your ride has started.",
+              type: "ride_started",
+              senderId: driverId,
+              sender_name: "Driver",
+              sender_image: ""
+            });
+          }
 
           return socket.emit("rideStatusUpdate", {
             success: true,
@@ -673,35 +907,86 @@ module.exports = function (io) {
           });
         }
 
-        // STATUS 3 → FINISHED, STATUS 4 → CANCELLED
-        if (status === '3' || status === '4') {
+
+        // ---------------------
+        // STATUS 3 → FINISHED
+        // ---------------------
+        if (status === '3') {
           if (currentStatus !== '2') {
-            const action = status === '3' ? 'finish' : 'cancel';
             return socket.emit("rideStatusUpdate", {
               success: false,
               status: currentStatus,
-              message: `Cannot ${action} ride. Ride must be started first (status 2).`
+              message: "Cannot finish ride. Ride must be started first."
             });
           }
 
           await booking.update({ status: status });
 
-          emitToBoth(`Ride ${status === '3' ? 'finished' : 'cancelled'} successfully`, status);
+          emitToBoth("Ride finished successfully", status);
+
+          // 🔥 PUSH
+          if (user.device_token) {
+            sendNotification_android(user.device_token, {
+              message: "Your ride has been completed.",
+              type: "ride_completed",
+              senderId: driverId,
+              sender_name: "Driver",
+              sender_image: ""
+            });
+          }
 
           return socket.emit("rideStatusUpdate", {
             success: true,
-            message: `Ride ${status === '3' ? 'finished' : 'cancelled'} successfully`,
+            message: "Ride finished successfully",
             data: { bookingId: booking.id, status: status }
           });
         }
 
-        // STATUS 0 → DRIVER ON THE WAY
+
+        // ----------------------
+        // STATUS 4 → CANCELLED
+        // ----------------------
+        if (status === '4') {
+          if (currentStatus !== '2') {
+            return socket.emit("rideStatusUpdate", {
+              success: false,
+              status: currentStatus,
+              message: "Cannot cancel. Ride must be started first."
+            });
+          }
+
+          await booking.update({ status: status });
+
+          emitToBoth("Ride cancelled successfully", status);
+
+          // 🔥 PUSH
+          if (user.device_token) {
+            sendNotification_android(user.device_token, {
+              message: "Your ride has been cancelled.",
+              type: "ride_cancelled",
+              senderId: driverId,
+              sender_name: "Driver",
+              sender_image: ""
+            });
+          }
+
+          return socket.emit("rideStatusUpdate", {
+            success: true,
+            message: "Ride cancelled successfully",
+            data: { bookingId: booking.id, status: status }
+          });
+        }
+
+
+        // ----------------------
+        // STATUS 0 → ON THE WAY
+        // ----------------------
         if (status === "0") {
           if (currentStatus >= "2") {
             return socket.emit("rideStatusUpdate", {
               success: false,
               status: currentStatus,
-              message: "Cannot change status to 0 after ride has started."
+              message: "Cannot change status to 0 after ride started."
             });
           }
 
@@ -709,17 +994,23 @@ module.exports = function (io) {
 
           emitToBoth("Driver on the way", "0");
 
+          // 🔥 PUSH
+          if (user.device_token) {
+            sendNotification_android(user.device_token, {
+              message: "Driver is on the way.",
+              type: "ride_ontheway",
+              senderId: driverId,
+              sender_name: "Driver",
+              sender_image: ""
+            });
+          }
+
           return socket.emit("rideStatusUpdate", {
             success: true,
             message: "Driver on the way",
             data: { bookingId: booking.id, status: "0" }
           });
         }
-
-        return socket.emit("rideStatusUpdate", {
-          success: false,
-          message: "Invalid status operation."
-        });
 
       } catch (error) {
         console.error("Error updating ride status:", error);
@@ -1196,9 +1487,114 @@ module.exports = function (io) {
     });
 
 
+    // socket.on("send_message", async (get_data) => {
+    //   try {
+
+    //     if (get_data.bookingId) {
+    //       const bookingExist = await db.bookings.findOne({
+    //         where: { id: get_data.bookingId },
+    //       });
+
+    //       if (!bookingExist) {
+    //         return socket.emit("send_message", {
+    //           success: false,
+    //           message: "Invalid bookingId - Booking not found!",
+    //         });
+    //       }
+    //     }
+    //     let findConstant = await db.chat_constant.findOne({
+    //       where: {
+    //         [Op.or]: [
+    //           { sender_id: get_data.sender_id, reciever_id: get_data.reciever_id },
+    //           { sender_id: get_data.reciever_id, reciever_id: get_data.sender_id },
+    //         ],
+    //         ...(get_data.bookingId && { bookingId: get_data.bookingId }),
+    //       },
+    //       raw: true,
+    //     });
+
+    //     let chatConstantId;
+
+    //     if (!findConstant) {
+    //       let createConstant = await db.chat_constant.create({
+    //         sender_id: get_data.sender_id,
+    //         reciever_id: get_data.reciever_id,
+    //         bookingId: get_data.bookingId || null,
+    //       });
+    //       chatConstantId = createConstant.id;
+    //     } else {
+    //       chatConstantId = findConstant.id;
+    //     }
+
+    //     let createMessage = await db.message.create({
+    //       sender_id: get_data.sender_id,
+    //       reciever_id: get_data.reciever_id,
+    //       message: get_data.message,
+    //       msgType: get_data.msgType,
+    //       chatConstant_id: chatConstantId,
+    //       bookingId: get_data.bookingId || null,
+    //     });
+
+    //     await db.chat_constant.update(
+    //       {
+    //         lastMessage_id: createMessage.id,
+    //         deletedId: 0,
+    //       },
+    //       { where: { id: chatConstantId } }
+    //     );
+
+    //     var getMsgData = await db.message.findOne({
+    //       attributes: {
+    //         include: [
+    //           [
+    //             Sequelize.literal(
+    //               "(SELECT CONCAT(firstName,lastName) FROM users WHERE users.id  = message.sender_id)"
+    //             ),
+    //             "SenderName",
+    //           ],
+    //           [
+    //             Sequelize.literal(
+    //               "(SELECT image FROM users WHERE users.id = message.sender_id)"
+    //             ),
+    //             "Senderimage",
+    //           ],
+    //           [
+    //             Sequelize.literal(
+    //               "(SELECT CONCAT(firstName,lastName) FROM users WHERE users.id = message.reciever_id)"
+    //             ),
+    //             "ReceiverName",
+    //           ],
+    //           [
+    //             Sequelize.literal(
+    //               "(SELECT image FROM users WHERE users.id = message.reciever_id)"
+    //             ),
+    //             "Receiverimage",
+    //           ],
+    //         ],
+    //       },
+    //       where: { id: createMessage.id },
+    //       raw: true,
+    //     });
+
+    //     let socketUser = await db.users.findOne({
+    //       where: { id: get_data.reciever_id },
+    //       raw: true,
+    //     });
+
+    //     if (socketUser) {
+    //       io.to(socketUser.socket_id).emit("user_constant_list", null);
+    //       io.to(socketUser.socketId).emit("send_message", getMsgData);
+    //     }
+
+    //     socket.emit("send_message", getMsgData);
+
+    //   } catch (error) {
+    //     console.error(error);
+    //   }
+    // });
     socket.on("send_message", async (get_data) => {
       try {
-
+        /* -------------------- BOOKING CHECK -------------------- */
         if (get_data.bookingId) {
           const bookingExist = await db.bookings.findOne({
             where: { id: get_data.bookingId },
@@ -1211,6 +1607,8 @@ module.exports = function (io) {
             });
           }
         }
+
+        /* ------------------ FIND / CREATE CHAT CONSTANT ------------------ */
         let findConstant = await db.chat_constant.findOne({
           where: {
             [Op.or]: [
@@ -1235,6 +1633,7 @@ module.exports = function (io) {
           chatConstantId = findConstant.id;
         }
 
+        /* ---------------------- CREATE MESSAGE ---------------------- */
         let createMessage = await db.message.create({
           sender_id: get_data.sender_id,
           reciever_id: get_data.reciever_id,
@@ -1252,6 +1651,7 @@ module.exports = function (io) {
           { where: { id: chatConstantId } }
         );
 
+        /* -------------------- FETCH FULL MESSAGE DATA -------------------- */
         var getMsgData = await db.message.findOne({
           attributes: {
             include: [
@@ -1285,22 +1685,53 @@ module.exports = function (io) {
           raw: true,
         });
 
+        /* ---------------------- FIND RECEIVER ---------------------- */
         let socketUser = await db.users.findOne({
           where: { id: get_data.reciever_id },
           raw: true,
         });
 
+        /* ==============================================================
+             EMIT SOCKET TO RECEIVER (NO CHANGE IN YOUR LOGIC)
+           ============================================================== */
         if (socketUser) {
           io.to(socketUser.socket_id).emit("user_constant_list", null);
           io.to(socketUser.socketId).emit("send_message", getMsgData);
         }
 
+        // Your same echo back to sender
         socket.emit("send_message", getMsgData);
+
+        /* ==============================================================
+                       PUSH NOTIFICATION (ONLY THIS ADDED)
+           ============================================================== */
+
+        if (socketUser && socketUser.device_token) {
+          const payload = {
+            to: socketUser.device_token,
+            notification: {
+              title: getMsgData.SenderName || "New Message",
+              body: get_data.message || "You received a new message",
+              sound: "default",
+            },
+            data: {
+              type: 3,
+              chatConstant_id: chatConstantId.toString(),
+              sender_id: get_data.sender_id.toString(),
+              receiver_id: get_data.reciever_id.toString(),
+              bookingId: (get_data.bookingId || "").toString(),
+            },
+          };
+
+          helper.sendNotification_android(payload); // your FCM function
+        }
 
       } catch (error) {
         console.error(error);
       }
     });
+
+
     socket.on("get_message_list", async (get_data) => {
       try {
 
@@ -1366,7 +1797,7 @@ module.exports = function (io) {
       }
     });
 
-  
+
     socket.on('user_blocked_status', async (data) => {
       try {
         const { bookingId } = data;
@@ -1418,7 +1849,7 @@ module.exports = function (io) {
           success: true,
           message: "Block status fetched successfully",
           data: {
-            constantId: chatConst.id,   
+            constantId: chatConst.id,
             bookingId: chatConst.bookingId,
             senderId: chatConst.sender_id,
             receiverId: chatConst.reciever_id,
