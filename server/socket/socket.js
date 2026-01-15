@@ -186,13 +186,9 @@ module.exports = function (io) {
     socket.on("unreadNotificationCount", async (data) => {
       try {
         const { receiverId, languagetype } = data;
-        const languageType = Number(languagetype) || 0; // 0 = EN, 1 = AR, 2 = FR
+        const lang = Number(data.languageType ?? data.languagetype) || 0;
+        const getMessage = (en, ar, fr) => (lang === 1 ? ar : lang === 2 ? fr : en);
 
-        const getMessage = (en, ar, fr) => {
-          if (languageType === 1) return ar;
-          if (languageType === 2) return fr;
-          return en;
-        };
 
         if (!receiverId) {
           return socket.emit("unreadNotificationCount", {
@@ -766,13 +762,9 @@ module.exports = function (io) {
     socket.on("rideStatusUpdate", async (data) => {
       try {
         const { bookingId, status, otp, driverId, languagetype } = data;
-        const languageType = Number(languagetype) || 0; // 0 = EN, 1 = AR, 2 = FR
+        const lang = Number(data.languageType ?? data.languagetype) || 0;
+        const getMessage = (en, ar, fr) => (lang === 1 ? ar : lang === 2 ? fr : en);
 
-        const getMessage = (en, ar, fr) => {
-          if (languageType === 1) return ar;
-          if (languageType === 2) return fr;
-          return en;
-        };
 
         if (!bookingId || !status || !driverId) {
           return socket.emit("rideStatusUpdate", {
@@ -1072,13 +1064,9 @@ module.exports = function (io) {
     socket.on("bookingHistory", async (data) => {
       try {
         const { userId, status, page = 1, limit = 10, languagetype } = data;
-        const languageType = Number(languagetype) || 0; // 0 = English, 1 = Arabic, 2 = French
+        const lang = Number(data.languageType ?? data.languagetype) || 0;
+        const getMessage = (en, ar, fr) => (lang === 1 ? ar : lang === 2 ? fr : en);
 
-        const getMessage = (en, ar, fr) => {
-          if (languageType === 1) return ar;
-          if (languageType === 2) return fr;
-          return en;
-        };
 
         if (!userId) {
           return socket.emit("bookingHistory", {
