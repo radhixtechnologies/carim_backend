@@ -1,7 +1,68 @@
 const path = require('path');
 const uuid = require("uuid").v4;
-
+const FCM = require("fcm-node");
+const util = require('util')
+const { google } = require('googleapis');
+const fcmfile = require('./carim-app-firebase-adminsdk-fbsvc-b0dc2c7c48.json');
+const SCOPES = ['https://www.googleapis.com/auth/cloud-platform'];
+const push_projectName = "Carim";
+const jwtClient = new google.auth.JWT(
+    fcmfile.client_email,
+    null,
+    fcmfile.private_key,
+    SCOPES,
+    null
+);
 module.exports = {
+
+    sendNotification_android: async (token, noti_data) => {
+        try {
+            jwtClient.authorize(async (err, tokens) => {
+                if (err) {
+                    console.log('Error during JWT authorization:', err);
+                    return;
+                }
+                const accessToken = tokens.access_token;
+                const apiUrl = `https://fcm.googleapis.com/v1/projects/${push_projectName}/messages:send`;
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                };
+
+                const data = {
+                    "message": {
+                        "token": token,
+                        "notification": {
+                            "title": "Carim",
+                            "body": noti_data.message,
+                        },
+
+                        "data": {
+                            "title": "Carim",
+                            "body": noti_data.message,
+                            "type": JSON.stringify(noti_data.type),
+                            "senderId": JSON.stringify(noti_data.senderId),
+                            "sender_name": noti_data.sender_name,
+                            "sender_image": noti_data.sender_image,
+
+                        },
+                    }
+                }
+                console.log(headers, data, "==========================");
+
+                try {
+                    const response = await axios.post(apiUrl, data, { headers });
+                    console.log('Push sent successfully:', response.data);
+                } catch (error) {
+                    console.error('Error sending push notification:', error.response ? error.response.data : error.data);
+                }
+            });
+        } catch (error) {
+            console.error('Error in sendNotification_android:', error);
+        }
+    },
+
+
     success: function (res, message = "", body = {}) {
         return res.status(200).json({
             success: true,
