@@ -7,6 +7,7 @@ var _contactus = require("./contactus");
 var _driverDocuments = require("./driverDocuments");
 var _faqs = require("./faqs");
 var _message = require("./message");
+var _notifications = require("./notifications");
 var _reports = require("./reports");
 var _reviewrating = require("./reviewrating");
 var _rideRequest = require("./rideRequest");
@@ -25,6 +26,7 @@ function initModels(sequelize) {
   var driverDocuments = _driverDocuments(sequelize, DataTypes);
   var faqs = _faqs(sequelize, DataTypes);
   var message = _message(sequelize, DataTypes);
+  var notifications = _notifications(sequelize, DataTypes);
   var reports = _reports(sequelize, DataTypes);
   var reviewrating = _reviewrating(sequelize, DataTypes);
   var rideRequest = _rideRequest(sequelize, DataTypes);
@@ -44,6 +46,7 @@ function initModels(sequelize) {
     driverDocuments,
     faqs,
     message,
+    notifications,
     reports,
     reviewrating,
     rideRequest,
