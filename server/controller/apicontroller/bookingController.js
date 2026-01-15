@@ -414,6 +414,7 @@ module.exports = {
     bookRide: (io) => {
         return async (req, res) => {
             try {
+                const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
                 const userId = req.user.id;
 
                 // ---------------- USER STATUS CHECK ----------------
@@ -423,10 +424,30 @@ module.exports = {
                     raw: true
                 });
 
-                if (!userStatus) return helper.failure(res, "User not found.");
-                if (userStatus.status === "0") return helper.error2(res, "Your account has been deactivated by admin.");
-                if (userStatus.block === "1") return helper.error1(res, "Your account has been blocked by admin.");
-                if (userStatus.suspend === "1") return helper.error3(res, "Your account has been suspended.");
+                if (!userStatus) {
+                    let msg = "User not found.";
+                    if (languageType == 1) msg = "المستخدم غير موجود.";
+                    else if (languageType == 2) msg = "Utilisateur non trouvé.";
+                    return helper.failure(res, msg);
+                }
+                if (userStatus.status === "0") {
+                    let msg = "Your account has been deactivated by admin.";
+                    if (languageType == 1) msg = "تم تعطيل حسابك من قبل المسؤول.";
+                    else if (languageType == 2) msg = "Votre compte a été désactivé par l’administrateur.";
+                    return helper.error2(res, msg);
+                }
+                if (userStatus.block === "1") {
+                    let msg = "Your account has been blocked by admin.";
+                    if (languageType == 1) msg = "تم حظر حسابك من قبل المسؤول.";
+                    else if (languageType == 2) msg = "Votre compte a été bloqué par l’administrateur.";
+                    return helper.error1(res, msg);
+                }
+                if (userStatus.suspend === "1") {
+                    let msg = "Your account has been suspended by admin.";
+                    if (languageType == 1) msg = "تم تعليق حسابك من قبل المسؤول.";
+                    else if (languageType == 2) msg = "Votre compte a été suspendu par l’administrateur.";
+                    return helper.error3(res, msg);
+                }
 
                 const {
                     pickupLocation,
@@ -440,12 +461,18 @@ module.exports = {
 
                 // ---------------- PICKUP REQUIRED ----------------
                 if (!pickupLocation || !pickupLatitude || !pickupLongitude) {
-                    return helper.failure(res, 'Pickup location and coordinates are required.');
+                    let msg = "Pickup location and coordinates are required.";
+                    if (languageType == 1) msg = "موقع الالتقاط والإحداثيات مطلوبة.";
+                    else if (languageType == 2) msg = "Le lieu de prise en charge et les coordonnées sont requis.";
+                    return helper.failure(res, msg);
                 }
 
                 if (rideOpen == 0) {
                     if (!dropLocation || !dropLatitude || !dropLongitude) {
-                        return helper.failure(res, 'Pickup and drop locations are required.');
+                        let msg = "Pickup and drop locations are required.";
+                        if (languageType == 1) msg = "مواقع الالتقاط والتسليم مطلوبة.";
+                        else if (languageType == 2) msg = "Les lieux de prise en charge et de dépôt sont requis.";
+                        return helper.failure(res, msg);
                     }
                 }
 
@@ -453,7 +480,10 @@ module.exports = {
                 const pickupLng = parseFloat(pickupLongitude);
 
                 if (isNaN(pickupLat) || isNaN(pickupLng)) {
-                    return helper.failure(res, 'Invalid pickup coordinates.');
+                    let msg = "Invalid pickup coordinates.";
+                    if (languageType == 1) msg = "إحداثيات الالتقاط غير صالحة.";
+                    else if (languageType == 2) msg = "Coordonnées de prise en charge non valides.";
+                    return helper.failure(res, msg);
                 }
 
                 // ---------------- DISTANCE CALCULATION ----------------
@@ -484,7 +514,10 @@ module.exports = {
                     : 10;
 
                 if (isNaN(pricePerKm) || pricePerKm <= 0) {
-                    return helper.failure(res, 'Invalid ride amount set by admin');
+                    let msg = "Invalid ride amount set by admin";
+                    if (languageType == 1) msg = "المبلغ المحدد للرحلة من قبل المسؤول غير صالح";
+                    else if (languageType == 2) msg = "Le montant du trajet défini par l’administrateur est invalide";
+                    return helper.failure(res, msg);
                 }
 
                 if (rideOpen == 0 || (rideOpen == 1 && dropLatitude && dropLongitude)) {
@@ -492,13 +525,19 @@ module.exports = {
                     const dropLng = parseFloat(dropLongitude);
 
                     if (isNaN(dropLat) || isNaN(dropLng)) {
-                        return helper.failure(res, 'Invalid drop coordinates.');
+                        let msg = "Invalid drop coordinates.";
+                        if (languageType == 1) msg = "إحداثيات الوجهة غير صالحة.";
+                        else if (languageType == 2) msg = "Coordonnées de dépôt non valides.";
+                        return helper.failure(res, msg);
                     }
 
                     rideDistanceKm = calculateDistance(pickupLat, pickupLng, dropLat, dropLng);
 
                     if (rideDistanceKm > 30) {
-                        return helper.failure(res, 'Drop location must be within 30 km');
+                        let msg = "Drop location must be within 30 km";
+                        if (languageType == 1) msg = "يجب أن تكون وجهة التسليم ضمن 30 كم";
+                        else if (languageType == 2) msg = "Le lieu de dépôt doit être dans un rayon de 30 km";
+                        return helper.failure(res, msg);
                     }
 
                     bookingPrice = Math.round(rideDistanceKm * pricePerKm).toString();
@@ -514,7 +553,10 @@ module.exports = {
                 });
 
                 if (existingBooking) {
-                    return helper.failure(res, 'You already have an active ride request');
+                    let msg = "You already have an active ride request";
+                    if (languageType == 1) msg = "لديك بالفعل طلب رحلة نشطة";
+                    else if (languageType == 2) msg = "Vous avez déjà une demande de course active";
+                    return helper.failure(res, msg);
                 }
 
                 // ---------------- GET DRIVERS (BUSY FILTERED) ----------------
@@ -526,7 +568,7 @@ module.exports = {
                         as: "driverbook",
                         required: false,
                         where: {
-                            status: { [Sequelize.Op.in]: ['0', '1', '2',] },
+                            status: { [Sequelize.Op.in]: ['0', '1', '2'] },
                             request: '1'
                         }
                     }]
@@ -553,19 +595,20 @@ module.exports = {
                     }
                 }
                 if (!driverAvailable) {
-                    return helper.failure(res, 'No drivers available within 30 km');
+                    let msg = "No drivers available within 30 km";
+                    if (languageType == 1) msg = "لا يوجد سائقون متاحون ضمن 30 كم";
+                    else if (languageType == 2) msg = "Aucun chauffeur disponible dans un rayon de 30 km";
+                    return helper.failure(res, msg);
                 }
 
-                // ---------------- ORDER ID ----------------
+                // ---------------- CREATE BOOKING ----------------
                 const orderId = Math.floor(100000 + Math.random() * 900000).toString();
-
                 const isOpenRideWithoutDrop = rideOpen == 1 && (!dropLatitude || !dropLongitude);
                 const finalDropLocation = isOpenRideWithoutDrop ? "" : dropLocation;
                 const finalDropLatitude = isOpenRideWithoutDrop ? "" : dropLatitude?.toString();
                 const finalDropLongitude = isOpenRideWithoutDrop ? "" : dropLongitude?.toString();
                 const finalBookingPrice = isOpenRideWithoutDrop ? "" : bookingPrice;
 
-                // ---------------- CREATE BOOKING ----------------
                 const newBooking = await db.bookings.create({
                     userId,
                     driverId: null,
@@ -585,7 +628,7 @@ module.exports = {
                 // ---------------- SAVE NOTIFICATION ----------------
                 await db.notifications.create({
                     sender_id: userId,
-                    receiver_id: 0,  // broadcast to all free drivers
+                    receiver_id: 0,
                     message: "New ride request created",
                     type: 1,
                     status: 0
@@ -609,7 +652,6 @@ module.exports = {
                             sender_name: "",
                             sender_image: ""
                         };
-
                         await helper.sendNotification_android(driverToken.deviceToken, notiData);
                     }
                 }
@@ -661,23 +703,33 @@ module.exports = {
                 });
 
                 // ---------------- RESPONSE ----------------
-                return helper.success(res, 'Ride booking request sent successfully', {
+                let msg = 'Ride booking request sent successfully';
+                if (languageType == 1) msg = 'تم إرسال طلب حجز الرحلة بنجاح';
+                else if (languageType == 2) msg = 'Demande de réservation de course envoyée avec succès';
+
+                let waitingMsg = 'Waiting for driver to accept your request';
+                if (languageType == 1) waitingMsg = 'في انتظار قبول السائق لطلبك';
+                else if (languageType == 2) waitingMsg = 'En attente que le chauffeur accepte votre demande';
+
+                return helper.success(res, msg, {
                     bookingId: newBooking.id,
                     orderId: newBooking.orderId,
                     status: newBooking.status,
                     request: newBooking.request,
                     bookingPrice: finalBookingPrice,
                     rideDistanceKm: rideDistanceKm ? rideDistanceKm.toFixed(2) : "",
-                    message: 'Waiting for driver to accept your request'
+                    message: waitingMsg
                 });
 
             } catch (error) {
                 console.error('Booking error:', error);
-                return helper.failure(res, "Something went wrong while booking the ride.");
+                let msg = "Something went wrong while booking the ride.";
+                if (languageType == 1) msg = "حدث خطأ أثناء حجز الرحلة.";
+                else if (languageType == 2) msg = "Une erreur est survenue lors de la réservation de la course.";
+                return helper.failure(res, msg);
             }
         };
     },
-
 
 
     updateDropLocationAndPrice: (io) => {
@@ -807,7 +859,6 @@ module.exports = {
             }
         };
     },
-
 
     // driverAccptReject: (io) => {
     //     return async (req, res) => {
@@ -1067,18 +1118,22 @@ module.exports = {
     driverAccptReject: (io) => {
         return async (req, res) => {
             try {
+                const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
                 const driverId = req.user.id;
                 const { bookingId, request } = req.body;
 
                 if (!bookingId || !request) {
-                    return helper.failure(res, 'Booking ID and request value are required.');
+                    let msg = "Booking ID and request value are required.";
+                    if (languageType == 1) msg = "مطلوب معرف الحجز وقيمة الطلب.";
+                    else if (languageType == 2) msg = "ID de réservation et valeur de la demande requis.";
+                    return helper.failure(res, msg);
                 }
 
                 if (!['1', '2'].includes(request)) {
-                    return helper.failure(
-                        res,
-                        'Invalid request value. Must be "1" (accept) or "2" (reject).'
-                    );
+                    let msg = 'Invalid request value. Must be "1" (accept) or "2" (reject).';
+                    if (languageType == 1) msg = 'قيمة الطلب غير صالحة. يجب أن تكون "1" (قبول) أو "2" (رفض).';
+                    else if (languageType == 2) msg = 'Valeur de la demande invalide. Doit être "1" (accepter) ou "2" (rejeter).';
+                    return helper.failure(res, msg);
                 }
 
                 const driver = await db.users.findOne({
@@ -1087,20 +1142,41 @@ module.exports = {
                     raw: true
                 });
 
-                if (driver.status === "0") return helper.failure(res, 'Your account has been deactivated by admin.');
-                if (driver.block === "1") return helper.failure(res, 'Your account has been blocked by admin.');
-                if (driver.suspend === "1") return helper.failure(res, 'Your account has been suspended by admin.');
-                if (driver.approve !== "1") return helper.failure(res, 'Your account is not approved by admin yet.');
+                // ================= DRIVER STATUS CHECK =================
+                if (driver.status === "0") {
+                    let msg = "Your account has been deactivated by admin.";
+                    if (languageType == 1) msg = "تم تعطيل حسابك من قبل المسؤول.";
+                    else if (languageType == 2) msg = "Votre compte a été désactivé par l’administrateur.";
+                    return helper.failure(res, msg);
+                }
+                if (driver.block === "1") {
+                    let msg = "Your account has been blocked by admin.";
+                    if (languageType == 1) msg = "تم حظر حسابك من قبل المسؤول.";
+                    else if (languageType == 2) msg = "Votre compte a été bloqué par l’administrateur.";
+                    return helper.failure(res, msg);
+                }
+                if (driver.suspend === "1") {
+                    let msg = "Your account has been suspended by admin.";
+                    if (languageType == 1) msg = "تم تعليق حسابك من قبل المسؤول.";
+                    else if (languageType == 2) msg = "Votre compte a été suspendu par l’administrateur.";
+                    return helper.failure(res, msg);
+                }
+                if (driver.approve !== "1") {
+                    let msg = "Your account is not approved by admin yet.";
+                    if (languageType == 1) msg = "لم يتم اعتماد حسابك من قبل المسؤول بعد.";
+                    else if (languageType == 2) msg = "Votre compte n’a pas encore été approuvé par l’administrateur.";
+                    return helper.failure(res, msg);
+                }
 
                 // ================= DRIVER BUSY CHECK =================
                 const activeRide = await db.bookings.findOne({
-                    where: {
-                        driverId,
-                        status: { [Sequelize.Op.in]: ['0', '1', '2'] }
-                    }
+                    where: { driverId, status: { [Sequelize.Op.in]: ['0', '1', '2'] } }
                 });
                 if (activeRide) {
-                    return helper.failure(res, 'You already have an active ride.');
+                    let msg = "You already have an active ride.";
+                    if (languageType == 1) msg = "لديك بالفعل رحلة نشطة.";
+                    else if (languageType == 2) msg = "Vous avez déjà une course active.";
+                    return helper.failure(res, msg);
                 }
 
                 let bookingUser;
@@ -1108,29 +1184,19 @@ module.exports = {
                 // ================= ACCEPT =================
                 if (request === '1') {
                     const [updated] = await db.bookings.update(
-                        {
-                            driverId,
-                            request: '1',
-                            status: '0'
-                        },
-                        {
-                            where: {
-                                id: bookingId,
-                                driverId: null,
-                                status: '0',
-                                request: '0'
-                            }
-                        }
+                        { driverId, request: '1', status: '0' },
+                        { where: { id: bookingId, driverId: null, status: '0', request: '0' } }
                     );
                     if (!updated) {
-                        return helper.failure(res, 'Booking already processed');
+                        let msg = "Booking already processed";
+                        if (languageType == 1) msg = "تمت معالجة الحجز بالفعل";
+                        else if (languageType == 2) msg = "Réservation déjà traitée";
+                        return helper.failure(res, msg);
                     }
 
                     await db.rideRequest.update(
-                        { status: 1 }, // ACCEPT
-                        {
-                            where: { bookingId, driverId }
-                        }
+                        { status: 1 },
+                        { where: { bookingId, driverId } }
                     );
                 }
 
@@ -1138,65 +1204,37 @@ module.exports = {
                 if (request === '2') {
                     bookingUser = await db.bookings.findOne({
                         where: { id: bookingId },
-                        include: [{
-                            model: db.users,
-                            as: 'userbook',
-                            attributes: ['socketId', 'deviceToken']
-                        }]
+                        include: [{ model: db.users, as: 'userbook', attributes: ['socketId', 'deviceToken'] }]
                     });
-
                     if (!bookingUser) {
-                        return helper.failure(res, 'Booking already processed');
+                        let msg = "Booking already processed";
+                        if (languageType == 1) msg = "تمت معالجة الحجز بالفعل";
+                        else if (languageType == 2) msg = "Réservation déjà traitée";
+                        return helper.failure(res, msg);
                     }
 
                     await bookingUser.increment('rejectCount', { by: 1 });
+                    await db.rideRequest.update({ status: 2 }, { where: { bookingId, driverId } });
 
-                    await db.rideRequest.update(
-                        { status: 2 }, // REJECT
-                        {
-                            where: {
-                                bookingId,
-                                driverId
-                            }
-                        }
-                    );
-
-                    const totalDrivers = await db.users.count({
-                        where: { role: '2', online: '1', approve: '1' }
-                    });
-
-                    await db.users.update(
-                        { lastFreeTime: new Date() },
-                        { where: { id: driverId } }
-                    );
+                    const totalDrivers = await db.users.count({ where: { role: '2', online: '1', approve: '1' } });
+                    await db.users.update({ lastFreeTime: new Date() }, { where: { id: driverId } });
 
                     if (bookingUser.rejectCount + 1 >= totalDrivers) {
-                        await bookingUser.update({
-                            status: '4',
-                            request: '2'
-                        });
+                        await bookingUser.update({ status: '4', request: '2' });
 
-                        // ================= PUSH: NO DRIVERS AVAILABLE =================
+                        // PUSH: NO DRIVERS AVAILABLE
                         if (bookingUser.userbook?.deviceToken) {
-                            helper.sendNotification_android(
-                                bookingUser.userbook.deviceToken,
-                                {
-                                    message: "Currently no drivers are available for your ride",
-                                    type: "no_driver",
-                                    senderId: "",
-                                    sender_name: "",
-                                    sender_image: ""
-                                }
-                            );
+                            let pushMsg = "Currently no drivers are available for your ride";
+                            if (languageType == 1) pushMsg = "لا يوجد سائقون متاحون لرحلتك حاليًا";
+                            else if (languageType == 2) pushMsg = "Aucun chauffeur n’est disponible pour votre course actuellement";
+                            helper.sendNotification_android(bookingUser.userbook.deviceToken, { message: pushMsg, type: "no_driver", senderId: "", sender_name: "", sender_image: "" });
                         }
 
                         if (bookingUser.userbook?.socketId) {
-                            io.to(bookingUser.userbook.socketId).emit("rideStatusUpdate", {
-                                bookingId: bookingUser.id,
-                                status: '4',
-                                request: '2',
-                                message: 'No drivers available right now'
-                            });
+                            let socketMsg = "No drivers available right now";
+                            if (languageType == 1) socketMsg = "لا يوجد سائقون متاحون الآن";
+                            else if (languageType == 2) socketMsg = "Aucun chauffeur disponible pour le moment";
+                            io.to(bookingUser.userbook.socketId).emit("rideStatusUpdate", { bookingId: bookingUser.id, status: '4', request: '2', message: socketMsg });
                         }
                     }
                 }
@@ -1204,21 +1242,26 @@ module.exports = {
                 // ================= FETCH BOOKING =================
                 const booking = await db.bookings.findOne({
                     where: { id: bookingId },
-                    include: [{
-                        model: db.users,
-                        as: 'userbook',
-                        attributes: ['id', 'socketId', 'deviceToken']
-                    }]
+                    include: [{ model: db.users, as: 'userbook', attributes: ['id', 'socketId', 'deviceToken'] }]
                 });
 
                 let statusCode = booking.status === '4' ? '4' : '0';
-
-                const msg =
+                let msg =
                     request === '1'
-                        ? 'Driver on the way'
+                        ? "Driver on the way"
                         : booking.status === '4'
-                            ? 'No drivers available'
-                            : 'Driver rejected the booking';
+                            ? "No drivers available"
+                            : "Driver rejected the booking";
+
+                if (languageType == 1) {
+                    if (request === '1') msg = "السائق في الطريق";
+                    else if (booking.status === '4') msg = "لا يوجد سائقون متاحون";
+                    else msg = "رفض السائق الحجز";
+                } else if (languageType == 2) {
+                    if (request === '1') msg = "Le chauffeur est en route";
+                    else if (booking.status === '4') msg = "Aucun chauffeur disponible";
+                    else msg = "Le chauffeur a rejeté la réservation";
+                }
 
                 // ================= USER EMIT =================
                 if (booking.userbook?.socketId) {
@@ -1231,7 +1274,7 @@ module.exports = {
                     });
                 }
 
-                // ========== PUSH NOTIFICATION TO USER (ACCEPT / REJECT) ==========
+                // PUSH NOTIFICATION TO USER
                 if (booking.userbook?.deviceToken) {
                     let pushMessage =
                         request === "1"
@@ -1240,116 +1283,52 @@ module.exports = {
                                 ? "No drivers available"
                                 : "Driver has rejected your ride request";
 
+                    if (languageType == 1) {
+                        pushMessage = request === "1" ? "قبل السائق طلب رحلتك" : booking.status === "4" ? "لا يوجد سائقون متاحون" : "رفض السائق طلبك";
+                    } else if (languageType == 2) {
+                        pushMessage = request === "1" ? "Le chauffeur a accepté votre demande de course" : booking.status === "4" ? "Aucun chauffeur disponible" : "Le chauffeur a rejeté votre demande de course";
+                    }
+
                     helper.sendNotification_android(
                         booking.userbook.deviceToken,
-                        {
-                            message: pushMessage,
-                            type: request === "1" ? "ride_accept" : "ride_reject",
-                            senderId: driverId,
-                            sender_name: driver.firstName + " " + driver.lastName,
-                            sender_image: driver.image
-                        }
+                        { message: pushMessage, type: request === "1" ? "ride_accept" : "ride_reject", senderId: driverId, sender_name: driver.firstName + " " + driver.lastName, sender_image: driver.image }
                     );
                 }
 
-                // ================= CURRENT DRIVER EMIT =================
+                // DRIVER SOCKET EMIT
                 if (global.onlineUsers?.[driverId]) {
+                    let driverMsg =
+                        request === '1'
+                            ? 'You accepted the ride request'
+                            : 'You rejected the ride request';
+                    if (languageType == 1) driverMsg = request === '1' ? "لقد قبلت طلب الرحلة" : "لقد رفضت طلب الرحلة";
+                    else if (languageType == 2) driverMsg = request === '1' ? "Vous avez accepté la demande de course" : "Vous avez rejeté la demande de course";
+
                     global.onlineUsers[driverId].forEach(sockId => {
-                        io.to(sockId).emit("rideStatusUpdate", {
-                            bookingId: booking.id,
-                            request,
-                            status: statusCode,
-                            message:
-                                request === '1'
-                                    ? 'You accepted the ride request'
-                                    : 'You rejected the ride request'
-                        });
+                        io.to(sockId).emit("rideStatusUpdate", { bookingId: booking.id, request, status: statusCode, message: driverMsg });
                     });
                 }
 
-                // ================= NEARBY DRIVERS EMIT =================
-                if ((request === '1' || request === '2') && booking.status !== '4') {
+                // RESPONSE
+                let resMsgAccept = "Booking accepted successfully. Driver on the way.";
+                let resMsgReject = "Booking rejected successfully";
+                if (languageType == 1) { resMsgAccept = "تم قبول الحجز بنجاح. السائق في الطريق."; resMsgReject = "تم رفض الحجز بنجاح"; }
+                else if (languageType == 2) { resMsgAccept = "Réservation acceptée avec succès. Le chauffeur est en route."; resMsgReject = "Réservation rejetée avec succès"; }
 
-                    const pickupLat = parseFloat(booking.pickupLatitude);
-                    const pickupLng = parseFloat(booking.pickupLongitude);
-                    const MAX_DISTANCE = 30;
+                let userMessage = request === '1' ? (languageType == 1 ? "لقد قبلت طلب الرحلة" : languageType == 2 ? "Vous avez accepté la demande de course" : "You have accepted the ride request")
+                    : (languageType == 1 ? "لقد رفضت طلب الرحلة" : languageType == 2 ? "Vous avez rejeté la demande de course" : "You have rejected the ride request");
 
-                    const drivers = await db.users.findAll({
-                        where: { role: '2', online: '1', approve: '1' },
-                        attributes: ['id', 'latitude', 'longitude'],
-                        raw: true
-                    });
-
-                    const toRad = v => (v * Math.PI) / 180;
-                    const distanceInKm = (lat1, lon1, lat2, lon2) => {
-                        const R = 6371;
-                        const dLat = toRad(lat2 - lat1);
-                        const dLon = toRad(lon2 - lon1);
-                        const a =
-                            Math.sin(dLat / 2) ** 2 +
-                            Math.cos(toRad(lat1)) *
-                            Math.cos(toRad(lat2)) *
-                            Math.sin(dLon / 2) ** 2;
-                        return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
-                    };
-
-                    for (const d of drivers) {
-
-                        if (String(d.id) === String(driverId)) continue;
-                        if (!d.latitude || !d.longitude) continue;
-
-                        const busy = await db.bookings.findOne({
-                            where: {
-                                driverId: d.id,
-                                status: { [Sequelize.Op.in]: ['0', '1', '2'] }
-                            }
-                        });
-
-                        if (busy) continue;
-
-                        const dist = distanceInKm(
-                            pickupLat,
-                            pickupLng,
-                            parseFloat(d.latitude),
-                            parseFloat(d.longitude)
-                        );
-
-                        if (dist <= MAX_DISTANCE && global.onlineUsers?.[d.id]) {
-                            global.onlineUsers[d.id].forEach(sockId => {
-                                io.to(sockId).emit("rideStatusUpdate", {
-                                    bookingId: booking.id,
-                                    status: '0',
-                                    request: '0',
-                                    message: 'No ride available'
-                                });
-                            });
-                        }
-                    }
-                }
-
-                return helper.success(
-                    res,
-                    request === '1'
-                        ? 'Booking accepted successfully. Driver on the way.'
-                        : 'Booking rejected successfully',
-                    {
-                        bookingId,
-                        request,
-                        message:
-                            request === '1'
-                                ? 'You have accepted the ride request.'
-                                : 'You have rejected the ride request.'
-                    }
-                );
+                return helper.success(res, request === '1' ? resMsgAccept : resMsgReject, { bookingId, request, message: userMessage });
 
             } catch (error) {
                 console.error(error);
-                return helper.failure(res, "Something went wrong while processing the booking.");
+                let msg = "Something went wrong while processing the booking.";
+                if (languageType == 1) msg = "حدث خطأ أثناء معالجة الحجز.";
+                else if (languageType == 2) msg = "Une erreur est survenue lors du traitement de la réservation.";
+                return helper.failure(res, msg);
             }
         };
     },
-
-
 
 
     // requestList: (io1) => {
@@ -1615,9 +1594,122 @@ module.exports = {
     //         }
     //     };
     // },
+    // requestList: (io) => {
+    //     return async (req, res) => {
+    //         try {
+    //             const driverId = req.user.id;
+
+    //             // ===== DRIVER CHECK =====
+    //             const driver = await db.users.findOne({
+    //                 where: { id: driverId },
+    //                 attributes: ['status', 'block', 'suspend', "approve", "lastFreeTime"],
+    //                 raw: true
+    //             });
+
+    //             if (!driver) return helper.error(res, "Driver not found.");
+    //             if (driver.status === "0") return helper.error2(res, "Your account has been deactivated by admin.");
+    //             if (driver.block === "1") return helper.error1(res, "Your account has been blocked by admin.");
+    //             if (driver.suspend === "1") return helper.error3(res, "Your account has been suspended by admin.");
+    //             if (driver.approve !== "1") {
+    //                 return helper.success(res, "Your account is not approved by admin yet.", {
+    //                     totalRequests: 0, requests: []
+    //                 });
+    //             }
+
+    //             // ===== CLEAN EXPIRED BOOKINGS =====
+    //             const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
+
+    //             await db.bookings.destroy({
+    //                 where: {
+    //                     driverId: null,
+    //                     status: '0',
+    //                     request: '0',
+    //                     rejectCount: '0',
+    //                     bookingDate: { [Sequelize.Op.lt]: oneMinuteAgo }
+    //                 },
+    //                 force: true
+    //             });
+
+    //             // ===== ACTIVE RIDE CHECK =====
+    //             const activeRide = await db.bookings.findOne({
+    //                 where: { driverId, status: { [Sequelize.Op.in]: ['0', '1', '2'] } }
+    //             });
+
+    //             if (activeRide) {
+    //                 return helper.success(res, 'You are currently on a ride', {
+    //                     totalRequests: 0,
+    //                     requests: []
+    //                 });
+    //             }
+
+    //             // ===== GET DRIVER LAST FREE TIME =====
+    //             let lastFreeTime = driver.lastFreeTime
+    //                 ? new Date(driver.lastFreeTime)
+    //                 : new Date(Date.now() - 10 * 1000);  // default 10 sec
+
+    //             // ===== REJECTED REQUESTS FILTER =====
+    //             const rejectedRequests = await db.rideRequest.findAll({
+    //                 where: { driverId, status: 2 },
+    //                 attributes: ['bookingId'],
+    //                 raw: true
+    //             });
+
+    //             const rejectedBookingIds = rejectedRequests.map(r => r.bookingId);
+
+    //             // ===== FETCH REQUESTS WITH lastFreeTime FILTER =====
+    //             const requests = await db.bookings.findAll({
+    //                 where: {
+    //                     driverId: null,
+    //                     status: '0',
+    //                     request: '0',
+
+    //                     // Do NOT show old bookings
+    //                     bookingDate: { [Sequelize.Op.gt]: lastFreeTime },
+
+    //                     ...(rejectedBookingIds.length && {
+    //                         id: { [Sequelize.Op.notIn]: rejectedBookingIds }
+    //                     })
+    //                 },
+    //                 include: [
+    //                     { model: db.users, as: 'userbook' }
+    //                 ],
+    //                 order: [['id', 'DESC']]
+    //             });
+
+    //             return helper.success(
+    //                 res,
+    //                 'Pending ride requests fetched successfully',
+    //                 {
+    //                     totalRequests: requests.length,
+    //                     requests: requests.map(booking => ({
+    //                         bookingId: booking.id,
+    //                         userId: booking.userId,
+    //                         userDetails: booking.userbook,
+    //                         pickupLocation: booking.pickupLocation,
+    //                         dropLocation: booking.dropLocation,
+    //                         pickupLatitude: booking.pickupLatitude,
+    //                         pickupLongitude: booking.pickupLongitude,
+    //                         dropLatitude: booking.dropLatitude,
+    //                         dropLongitude: booking.dropLongitude,
+    //                         status: booking.status,
+    //                         request: booking.request,
+    //                         bookingDate: booking.bookingDate,
+    //                         orderId: booking.orderId,
+    //                         rideOpen: booking.rideOpen
+    //                     }))
+    //                 }
+    //             );
+
+    //         } catch (error) {
+    //             console.log("requestList error:", error);
+    //             return helper.error(res, "Something went wrong while fetching requests.");
+    //         }
+    //     };
+    // },
     requestList: (io) => {
         return async (req, res) => {
             try {
+                const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default=English
                 const driverId = req.user.id;
 
                 // ===== DRIVER CHECK =====
@@ -1627,19 +1719,43 @@ module.exports = {
                     raw: true
                 });
 
-                if (!driver) return helper.error(res, "Driver not found.");
-                if (driver.status === "0") return helper.error2(res, "Your account has been deactivated by admin.");
-                if (driver.block === "1") return helper.error1(res, "Your account has been blocked by admin.");
-                if (driver.suspend === "1") return helper.error3(res, "Your account has been suspended by admin.");
+                if (!driver) {
+                    let msg = "Driver not found.";
+                    if (languageType == 1) msg = "السائق غير موجود.";
+                    else if (languageType == 2) msg = "Chauffeur non trouvé.";
+                    return helper.error(res, msg);
+                }
+
+                if (driver.status === "0") {
+                    let msg = "Your account has been deactivated by admin.";
+                    if (languageType == 1) msg = "تم تعطيل حسابك من قبل المسؤول.";
+                    else if (languageType == 2) msg = "Votre compte a été désactivé par l’administrateur.";
+                    return helper.error2(res, msg);
+                }
+
+                if (driver.block === "1") {
+                    let msg = "Your account has been blocked by admin.";
+                    if (languageType == 1) msg = "تم حظر حسابك من قبل المسؤول.";
+                    else if (languageType == 2) msg = "Votre compte a été bloqué par l’administrateur.";
+                    return helper.error1(res, msg);
+                }
+
+                if (driver.suspend === "1") {
+                    let msg = "Your account has been suspended by admin.";
+                    if (languageType == 1) msg = "تم تعليق حسابك من قبل المسؤول.";
+                    else if (languageType == 2) msg = "Votre compte a été suspendu par l’administrateur.";
+                    return helper.error3(res, msg);
+                }
+
                 if (driver.approve !== "1") {
-                    return helper.success(res, "Your account is not approved by admin yet.", {
-                        totalRequests: 0, requests: []
-                    });
+                    let msg = "Your account is not approved by admin yet.";
+                    if (languageType == 1) msg = "لم يتم اعتماد حسابك من قبل المسؤول بعد.";
+                    else if (languageType == 2) msg = "Votre compte n’a pas encore été approuvé par l’administrateur.";
+                    return helper.success(res, msg, { totalRequests: 0, requests: [] });
                 }
 
                 // ===== CLEAN EXPIRED BOOKINGS =====
                 const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
-
                 await db.bookings.destroy({
                     where: {
                         driverId: null,
@@ -1657,10 +1773,10 @@ module.exports = {
                 });
 
                 if (activeRide) {
-                    return helper.success(res, 'You are currently on a ride', {
-                        totalRequests: 0,
-                        requests: []
-                    });
+                    let msg = "You are currently on a ride";
+                    if (languageType == 1) msg = "أنت حاليًا في رحلة";
+                    else if (languageType == 2) msg = "Vous êtes actuellement en course";
+                    return helper.success(res, msg, { totalRequests: 0, requests: [] });
                 }
 
                 // ===== GET DRIVER LAST FREE TIME =====
@@ -1683,23 +1799,20 @@ module.exports = {
                         driverId: null,
                         status: '0',
                         request: '0',
-
-                        // Do NOT show old bookings
                         bookingDate: { [Sequelize.Op.gt]: lastFreeTime },
-
-                        ...(rejectedBookingIds.length && {
-                            id: { [Sequelize.Op.notIn]: rejectedBookingIds }
-                        })
+                        ...(rejectedBookingIds.length && { id: { [Sequelize.Op.notIn]: rejectedBookingIds } })
                     },
-                    include: [
-                        { model: db.users, as: 'userbook' }
-                    ],
+                    include: [{ model: db.users, as: 'userbook' }],
                     order: [['id', 'DESC']]
                 });
 
+                let successMsg = "Pending ride requests fetched successfully";
+                if (languageType == 1) successMsg = "تم جلب طلبات الرحلات المعلقة بنجاح";
+                else if (languageType == 2) successMsg = "Demandes de course en attente récupérées avec succès";
+
                 return helper.success(
                     res,
-                    'Pending ride requests fetched successfully',
+                    successMsg,
                     {
                         totalRequests: requests.length,
                         requests: requests.map(booking => ({
@@ -1723,22 +1836,27 @@ module.exports = {
 
             } catch (error) {
                 console.log("requestList error:", error);
-                return helper.error(res, "Something went wrong while fetching requests.");
+                let msg = "Something went wrong while fetching requests.";
+                if (languageType == 1) msg = "حدث خطأ أثناء جلب الطلبات.";
+                else if (languageType == 2) msg = "Une erreur est survenue lors de la récupération des demandes.";
+                return helper.error(res, msg);
             }
         };
     },
 
 
-
-
-
     updatedPickupLocation: async (req, res) => {
         try {
+            const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default=English
             const userId = req.user.id;
             const { bookingId, pickupLocation, pickupLatitude, pickupLongitude } = req.body;
 
+            // Optional: validate required fields
             // if (!bookingId || !pickupLocation || !pickupLatitude || !pickupLongitude) {
-            //     return helper.failure(res, 'Booking ID, pickup location, and coordinates are required.');
+            //     let msg = "Booking ID, pickup location, and coordinates are required.";
+            //     if (languageType == 1) msg = "معرف الحجز وموقع الالتقاط والإحداثيات مطلوبة.";
+            //     else if (languageType == 2) msg = "ID de réservation, lieu de prise en charge et coordonnées requis.";
+            //     return helper.failure(res, msg);
             // }
 
             const booking = await db.bookings.findOne({
@@ -1751,7 +1869,10 @@ module.exports = {
             });
 
             if (!booking) {
-                return helper.failure(res, 'Booking not found or cannot be updated', 404);
+                let msg = "Booking not found or cannot be updated";
+                if (languageType == 1) msg = "الحجز غير موجود أو لا يمكن تحديثه";
+                else if (languageType == 2) msg = "Réservation introuvable ou ne peut pas être mise à jour";
+                return helper.failure(res, msg, 404);
             }
 
             await booking.update({
@@ -1760,7 +1881,11 @@ module.exports = {
                 pickupLongitude: pickupLongitude.toString()
             });
 
-            return helper.success(res, 'Pickup location updated successfully', {
+            let successMsg = "Pickup location updated successfully";
+            if (languageType == 1) successMsg = "تم تحديث موقع الالتقاط بنجاح";
+            else if (languageType == 2) successMsg = "Lieu de prise en charge mis à jour avec succès";
+
+            return helper.success(res, successMsg, {
                 bookingId: booking.id,
                 pickupLocation: booking.pickupLocation,
                 pickupLatitude: booking.pickupLatitude,
@@ -1768,12 +1893,17 @@ module.exports = {
             });
 
         } catch (error) {
-            return helper.failure(res, "Something went wrong while updating pickup location.");
+            let errMsg = "Something went wrong while updating pickup location.";
+            if (languageType == 1) errMsg = "حدث خطأ أثناء تحديث موقع الالتقاط.";
+            else if (languageType == 2) errMsg = "Une erreur est survenue lors de la mise à jour du lieu de prise en charge.";
+            return helper.failure(res, errMsg);
         }
     },
 
+
     bookingHistory: async (req, res) => {
         try {
+            const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default=English
             const userId = req.user.id;
 
             const userStatus = await db.users.findOne({
@@ -1781,17 +1911,30 @@ module.exports = {
                 attributes: ['status', 'block', 'suspend'],
                 raw: true
             });
+
             if (!userStatus) {
-                return helper.failure(res, "User not found.");
+                let msg = "User not found.";
+                if (languageType == 1) msg = "المستخدم غير موجود.";
+                else if (languageType == 2) msg = "Utilisateur non trouvé.";
+                return helper.failure(res, msg);
             }
             if (userStatus.status === "0") {
-                return helper.error2(res, "Your account has been deactivated by admin.");
+                let msg = "Your account has been deactivated by admin.";
+                if (languageType == 1) msg = "تم تعطيل حسابك من قبل المسؤول.";
+                else if (languageType == 2) msg = "Votre compte a été désactivé par l'administrateur.";
+                return helper.error2(res, msg);
             }
             if (userStatus.block === "1") {
-                return helper.error1(res, "Your account has been blocked by admin.");
+                let msg = "Your account has been blocked by admin.";
+                if (languageType == 1) msg = "تم حظر حسابك من قبل المسؤول.";
+                else if (languageType == 2) msg = "Votre compte a été bloqué par l'administrateur.";
+                return helper.error1(res, msg);
             }
             if (userStatus.suspend === "1") {
-                return helper.error3(res, "Your account has been suspended by admin.");
+                let msg = "Your account has been suspended by admin.";
+                if (languageType == 1) msg = "تم تعليق حسابك من قبل المسؤول.";
+                else if (languageType == 2) msg = "Votre compte a été suspendu par l'administrateur.";
+                return helper.error3(res, msg);
             }
 
             const { status } = req.query;
@@ -1854,7 +1997,11 @@ module.exports = {
                 order: [['id', 'DESC']]
             });
 
-            return helper.success(res, 'Booking history fetched successfully', {
+            let successMsg = "Booking history fetched successfully";
+            if (languageType == 1) successMsg = "تم جلب سجل الحجز بنجاح";
+            else if (languageType == 2) successMsg = "Historique des réservations récupéré avec succès";
+
+            return helper.success(res, successMsg, {
                 totalBookings: totalBookings,
                 currentPage: page,
                 totalPages: Math.ceil(totalBookings / limit),
@@ -1880,12 +2027,17 @@ module.exports = {
 
         } catch (error) {
             console.error('Booking history error:', error);
-            return helper.failure(res, "Something went wrong while fetching booking history.");
+            let errMsg = "Something went wrong while fetching booking history.";
+            if (languageType == 1) errMsg = "حدث خطأ أثناء جلب سجل الحجز.";
+            else if (languageType == 2) errMsg = "Une erreur est survenue lors de la récupération de l'historique des réservations.";
+            return helper.failure(res, errMsg);
         }
     },
 
+
     bookingDetail: async (req, res) => {
         try {
+            const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default=English
             const userId = req.user.id;
             const { id } = req.params;
 
@@ -1894,31 +2046,41 @@ module.exports = {
                 attributes: ['status', 'block', 'suspend'],
                 raw: true
             });
+
             if (!userStatus) {
-                return helper.failure(res, "User not found.");
+                let msg = "User not found.";
+                if (languageType == 1) msg = "المستخدم غير موجود.";
+                else if (languageType == 2) msg = "Utilisateur non trouvé.";
+                return helper.failure(res, msg);
             }
             if (userStatus.status === "0") {
-                return helper.error2(res, "Your account has been deactivated by admin.");
+                let msg = "Your account has been deactivated by admin.";
+                if (languageType == 1) msg = "تم تعطيل حسابك من قبل المسؤول.";
+                else if (languageType == 2) msg = "Votre compte a été désactivé par l'administrateur.";
+                return helper.error2(res, msg);
             }
             if (userStatus.block === "1") {
-                return helper.error1(res, "Your account has been blocked by admin.");
+                let msg = "Your account has been blocked by admin.";
+                if (languageType == 1) msg = "تم حظر حسابك من قبل المسؤول.";
+                else if (languageType == 2) msg = "Votre compte a été bloqué par l'administrateur.";
+                return helper.error1(res, msg);
             }
             if (userStatus.suspend === "1") {
-                return helper.error3(res, "Your account has been suspended by admin.");
+                let msg = "Your account has been suspended by admin.";
+                if (languageType == 1) msg = "تم تعليق حسابك من قبل المسؤول.";
+                else if (languageType == 2) msg = "Votre compte a été suspendu par l'administrateur.";
+                return helper.error3(res, msg);
             }
 
             if (!id) {
-                return helper.failure(res, 'Booking ID is required.');
+                let msg = "Booking ID is required.";
+                if (languageType == 1) msg = "رقم تعريف الحجز مطلوب.";
+                else if (languageType == 2) msg = "L'ID de réservation est requis.";
+                return helper.failure(res, msg);
             }
 
             const booking = await db.bookings.findOne({
-                where: {
-                    id: id,
-                    // [Sequelize.Op.or]: [
-                    //     // { driverId: userId },
-                    //     { userId: userId }
-                    // ]
-                },
+                where: { id: id },
                 include: [
                     {
                         model: db.users,
@@ -1937,10 +2099,17 @@ module.exports = {
             });
 
             if (!booking) {
-                return helper.failure(res, 'Booking not found',);
+                let msg = "Booking not found.";
+                if (languageType == 1) msg = "الحجز غير موجود.";
+                else if (languageType == 2) msg = "Réservation non trouvée.";
+                return helper.failure(res, msg);
             }
 
-            return helper.success(res, 'Booking details fetched successfully', {
+            let successMsg = "Booking details fetched successfully";
+            if (languageType == 1) successMsg = "تم جلب تفاصيل الحجز بنجاح";
+            else if (languageType == 2) successMsg = "Détails de la réservation récupérés avec succès";
+
+            return helper.success(res, successMsg, {
                 bookingId: booking.id,
                 orderId: booking.orderId,
                 driverId: booking.driverId,
@@ -1962,10 +2131,12 @@ module.exports = {
 
         } catch (error) {
             console.error('Ride details error:', error);
-            return helper.failure(res, "Something went wrong while fetching ride details.");
+            let errMsg = "Something went wrong while fetching ride details.";
+            if (languageType == 1) errMsg = "حدث خطأ أثناء جلب تفاصيل الحجز.";
+            else if (languageType == 2) errMsg = "Une erreur est survenue lors de la récupération des détails de la réservation.";
+            return helper.failure(res, errMsg);
         }
     },
-
 
 
     // cancelRide: (io) => {
@@ -2139,68 +2310,54 @@ module.exports = {
     cancelRide: (io) => {
         return async (req, res) => {
             try {
+                const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default=English
                 const loggedInUserId = req.user.id;
                 const loggedInUserRole = req.user.role; // "1" = user, "2" = driver
                 const { bookingId } = req.body;
 
-                if (!bookingId) {
-                    return helper.failure(res, "Booking ID is required.");
-                }
+                let msgBookingRequired = "Booking ID is required.";
+                if (languageType == 1) msgBookingRequired = "رقم تعريف الحجز مطلوب.";
+                else if (languageType == 2) msgBookingRequired = "L'ID de réservation est requis.";
+
+                if (!bookingId) return helper.failure(res, msgBookingRequired);
 
                 const cancellableStatus = ["0", "1"];
+                const whereCond = { id: bookingId, status: { [Op.in]: cancellableStatus } };
 
-                const whereCond = {
-                    id: bookingId,
-                    status: { [Op.in]: cancellableStatus }
-                };
-
-                if (loggedInUserRole === "1") {
-                    whereCond.userId = loggedInUserId;
-                } else if (loggedInUserRole === "2") {
-                    whereCond.driverId = loggedInUserId;
-                } else {
-                    return helper.failure(res, "Only users or drivers can cancel a ride.");
+                if (loggedInUserRole === "1") whereCond.userId = loggedInUserId;
+                else if (loggedInUserRole === "2") whereCond.driverId = loggedInUserId;
+                else {
+                    let msgRoleErr = "Only users or drivers can cancel a ride.";
+                    if (languageType == 1) msgRoleErr = "فقط المستخدمين أو السائقين يمكنهم إلغاء الرحلة.";
+                    else if (languageType == 2) msgRoleErr = "Seuls les utilisateurs ou les conducteurs peuvent annuler une course.";
+                    return helper.failure(res, msgRoleErr);
                 }
 
                 const booking = await db.bookings.findOne({ where: whereCond });
 
-                if (!booking) {
-                    return helper.failure(res, "Ride cannot be cancelled or already processed.");
-                }
+                let msgCannotCancel = "Ride cannot be cancelled or already processed.";
+                if (languageType == 1) msgCannotCancel = "لا يمكن إلغاء الرحلة أو تم معالجتها بالفعل.";
+                else if (languageType == 2) msgCannotCancel = "La course ne peut pas être annulée ou a déjà été traitée.";
+
+                if (!booking) return helper.failure(res, msgCannotCancel);
 
                 const driverId = booking.driverId;
-
-                // 5 = cancelled by user
-                // 4 = cancelled by driver
                 const newStatus = loggedInUserRole === "1" ? "5" : "4";
                 await booking.update({ status: newStatus });
 
-                /* ================= DRIVER BUSY CHECK ================= */
                 async function isDriverBusy(id) {
                     return await db.bookings.findOne({
-                        where: {
-                            driverId: id,
-                            status: { [Op.in]: ["0", "1", "2"] }
-                        }
+                        where: { driverId: id, status: { [Op.in]: ["0", "1", "2"] } }
                     });
                 }
 
-                /* ==========================================================
-                   ==================== USER CANCEL ==========================
-                   ========================================================== */
+                /* ================= USER CANCEL ================= */
                 if (loggedInUserRole === "1") {
-
                     const request = booking.request;
 
-                    // If driver rejected earlier → NO PUSH
-                    if (request === "2") {
-                        console.log("Driver already rejected → Not sending cancel push");
-                    } else {
+                    if (request !== "2") {
                         const busyRide = await isDriverBusy(driverId);
-
                         if (!busyRide && request === "1" && driverId) {
-
-                            /* -------- PUSH NOTIFICATION TO DRIVER -------- */
                             const driverToken = await db.users.findOne({
                                 where: { id: driverId },
                                 attributes: ["deviceToken"],
@@ -2208,22 +2365,23 @@ module.exports = {
                             });
 
                             if (driverToken?.deviceToken) {
-                                const notiData = {
-                                    message: "Ride cancelled by user",
+                                let msgPush = "Ride cancelled by user";
+                                if (languageType == 1) msgPush = "تم إلغاء الرحلة بواسطة المستخدم";
+                                else if (languageType == 2) msgPush = "Course annulée par l'utilisateur";
+
+                                helper.sendNotification_android(driverToken.deviceToken, {
+                                    message: msgPush,
                                     type: 5,
                                     bookingId: booking.id.toString(),
                                     cancelledBy: "user"
-                                };
-
-                                helper.sendNotification_android(driverToken.deviceToken, notiData);
+                                });
                             }
 
-                            /* -------- SOCKET EMIT -------- */
                             if (global.onlineUsers?.[driverId]) {
                                 global.onlineUsers[driverId].forEach(socketId => {
                                     io.to(socketId).emit("rideStatusUpdate", {
                                         success: true,
-                                        message: "Ride cancelled by user",
+                                        message: msgPush,
                                         bookingId: booking.id,
                                         status: "5",
                                         cancelledBy: "user"
@@ -2233,7 +2391,6 @@ module.exports = {
                         }
                     }
 
-                    /* ============= IF NO DRIVER ACCEPTED YET (request = 0) ============= */
                     if (request === "0") {
                         const pickupLat = parseFloat(booking.pickupLatitude);
                         const pickupLng = parseFloat(booking.pickupLongitude);
@@ -2260,62 +2417,47 @@ module.exports = {
 
                         for (const driver of drivers) {
                             if (!driver.latitude || !driver.longitude) continue;
+                            const dist = distanceInKm(pickupLat, pickupLng, parseFloat(driver.latitude), parseFloat(driver.longitude));
+                            const busyRide = await isDriverBusy(driver.id);
+                            if (dist <= MAX_DISTANCE && !busyRide) {
+                                const driverToken = await db.users.findOne({
+                                    where: { id: driver.id },
+                                    attributes: ["deviceToken"],
+                                    raw: true
+                                });
 
-                            const dist = distanceInKm(
-                                pickupLat,
-                                pickupLng,
-                                parseFloat(driver.latitude),
-                                parseFloat(driver.longitude)
-                            );
+                                if (driverToken?.deviceToken) {
+                                    let msgPush = "Ride request cancelled by user";
+                                    if (languageType == 1) msgPush = "تم إلغاء طلب الرحلة بواسطة المستخدم";
+                                    else if (languageType == 2) msgPush = "Demande de course annulée par l'utilisateur";
 
-                            if (dist <= MAX_DISTANCE) {
-
-                                const busyRide = await isDriverBusy(driver.id);
-                                if (!busyRide) {
-
-                                    /* -------- PUSH TO ALL NEARBY DRIVERS -------- */
-                                    const driverToken = await db.users.findOne({
-                                        where: { id: driver.id },
-                                        attributes: ["deviceToken"],
-                                        raw: true
+                                    helper.sendNotification_android(driverToken.deviceToken, {
+                                        message: msgPush,
+                                        type: 5,
+                                        bookingId: booking.id.toString(),
+                                        cancelledBy: "user"
                                     });
+                                }
 
-                                    if (driverToken?.deviceToken) {
-                                        const notiData = {
-                                            message: "Ride request cancelled by user",
-                                            type: 5,
-                                            bookingId: booking.id.toString(),
+                                if (global.onlineUsers?.[driver.id]) {
+                                    global.onlineUsers[driver.id].forEach(socketId => {
+                                        io.to(socketId).emit("rideStatusUpdate", {
+                                            success: true,
+                                            message: msgPush,
+                                            bookingId: booking.id,
+                                            status: "5",
                                             cancelledBy: "user"
-                                        };
-
-                                        helper.sendNotification_android(driverToken.deviceToken, notiData);
-                                    }
-
-                                    /* -------- SOCKET -------- */
-                                    if (global.onlineUsers?.[driver.id]) {
-                                        global.onlineUsers[driver.id].forEach(socketId => {
-                                            io.to(socketId).emit("rideStatusUpdate", {
-                                                success: true,
-                                                message: "Ride cancelled by user",
-                                                bookingId: booking.id,
-                                                status: "5",
-                                                cancelledBy: "user"
-                                            });
                                         });
-                                    }
+                                    });
                                 }
                             }
                         }
                     }
                 }
 
-                /* ==========================================================
-                   ==================== DRIVER CANCEL =========================
-                   ========================================================== */
+                /* ================= DRIVER CANCEL ================= */
                 if (loggedInUserRole === "2") {
                     const userId = booking.userId;
-
-                    /* -------- PUSH TO USER -------- */
                     const userToken = await db.users.findOne({
                         where: { id: userId },
                         attributes: ["deviceToken"],
@@ -2323,22 +2465,23 @@ module.exports = {
                     });
 
                     if (userToken?.deviceToken) {
-                        const notiData = {
-                            message: "Ride cancelled by driver",
+                        let msgPush = "Ride cancelled by driver";
+                        if (languageType == 1) msgPush = "تم إلغاء الرحلة بواسطة السائق";
+                        else if (languageType == 2) msgPush = "Course annulée par le conducteur";
+
+                        helper.sendNotification_android(userToken.deviceToken, {
+                            message: msgPush,
                             type: 4,
                             bookingId: booking.id.toString(),
                             cancelledBy: "driver"
-                        };
-
-                        sendNotification_android(userToken.deviceToken, notiData);
+                        });
                     }
 
-                    /* -------- SOCKET -------- */
                     if (global.onlineUsers?.[userId]) {
                         global.onlineUsers[userId].forEach(socketId => {
                             io.to(socketId).emit("rideStatusUpdate", {
                                 success: true,
-                                message: "Ride cancelled by driver",
+                                message: msgPush,
                                 bookingId: booking.id,
                                 status: "4",
                                 cancelledBy: "driver"
@@ -2347,37 +2490,51 @@ module.exports = {
                     }
                 }
 
-                const msg =
-                    loggedInUserRole === "1"
-                        ? "Ride cancelled by user successfully."
-                        : "Ride cancelled by driver successfully.";
+                let msgSuccess = loggedInUserRole === "1"
+                    ? "Ride cancelled by user successfully."
+                    : "Ride cancelled by driver successfully.";
+                if (languageType == 1) msgSuccess = loggedInUserRole === "1"
+                    ? "تم إلغاء الرحلة بواسطة المستخدم بنجاح."
+                    : "تم إلغاء الرحلة بواسطة السائق بنجاح.";
+                else if (languageType == 2) msgSuccess = loggedInUserRole === "1"
+                    ? "Course annulée par l'utilisateur avec succès."
+                    : "Course annulée par le conducteur avec succès.";
 
-                return helper.success(res, msg, {
+                return helper.success(res, msgSuccess, {
                     bookingId: booking.id,
                     cancelledBy: loggedInUserRole === "1" ? "user" : "driver",
                     status: newStatus,
-                    message: "Ride has been cancelled."
+                    message: msgSuccess
                 });
 
             } catch (error) {
                 console.error(error);
-                return helper.failure(res, "Something went wrong while cancelling the ride.");
+                let errMsg = "Something went wrong while cancelling the ride.";
+                if (languageType == 1) errMsg = "حدث خطأ أثناء إلغاء الرحلة.";
+                else if (languageType == 2) errMsg = "Une erreur est survenue lors de l'annulation de la course.";
+                return helper.failure(res, errMsg);
             }
         };
     },
 
 
-
     report: async (req, res) => {
         try {
+            const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default=English
+
             const v = new Validator(req.body, {
                 reportTo: "required",
             });
             const errorResponse = await helper.checkValidation(v);
             if (errorResponse) {
-                return helper.error(res, errorResponse);
+                let msgValidation = errorResponse;
+                if (languageType == 1) msgValidation = "حقل 'reportTo' مطلوب.";
+                else if (languageType == 2) msgValidation = "Le champ 'reportTo' est requis.";
+                return helper.error(res, msgValidation);
             }
+
             req.body.reportBy = req.user.id;
+
             // Check if the report already exists
             const existingReport = await db.reports.findOne({
                 where: {
@@ -2387,26 +2544,42 @@ module.exports = {
                 raw: true
             });
 
+            let msgAlreadyReported = "You have already reported this user.";
+            if (languageType == 1) msgAlreadyReported = "لقد قمت بالإبلاغ عن هذا المستخدم بالفعل.";
+            else if (languageType == 2) msgAlreadyReported = "Vous avez déjà signalé cet utilisateur.";
+
             if (existingReport) {
-                return helper.failure(res, "You have already reported this user.");
+                return helper.failure(res, msgAlreadyReported);
             }
 
-            // Create a new report if it doesn't exist
+            // Create a new report
             const newReport = await db.reports.create({
                 ...req.body,
             });
 
-            return helper.success(res, "Report added successfully", newReport);
+            let msgSuccess = "Report added successfully";
+            if (languageType == 1) msgSuccess = "تم إضافة البلاغ بنجاح";
+            else if (languageType == 2) msgSuccess = "Signalement ajouté avec succès";
+
+            return helper.success(res, msgSuccess, newReport);
 
         } catch (error) {
             console.error("Error:", error);
-            return helper.error(res, "Something went wrong.", error);
+
+            let msgError = "Something went wrong.";
+            if (languageType == 1) msgError = "حدث خطأ ما.";
+            else if (languageType == 2) msgError = "Une erreur est survenue.";
+
+            return helper.error(res, msgError, error);
         }
     },
+
 
     blockUser: (io) => {
         return async (req, res) => {
             try {
+                const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default=English
+
                 const v = new Validator(req.body, {
                     userId: "required",
                     block: "required|in:0,1"
@@ -2414,14 +2587,21 @@ module.exports = {
 
                 const errorResponse = await helper.checkValidation(v);
                 if (errorResponse) {
-                    return helper.failure(res, errorResponse);
+                    let msgValidation = errorResponse;
+                    if (languageType == 1) msgValidation = "حقل 'userId' و 'block' مطلوبان وصحيحة.";
+                    else if (languageType == 2) msgValidation = "Les champs 'userId' et 'block' sont requis et valides.";
+                    return helper.failure(res, msgValidation);
                 }
 
                 const blockBy = req.user.id;
                 const blockTo = req.body.userId;
 
+                let msgSelfBlock = "You cannot block yourself.";
+                if (languageType == 1) msgSelfBlock = "لا يمكنك حظر نفسك.";
+                else if (languageType == 2) msgSelfBlock = "Vous ne pouvez pas vous bloquer vous-même.";
+
                 if (blockBy == blockTo) {
-                    return helper.failure(res, "You cannot block yourself.");
+                    return helper.failure(res, msgSelfBlock);
                 }
 
                 await db.users.update(
@@ -2429,10 +2609,14 @@ module.exports = {
                     { where: { id: blockTo } }
                 );
 
-                const message =
+                let message =
                     req.body.block === "1"
                         ? "User blocked successfully"
                         : "User unblocked successfully";
+
+                if (languageType == 1) message = req.body.block === "1" ? "تم حظر المستخدم بنجاح" : "تم إلغاء حظر المستخدم بنجاح";
+                else if (languageType == 2) message = req.body.block === "1" ? "Utilisateur bloqué avec succès" : "Utilisateur débloqué avec succès";
+
                 if (io && global.onlineUsers && onlineUsers[blockTo]) {
                     onlineUsers[blockTo].forEach(socketId => {
                         io.to(socketId).emit("blockedStatusChanged", {
@@ -2447,21 +2631,39 @@ module.exports = {
 
             } catch (error) {
                 console.error("Block user error:", error);
-                return helper.failure(res, "Something went wrong.");
+
+                let msgError = "Something went wrong.";
+                if (languageType == 1) msgError = "حدث خطأ ما.";
+                else if (languageType == 2) msgError = "Une erreur est survenue.";
+
+                return helper.failure(res, msgError);
             }
         };
     },
 
     driverWaletRecharge: async (req, res) => {
         try {
+            const languageType = Number(req.headers.languagetype); // 1 = Arabic, 2 = French, default = English
+
             const data = await db.transferscreenshot.create({
                 driverId: req.user.id,
                 image: req.body.image
             });
-            return helper.success(res, "Driver Wallet Recharge created successfully", data);
+
+            let successMessage = "Driver Wallet Recharge created successfully";
+            if (languageType === 1) successMessage = "تم إنشاء إعادة شحن محفظة السائق بنجاح";
+            else if (languageType === 2) successMessage = "Recharge du portefeuille du conducteur créée avec succès";
+
+            return helper.success(res, successMessage, data);
+
         } catch (error) {
-            console.log(error);
-            return helper.failure(res, "Something went wrong");
+            console.error(error);
+
+            let errorMessage = "Something went wrong";
+            if (languageType === 1) errorMessage = "حدث خطأ ما";
+            else if (languageType === 2) errorMessage = "Une erreur est survenue";
+
+            return helper.failure(res, errorMessage);
         }
     }
 
