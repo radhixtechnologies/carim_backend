@@ -783,144 +783,174 @@ module.exports = {
         }
     },
 
-    vehicleEdit: async (req, res) => {
-        try {
-            const v = new Validator(req.body, {
+ vehicleEdit: async (req, res) => {
+    try {
+        const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
 
-            });
+        const v = new Validator(req.body, {});
 
-            const errorsResponse = await helper.checkValidation(v);
-            if (errorsResponse) {
-                return helper.failure(res, errorsResponse);
-            }
+        const errorsResponse = await helper.checkValidation(v);
+        if (errorsResponse) {
+            return helper.failure(res, errorsResponse);
+        }
 
-            const {
-                vehicleBrand,
-                vehicleId,
-                vehicleModel,
-                vehicleYear,
+        const {
+            vehicleBrand,
+            vehicleId,
+            vehicleModel,
+            vehicleYear,
+            vehicleNumber,
+            vehicleColor,
+            vehicleDocument,
+            drivingLicence,
+            passengerCount
+        } = req.body;
+
+        const driverId = req.user.id;
+
+        const driver = await db.users.findOne({
+            where: { id: driverId, role: "2", deletedAt: null }
+        });
+
+        if (!driver) {
+            let msg = 'User not found or not authorized as driver';
+            if (languageType == 1) msg = "المستخدم غير موجود أو غير مخول كسائق";
+            else if (languageType == 2) msg = "Utilisateur introuvable ou non autorisé en tant que conducteur";
+            return helper.failure(res, msg);
+        }
+
+        const existingVehicle = await db.vehicleDetails.findOne({
+            where: { id: vehicleId, driverId }
+        });
+
+        if (!existingVehicle) {
+            let msg = 'Vehicle not found or not authorized to edit';
+            if (languageType == 1) msg = "المركبة غير موجودة أو غير مخول لتعديلها";
+            else if (languageType == 2) msg = "Véhicule introuvable ou non autorisé à modifier";
+            return helper.failure(res, msg);
+        }
+
+        const existingVehicleNumber = await db.vehicleDetails.findOne({
+            where: {
                 vehicleNumber,
-                vehicleColor,
-                vehicleDocument,
-                drivingLicence,
-                passengerCount
-            } = req.body;
-
-            const driverId = req.user.id;
-
-            const driver = await db.users.findOne({
-                where: {
-                    id: driverId,
-                    role: "2",
-                    deletedAt: null
-                }
-            });
-
-            if (!driver) {
-                return helper.failure(res, 'User not found or not authorized as driver');
+                id: { [db.Sequelize.Op.ne]: vehicleId }
             }
+        });
 
-            const existingVehicle = await db.vehicleDetails.findOne({
-                where: {
-                    id: vehicleId,
-                    driverId: driverId
-                }
-            });
-
-            if (!existingVehicle) {
-                return helper.failure(res, 'Vehicle not found or not authorized to edit');
-            }
-
-            const existingVehicleNumber = await db.vehicleDetails.findOne({
-                where: {
-                    vehicleNumber: vehicleNumber,
-                    id: { [db.Sequelize.Op.ne]: vehicleId }
-                }
-            });
-
-            if (existingVehicleNumber) {
-                return helper.failure(res, 'Vehicle number already registered by another vehicle');
-            }
-
-            await db.vehicleDetails.update({
-                vehicleBrand: vehicleBrand,
-                vehicleModel: vehicleModel,
-                vehicleYear: vehicleYear,
-                vehicleNumber: vehicleNumber,
-                vehicleColor: vehicleColor,
-                vehicleDocument: vehicleDocument,
-                drivingLicence: drivingLicence,
-                passengerCount: passengerCount,
-                updatedAt: new Date()
-            }, {
-                where: {
-                    id: vehicleId,
-                    driverId: driverId
-                }
-            });
-
-            const updatedVehicle = await db.vehicleDetails.findOne({
-                where: { id: vehicleId }
-            });
-
-            const responseData = {
-                id: updatedVehicle.id,
-                vehicleBrand: updatedVehicle.vehicleBrand,
-                vehicleModel: updatedVehicle.vehicleModel,
-                vehicleYear: updatedVehicle.vehicleYear,
-                vehicleNumber: updatedVehicle.vehicleNumber,
-                vehicleColor: updatedVehicle.vehicleColor,
-                vehicleDocument: updatedVehicle.vehicleDocument,
-                drivingLicence: updatedVehicle.drivingLicence,
-                passengerCount: updatedVehicle.passengerCount,
-                updatedAt: updatedVehicle.updatedAt
-            };
-
-            return helper.success(res, 'Vehicle updated successfully', responseData);
-
-        } catch (error) {
-            return helper.failure(res, `Something went wrong while updating vehicle: ${error.message}`);
+        if (existingVehicleNumber) {
+            let msg = 'Vehicle number already registered by another vehicle';
+            if (languageType == 1) msg = "رقم المركبة مسجل بالفعل بواسطة مركبة أخرى";
+            else if (languageType == 2) msg = "Numéro de véhicule déjà enregistré par un autre véhicule";
+            return helper.failure(res, msg);
         }
-    },
-    vehicleGet: async (req, res) => {
-        try {
-            const driverId = req.user.id;
 
-            const driver = await db.users.findOne({
-                where: {
-                    id: driverId,
-                    role: "2",
-                    deletedAt: null
-                }
-            });
-            if (!driver) {
-                return helper.failure(res, 'User not found or not authorized as driver');
-            }
-            if (driver.status === "0") {
-                return helper.error2(res, "Your account has been deactivated by admin.");
-            }
+        await db.vehicleDetails.update({
+            vehicleBrand,
+            vehicleModel,
+            vehicleYear,
+            vehicleNumber,
+            vehicleColor,
+            vehicleDocument,
+            drivingLicence,
+            passengerCount,
+            updatedAt: new Date()
+        }, {
+            where: { id: vehicleId, driverId }
+        });
 
-            if (driver.block === "1") {
-                return helper.error1(res, "Your account has been blocked by admin.");
-            }
+        const updatedVehicle = await db.vehicleDetails.findOne({ where: { id: vehicleId } });
 
-            if (driver.suspend === "1") {
-                return helper.error3(res, "Your account has been suspended by admin.");
-            }
-            const vehicle = await db.vehicleDetails.findOne({
-                where: { driverId },
-            });
+        const responseData = {
+            id: updatedVehicle.id,
+            vehicleBrand: updatedVehicle.vehicleBrand,
+            vehicleModel: updatedVehicle.vehicleModel,
+            vehicleYear: updatedVehicle.vehicleYear,
+            vehicleNumber: updatedVehicle.vehicleNumber,
+            vehicleColor: updatedVehicle.vehicleColor,
+            vehicleDocument: updatedVehicle.vehicleDocument,
+            drivingLicence: updatedVehicle.drivingLicence,
+            passengerCount: updatedVehicle.passengerCount,
+            updatedAt: updatedVehicle.updatedAt
+        };
 
-            if (!vehicle) {
-                return helper.failure(res, 'No vehicle found for this driver');
-            }
+        let msg = 'Vehicle updated successfully';
+        if (languageType == 1) msg = "تم تحديث المركبة بنجاح";
+        else if (languageType == 2) msg = "Véhicule mis à jour avec succès";
 
-            return helper.success(res, 'Vehicle details fetched successfully', vehicle);
+        return helper.success(res, msg, responseData);
 
-        } catch (error) {
-            return helper.failure(res, `Something went wrong while fetching vehicle: ${error.message}`);
+    } catch (error) {
+        console.error('vehicleEdit error:', error);
+
+        let msg = `Something went wrong while updating vehicle: ${error.message}`;
+        if (languageType == 1) msg = `حدث خطأ أثناء تحديث المركبة: ${error.message}`;
+        else if (languageType == 2) msg = `Une erreur s'est produite lors de la mise à jour du véhicule : ${error.message}`;
+
+        return helper.failure(res, msg);
+    }
+},
+
+  vehicleGet: async (req, res) => {
+    try {
+        const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
+        const driverId = req.user.id;
+
+        const driver = await db.users.findOne({
+            where: { id: driverId, role: "2", deletedAt: null }
+        });
+
+        if (!driver) {
+            let msg = 'User not found or not authorized as driver';
+            if (languageType == 1) msg = "المستخدم غير موجود أو غير مخول كسائق";
+            else if (languageType == 2) msg = "Utilisateur introuvable ou non autorisé en tant que conducteur";
+            return helper.failure(res, msg);
         }
-    },
+
+        if (driver.status === "0") {
+            let msg = "Your account has been deactivated by admin.";
+            if (languageType == 1) msg = "تم تعطيل حسابك من قبل المسؤول.";
+            else if (languageType == 2) msg = "Votre compte a été désactivé par l’administrateur.";
+            return helper.error2(res, msg);
+        }
+
+        if (driver.block === "1") {
+            let msg = "Your account has been blocked by admin.";
+            if (languageType == 1) msg = "تم حظر حسابك من قبل المسؤول.";
+            else if (languageType == 2) msg = "Votre compte a été bloqué par l’administrateur.";
+            return helper.error1(res, msg);
+        }
+
+        if (driver.suspend === "1") {
+            let msg = "Your account has been suspended by admin.";
+            if (languageType == 1) msg = "تم تعليق حسابك من قبل المسؤول.";
+            else if (languageType == 2) msg = "Votre compte a été suspendu par l’administrateur.";
+            return helper.error3(res, msg);
+        }
+
+        const vehicle = await db.vehicleDetails.findOne({ where: { driverId } });
+
+        if (!vehicle) {
+            let msg = 'No vehicle found for this driver';
+            if (languageType == 1) msg = "لا توجد مركبة لهذا السائق";
+            else if (languageType == 2) msg = "Aucun véhicule trouvé pour ce conducteur";
+            return helper.failure(res, msg);
+        }
+
+        let msg = 'Vehicle details fetched successfully';
+        if (languageType == 1) msg = "تم جلب تفاصيل المركبة بنجاح";
+        else if (languageType == 2) msg = "Détails du véhicule récupérés avec succès";
+
+        return helper.success(res, msg, vehicle);
+
+    } catch (error) {
+        console.error('vehicleGet error:', error);
+        let msg = `Something went wrong while fetching vehicle: ${error.message}`;
+        if (languageType == 1) msg = `حدث خطأ أثناء جلب المركبة: ${error.message}`;
+        else if (languageType == 2) msg = `Une erreur s'est produite lors de la récupération du véhicule : ${error.message}`;
+        return helper.failure(res, msg);
+    }
+},
+
     bankDetail: async (req, res) => {
         try {
             const admin = await db.users.findOne({

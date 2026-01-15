@@ -753,7 +753,7 @@ module.exports = function (io) {
           include: [{
             model: db.users,
             as: 'userbook',
-            attributes: ['id', 'rideOtp', 'socketId', 'device_token', 'status', 'block', 'suspend']
+            attributes: ['id', 'rideOtp', 'socketId', 'deviceToken', 'status', 'block', 'suspend']
           }]
         });
 
@@ -770,7 +770,7 @@ module.exports = function (io) {
         // DRIVER CHECK
         const driverStatus = await db.users.findOne({
           where: { id: driverId },
-          attributes: ['device_token', 'status', 'block', 'suspend'],
+          attributes: ['deviceToken', 'status', 'block', 'suspend'],
           raw: true
         });
 
@@ -838,8 +838,8 @@ module.exports = function (io) {
           emitToBoth("Driver arrived", "1");
 
           // 🔥 PUSH NOTIFICATION TO USER
-          if (user.device_token) {
-            sendNotification_android(user.device_token, {
+          if (user.deviceToken) {
+            sendNotification_android(user.deviceToken, {
               message: "Your driver has arrived.",
               type: "ride_arrived",
               senderId: driverId,
@@ -890,8 +890,8 @@ module.exports = function (io) {
           emitToBoth("Ride has started", status, true);
 
           // 🔥 PUSH TO USER
-          if (user.device_token) {
-            sendNotification_android(user.device_token, {
+          if (user.deviceToken) {
+            sendNotification_android(user.deviceToken, {
               message: "Your ride has started.",
               type: "ride_started",
               senderId: driverId,
@@ -925,8 +925,8 @@ module.exports = function (io) {
           emitToBoth("Ride finished successfully", status);
 
           // 🔥 PUSH
-          if (user.device_token) {
-            sendNotification_android(user.device_token, {
+          if (user.deviceToken) {
+            sendNotification_android(user.deviceToken, {
               message: "Your ride has been completed.",
               type: "ride_completed",
               senderId: driverId,
@@ -960,8 +960,8 @@ module.exports = function (io) {
           emitToBoth("Ride cancelled successfully", status);
 
           // 🔥 PUSH
-          if (user.device_token) {
-            sendNotification_android(user.device_token, {
+          if (user.deviceToken) {
+            sendNotification_android(user.deviceToken, {
               message: "Your ride has been cancelled.",
               type: "ride_cancelled",
               senderId: driverId,
@@ -995,8 +995,8 @@ module.exports = function (io) {
           emitToBoth("Driver on the way", "0");
 
           // 🔥 PUSH
-          if (user.device_token) {
-            sendNotification_android(user.device_token, {
+          if (user.deviceToken) {
+            sendNotification_android(user.deviceToken, {
               message: "Driver is on the way.",
               type: "ride_ontheway",
               senderId: driverId,
@@ -1706,9 +1706,9 @@ module.exports = function (io) {
                        PUSH NOTIFICATION (ONLY THIS ADDED)
            ============================================================== */
 
-        if (socketUser && socketUser.device_token) {
+        if (socketUser && socketUser.deviceToken) {
           const payload = {
-            to: socketUser.device_token,
+            to: socketUser.deviceToken,
             notification: {
               title: getMsgData.SenderName || "New Message",
               body: get_data.message || "You received a new message",

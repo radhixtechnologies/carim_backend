@@ -597,11 +597,11 @@ module.exports = {
 
                     const driverToken = await db.users.findOne({
                         where: { id: driver.id },
-                        attributes: ["device_token"],
+                        attributes: ["deviceToken"],
                         raw: true
                     });
 
-                    if (driverToken?.device_token) {
+                    if (driverToken?.deviceToken) {
                         const notiData = {
                             message: "New ride request available",
                             type: 1,
@@ -610,7 +610,7 @@ module.exports = {
                             sender_image: ""
                         };
 
-                        await helper.sendNotification_android(driverToken.device_token, notiData);
+                        await helper.sendNotification_android(driverToken.deviceToken, notiData);
                     }
                 }
 
@@ -1083,7 +1083,7 @@ module.exports = {
 
                 const driver = await db.users.findOne({
                     where: { id: driverId },
-                    attributes: ['approve', 'status', 'block', 'suspend', 'firstName', 'lastName', 'image', 'device_token'],
+                    attributes: ['approve', 'status', 'block', 'suspend', 'firstName', 'lastName', 'image', 'deviceToken'],
                     raw: true
                 });
 
@@ -1141,7 +1141,7 @@ module.exports = {
                         include: [{
                             model: db.users,
                             as: 'userbook',
-                            attributes: ['socketId', 'device_token']
+                            attributes: ['socketId', 'deviceToken']
                         }]
                     });
 
@@ -1177,9 +1177,9 @@ module.exports = {
                         });
 
                         // ================= PUSH: NO DRIVERS AVAILABLE =================
-                        if (bookingUser.userbook?.device_token) {
+                        if (bookingUser.userbook?.deviceToken) {
                             helper.sendNotification_android(
-                                bookingUser.userbook.device_token,
+                                bookingUser.userbook.deviceToken,
                                 {
                                     message: "Currently no drivers are available for your ride",
                                     type: "no_driver",
@@ -1207,7 +1207,7 @@ module.exports = {
                     include: [{
                         model: db.users,
                         as: 'userbook',
-                        attributes: ['id', 'socketId', 'device_token']
+                        attributes: ['id', 'socketId', 'deviceToken']
                     }]
                 });
 
@@ -1232,7 +1232,7 @@ module.exports = {
                 }
 
                 // ========== PUSH NOTIFICATION TO USER (ACCEPT / REJECT) ==========
-                if (booking.userbook?.device_token) {
+                if (booking.userbook?.deviceToken) {
                     let pushMessage =
                         request === "1"
                             ? "Driver has accepted your ride request"
@@ -1241,7 +1241,7 @@ module.exports = {
                                 : "Driver has rejected your ride request";
 
                     helper.sendNotification_android(
-                        booking.userbook.device_token,
+                        booking.userbook.deviceToken,
                         {
                             message: pushMessage,
                             type: request === "1" ? "ride_accept" : "ride_reject",
@@ -2203,11 +2203,11 @@ module.exports = {
                             /* -------- PUSH NOTIFICATION TO DRIVER -------- */
                             const driverToken = await db.users.findOne({
                                 where: { id: driverId },
-                                attributes: ["device_token"],
+                                attributes: ["deviceToken"],
                                 raw: true
                             });
 
-                            if (driverToken?.device_token) {
+                            if (driverToken?.deviceToken) {
                                 const notiData = {
                                     message: "Ride cancelled by user",
                                     type: 5,
@@ -2215,7 +2215,7 @@ module.exports = {
                                     cancelledBy: "user"
                                 };
 
-                                helper.sendNotification_android(driverToken.device_token, notiData);
+                                helper.sendNotification_android(driverToken.deviceToken, notiData);
                             }
 
                             /* -------- SOCKET EMIT -------- */
@@ -2276,11 +2276,11 @@ module.exports = {
                                     /* -------- PUSH TO ALL NEARBY DRIVERS -------- */
                                     const driverToken = await db.users.findOne({
                                         where: { id: driver.id },
-                                        attributes: ["device_token"],
+                                        attributes: ["deviceToken"],
                                         raw: true
                                     });
 
-                                    if (driverToken?.device_token) {
+                                    if (driverToken?.deviceToken) {
                                         const notiData = {
                                             message: "Ride request cancelled by user",
                                             type: 5,
@@ -2288,7 +2288,7 @@ module.exports = {
                                             cancelledBy: "user"
                                         };
 
-                                        helper.sendNotification_android(driverToken.device_token, notiData);
+                                        helper.sendNotification_android(driverToken.deviceToken, notiData);
                                     }
 
                                     /* -------- SOCKET -------- */
@@ -2318,11 +2318,11 @@ module.exports = {
                     /* -------- PUSH TO USER -------- */
                     const userToken = await db.users.findOne({
                         where: { id: userId },
-                        attributes: ["device_token"],
+                        attributes: ["deviceToken"],
                         raw: true
                     });
 
-                    if (userToken?.device_token) {
+                    if (userToken?.deviceToken) {
                         const notiData = {
                             message: "Ride cancelled by driver",
                             type: 4,
@@ -2330,7 +2330,7 @@ module.exports = {
                             cancelledBy: "driver"
                         };
 
-                        sendNotification_android(userToken.device_token, notiData);
+                        sendNotification_android(userToken.deviceToken, notiData);
                     }
 
                     /* -------- SOCKET -------- */
