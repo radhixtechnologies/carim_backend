@@ -58,6 +58,9 @@ router.post("/blockUser", bookingController.blockUser(io));
 router.post("/driverWaletRecharge", bookingController.driverWaletRecharge);
 
 
+router.post('/testLocation', authController.testLocation);
+router.get('/getLocations', authController.getLocations);
+
 
 
 return router

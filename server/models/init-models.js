@@ -11,6 +11,7 @@ var _notifications = require("./notifications");
 var _reports = require("./reports");
 var _reviewrating = require("./reviewrating");
 var _rideRequest = require("./rideRequest");
+var _testingLocation = require("./testingLocation");
 var _transactions = require("./transactions");
 var _transferscreenshot = require("./transferscreenshot");
 var _userBanks = require("./userBanks");
@@ -30,6 +31,7 @@ function initModels(sequelize) {
   var reports = _reports(sequelize, DataTypes);
   var reviewrating = _reviewrating(sequelize, DataTypes);
   var rideRequest = _rideRequest(sequelize, DataTypes);
+  var testingLocation = _testingLocation(sequelize, DataTypes);
   var transactions = _transactions(sequelize, DataTypes);
   var transferscreenshot = _transferscreenshot(sequelize, DataTypes);
   var userBanks = _userBanks(sequelize, DataTypes);
@@ -50,6 +52,7 @@ function initModels(sequelize) {
     reports,
     reviewrating,
     rideRequest,
+    testingLocation,
     transactions,
     transferscreenshot,
     userBanks,

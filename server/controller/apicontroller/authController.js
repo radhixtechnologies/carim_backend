@@ -9,6 +9,8 @@ const { Sequelize } = require('sequelize');
 module.exports = {
     login: async (req, res) => {
         try {
+            const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
+
             const v = new Validator(req.body, {
                 countryCode: "required",
                 phoneNumber: "required",
@@ -20,143 +22,124 @@ module.exports = {
                 return helper.failure(res, errorsResponse);
             }
 
-            const {
-                deviceToken,
-                deviceType,
-                phoneNumber,
-                countryCode,
-                role,
-            } = req.body;
+            const { deviceToken, deviceType, phoneNumber, countryCode, role } = req.body;
 
             const existingUser = await db.users.findOne({
-                where: {
-                    phoneNumber: phoneNumber,
-                    countryCode: countryCode,
-                    role: role,
-                    deletedAt: null
-                }
+                where: { phoneNumber, countryCode, role, deletedAt: null }
             });
 
             let user;
             let isNewUser = false;
-
             const otp = '1111';
-            const rideOtp = '1111'
+            const rideOtp = '1111';
 
             if (existingUser) {
                 if (existingUser.status === "0") {
-                    return helper.failure(res, 'Your account has been deactivated by admin.');
+                    let msg = "Your account has been deactivated by admin.";
+                    if (languageType == 1) msg = "تم تعطيل حسابك من قبل المسؤول.";
+                    else if (languageType == 2) msg = "Votre compte a été désactivé par l’administrateur.";
+                    return helper.failure(res, msg);
                 }
+
                 if (existingUser.block === "1") {
-                    return helper.failure(res, "Your account has been blocked by admin.",);
+                    let msg = "Your account has been blocked by admin.";
+                    if (languageType == 1) msg = "تم حظر حسابك من قبل المسؤول.";
+                    else if (languageType == 2) msg = "Votre compte a été bloqué par l’administrateur.";
+                    return helper.failure(res, msg);
                 }
+
                 if (existingUser.suspend === "1") {
-                    return helper.failure(res, "Your account has been suspended by admin.",);
+                    let msg = "Your account has been suspended by admin.";
+                    if (languageType == 1) msg = "تم تعليق حسابك من قبل المسؤول.";
+                    else if (languageType == 2) msg = "Votre compte a été suspendu par l’administrateur.";
+                    return helper.failure(res, msg);
                 }
+
                 if (existingUser.role == '2' && existingUser.otpVerify == "1") {
-
-                    // if (existingUser.isProfileComplete != "1") {
-                    //     return helper.failure(res, "Please complete your profile first.");
-                    // }
-
-                    // if (existingUser.vehicle != "1") {
-                    //     return helper.failure(res, "Please add your vehicle details first.");
-                    // }
-
                     if (existingUser.isProfileComplete == "1" && existingUser.vehicle == "1") {
                         if (existingUser.approve != "1") {
-                            return helper.failure(res, "Your driver account is not approved yet.");
+                            let msg = "Your driver account is not approved yet.";
+                            if (languageType == 1) msg = "حساب السائق الخاص بك لم يتم الموافقة عليه بعد.";
+                            else if (languageType == 2) msg = "Votre compte conducteur n’est pas encore approuvé.";
+                            return helper.failure(res, msg);
                         }
                     }
                 }
 
-
                 user = existingUser;
 
                 await db.users.update(
-                    {
-                        online: '1',
-                        otp: otp,
-                        rideOtp: rideOtp,
-                        updatedAt: helper.unixTimestamp()
-                    },
+                    { online: '1', otp, rideOtp, updatedAt: helper.unixTimestamp() },
                     { where: { id: user.id } }
                 );
 
-                user = await db.users.findOne({
-                    where: { id: user.id, deletedAt: null }
-                });
+                user = await db.users.findOne({ where: { id: user.id, deletedAt: null } });
             } else {
                 const userWithSamePhone = await db.users.findOne({
-                    where: {
-                        phoneNumber: phoneNumber,
-                        countryCode: countryCode,
-                        deletedAt: null
-                    }
+                    where: { phoneNumber, countryCode, deletedAt: null }
                 });
 
                 if (userWithSamePhone) {
-                    return helper.failure(res, 'Phone number already registered with a different role');
+                    let msg = "Phone number already registered with a different role";
+                    if (languageType == 1) msg = "رقم الهاتف مسجل بالفعل بدور مختلف";
+                    else if (languageType == 2) msg = "Le numéro de téléphone est déjà enregistré avec un rôle différent";
+                    return helper.failure(res, msg);
                 }
 
                 user = await db.users.create({
-                    countryCode: countryCode,
-                    phoneNumber: phoneNumber,
-                    role: role,
+                    countryCode,
+                    phoneNumber,
+                    role,
                     deviceToken: deviceToken || null,
                     deviceType: deviceType || null,
                     loginTime: helper.unixTimestamp(),
-                    otp: otp,
-                    rideOtp: rideOtp,
+                    otp,
+                    rideOtp,
                     status: "1"
                 });
 
                 isNewUser = true;
             }
-
             const loginTime = helper.unixTimestamp();
-            const token = jwt.sign(
-                { loginTime: loginTime, id: user.id },
-                process.env.JWT_SECRET
-            );
+            const token = jwt.sign({ loginTime, id: user.id }, process.env.JWT_SECRET);
 
-            const updateData = {
-                loginTime: loginTime,
-                updatedAt: helper.unixTimestamp()
-            };
-
+            const updateData = { loginTime, updatedAt: helper.unixTimestamp() };
             if (deviceToken) {
                 updateData.deviceToken = deviceToken;
                 updateData.deviceType = deviceType || null;
             }
 
-            await db.users.update(
-                updateData,
-                { where: { id: user.id } }
-            );
+            await db.users.update(updateData, { where: { id: user.id } });
 
-            const updatedUser = await db.users.findOne({
-                where: { id: user.id, deletedAt: null }
-            });
+            const updatedUser = await db.users.findOne({ where: { id: user.id, deletedAt: null } });
 
-            const responseData = {
-                ...updatedUser.toJSON(),
-                token: token
-            };
-            responseData.otp = otp;
+            const responseData = { ...updatedUser.toJSON(), token, otp };
+
             if (isNewUser) {
-                return helper.success(res, 'Account created successfully. OTP sent for verification.', responseData);
+                let msg = "Account created successfully. OTP sent for verification.";
+                if (languageType == 1) msg = "تم إنشاء الحساب بنجاح. تم إرسال OTP للتحقق.";
+                else if (languageType == 2) msg = "Compte créé avec succès. OTP envoyé pour vérification.";
+                return helper.success(res, msg, responseData);
             }
 
-            return helper.success(res, 'OTP sent successfully for verification', responseData);
+            let msg = "OTP sent successfully for verification";
+            if (languageType == 1) msg = "تم إرسال OTP للتحقق بنجاح";
+            else if (languageType == 2) msg = "OTP envoyé avec succès pour vérification";
+            return helper.success(res, msg, responseData);
 
         } catch (error) {
             console.error('Login error:', error);
-            return helper.failure(res, 'Something went wrong');
+            let msg = "Something went wrong";
+            if (languageType == 1) msg = "حدث خطأ ما";
+            else if (languageType == 2) msg = "Une erreur est survenue";
+            return helper.failure(res, msg);
         }
     },
+
     verifyOtp: async (req, res) => {
         try {
+            const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
+
             const v = new Validator(req.body, {
                 otp: 'required',
                 countryCode: 'required',
@@ -177,15 +160,20 @@ module.exports = {
             });
 
             if (!user) {
-                return helper.failure(res, 'User not found.');
+                let msg = 'User not found.';
+                if (languageType == 1) msg = 'المستخدم غير موجود.';
+                else if (languageType == 2) msg = 'Utilisateur non trouvé.';
+                return helper.failure(res, msg);
             }
 
             if (user.status === "0") {
-                return helper.failure(res, "Your account is in-active by Admin. Please contact the admin for assistance."); // Changed from failure to failure
+                let msg = "Your account is in-active by Admin. Please contact the admin for assistance.";
+                if (languageType == 1) msg = "حسابك معطل من قبل المسؤول. يرجى الاتصال بالمسؤول للمساعدة.";
+                else if (languageType == 2) msg = "Votre compte est inactif par l’administrateur. Veuillez contacter l’administrateur pour obtenir de l’aide.";
+                return helper.failure(res, msg);
             }
 
             if (req.body.otp == user.otp) {
-
                 const loginTime = helper.unixTimestamp();
 
                 const token = jwt.sign(
@@ -209,20 +197,36 @@ module.exports = {
                     }
                 });
 
-                return helper.success(res, 'OTP verified successfully.', {
+                let msg = 'OTP verified successfully.';
+                if (languageType == 1) msg = 'تم التحقق من OTP بنجاح.';
+                else if (languageType == 2) msg = 'OTP vérifié avec succès.';
+
+                return helper.success(res, msg, {
                     ...updated.toJSON(),
                     token: token
                 });
 
             } else {
-                return helper.failure(res, 'OTP does not match.');
+                let msg = 'OTP does not match.';
+                if (languageType == 1) msg = 'OTP غير مطابق.';
+                else if (languageType == 2) msg = 'OTP ne correspond pas.';
+                return helper.failure(res, msg);
             }
+
         } catch (error) {
-            return helper.failure(res, 'Something went wrong');
+            console.error('verifyOtp error:', error);
+            let msg = 'Something went wrong';
+            if (languageType == 1) msg = 'حدث خطأ ما';
+            else if (languageType == 2) msg = 'Une erreur est survenue';
+            return helper.failure(res, msg);
         }
     },
+
+
     resendOTP: async (req, res) => {
         try {
+            const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
+
             const v = new Validator(req.body, {
                 countryCode: "required",
                 phoneNumber: "required",
@@ -236,16 +240,15 @@ module.exports = {
             const { countryCode, phoneNumber } = req.body;
 
             const user = await db.users.findOne({
-                where: {
-                    phoneNumber,
-                    countryCode,
-                    deletedAt: null
-                },
+                where: { phoneNumber, countryCode, deletedAt: null },
                 raw: true
             });
 
             if (!user) {
-                return helper.failure(res, "User not found");
+                let msg = "User not found";
+                if (languageType == 1) msg = "المستخدم غير موجود";
+                else if (languageType == 2) msg = "Utilisateur non trouvé";
+                return helper.failure(res, msg);
             }
 
             const otp = '1111';
@@ -255,48 +258,66 @@ module.exports = {
                     otp: otp,
                     otpVerify: "0",
                 },
-                {
-                    where: {
-                        id: user.id,
-                    },
-                }
+                { where: { id: user.id } }
             );
 
-            return helper.success(res, "OTP Re-sent Successfully");
+            let msg = "OTP Re-sent Successfully";
+            if (languageType == 1) msg = "تم إعادة إرسال OTP بنجاح";
+            else if (languageType == 2) msg = "OTP renvoyé avec succès";
+
+            return helper.success(res, msg);
+
         } catch (error) {
-            return helper.failure(res, "OTP Not Sent!");
+            console.error('resendOTP error:', error);
+            let msg = "OTP Not Sent!";
+            if (languageType == 1) msg = "لم يتم إرسال OTP!";
+            else if (languageType == 2) msg = "OTP non envoyé !";
+            return helper.failure(res, msg);
         }
     },
+
+
     createAccount: async (req, res) => {
         try {
+            const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
+
             let profile = await db.users.findOne({
-                where: {
-                    id: req.user.id,
-                },
+                where: { id: req.user.id },
             });
+
             const rideOtp = Math.floor(1000 + Math.random() * 9000).toString();
-            const updatedProfileData = {
-                ...req.body,
-                rideOtp: rideOtp
-            };
+            const updatedProfileData = { ...req.body, rideOtp };
+
             await db.users.update(updatedProfileData, {
-                where: {
-                    id: req.user.id,
-                },
+                where: { id: req.user.id },
             });
+
             profile = await db.users.findOne({
-                where: {
-                    id: req.user.id,
-                },
+                where: { id: req.user.id },
                 raw: true,
             });
-            return helper.success(res, "Profile addeed successfully.", profile);
+
+            let msg = "Profile added successfully.";
+            if (languageType == 1) msg = "تم إضافة الملف الشخصي بنجاح.";
+            else if (languageType == 2) msg = "Profil ajouté avec succès.";
+
+            return helper.success(res, msg, profile);
+
         } catch (error) {
-            return helper.failure(res, "An error occurred while added the profile.");
+            console.error('createAccount error:', error);
+
+            let msg = "An error occurred while adding the profile.";
+            if (languageType == 1) msg = "حدث خطأ أثناء إضافة الملف الشخصي.";
+            else if (languageType == 2) msg = "Une erreur s'est produite lors de l'ajout du profil.";
+
+            return helper.failure(res, msg);
         }
     },
+
+
     getProfile: async (req, res) => {
         try {
+            const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
             const userId = req.user.id;
 
             const get_user_details = await db.users.findOne({
@@ -305,154 +326,223 @@ module.exports = {
             });
 
             if (!get_user_details) {
-                return helper.error(res, "User not found.");
+                let msg = "User not found.";
+                if (languageType == 1) msg = "المستخدم غير موجود.";
+                else if (languageType == 2) msg = "Utilisateur non trouvé.";
+                return helper.failure(res, msg);
             }
 
-            return helper.success(
-                res,
-                "Get user Profile Successfully.",
-                get_user_details
-            );
+            let msg = "Get user Profile Successfully.";
+            if (languageType == 1) msg = "تم جلب ملف المستخدم بنجاح.";
+            else if (languageType == 2) msg = "Profil utilisateur récupéré avec succès.";
+
+            return helper.success(res, msg, get_user_details);
+
         } catch (error) {
-            return helper.failure(res, "Something went wrong.");
+            console.error('getProfile error:', error);
+
+            let msg = "Something went wrong.";
+            if (languageType == 1) msg = "حدث خطأ ما.";
+            else if (languageType == 2) msg = "Une erreur est survenue.";
+            return helper.failure(res, msg);
         }
     },
+
     editProfile: async (req, res) => {
         try {
+            const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
+
             let profile = await db.users.findOne({
-                where: {
-                    id: req.user.id,
-                },
+                where: { id: req.user.id },
             });
 
-            const updatedProfileData = {
-                ...req.body,
-            };
+            const updatedProfileData = { ...req.body };
+
             await db.users.update(updatedProfileData, {
-                where: {
-                    id: req.user.id,
-                },
+                where: { id: req.user.id },
             });
+
             profile = await db.users.findOne({
-                where: {
-                    id: req.user.id,
-                },
+                where: { id: req.user.id },
                 raw: true,
             });
-            return helper.success(res, "Profile updated successfully.", profile);
+
+            let msg = "Profile updated successfully.";
+            if (languageType == 1) msg = "تم تحديث الملف الشخصي بنجاح.";
+            else if (languageType == 2) msg = "Profil mis à jour avec succès.";
+
+            return helper.success(res, msg, profile);
+
         } catch (error) {
-            return helper.failure(res, "An error occurred while updating the profile.");
+            console.error('editProfile error:', error);
+
+            let msg = "An error occurred while updating the profile.";
+            if (languageType == 1) msg = "حدث خطأ أثناء تحديث الملف الشخصي.";
+            else if (languageType == 2) msg = "Une erreur s'est produite lors de la mise à jour du profil.";
+
+            return helper.failure(res, msg);
         }
     },
+
+
+
     deleteAccount: async (req, res) => {
         try {
+            const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
             const deletedAt = new Date();
 
-            let updatedUser = await db.users.update(
-                {
-                    deletedAt: deletedAt,
-                },
-                {
-                    where: {
-                        id: req.user.id,
-                    },
-                }
+            await db.users.update(
+                { deletedAt },
+                { where: { id: req.user.id } }
             );
 
-            return helper.success(res, "Account deleted successfully.", {});
+            let msg = "Account deleted successfully.";
+            if (languageType == 1) msg = "تم حذف الحساب بنجاح.";
+            else if (languageType == 2) msg = "Compte supprimé avec succès.";
+
+            return helper.success(res, msg, {});
+
         } catch (error) {
-            return helper.failure(res, "Error during account deletion.", {});
+            console.error('deleteAccount error:', error);
+
+            let msg = "Error during account deletion.";
+            if (languageType == 1) msg = "حدث خطأ أثناء حذف الحساب.";
+            else if (languageType == 2) msg = "Erreur lors de la suppression du compte.";
+
+            return helper.failure(res, msg, {});
         }
     },
+
     logout: async (req, res) => {
         try {
-            let loginTime = helper.unixTimestamp();
+            const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
+            const loginTime = helper.unixTimestamp();
+
             await db.users.update(
-                {
-                    deviceToken: "",
-                    loginTime: 0,
-                },
-                {
-                    where: {
-                        id: req.user.id,
-                    },
-                }
+                { deviceToken: "", loginTime: 0 },
+                { where: { id: req.user.id } }
             );
 
-            return helper.success(res, "Logout Successfully", {});
-        } catch (error) {
-            return helper.failure(res, "Error during account logout.", {});
+            let msg = "Logout Successfully";
+            if (languageType == 1) msg = "تم تسجيل الخروج بنجاح";
+            else if (languageType == 2) msg = "Déconnexion réussie";
 
+            return helper.success(res, msg, {});
+
+        } catch (error) {
+            console.error('logout error:', error);
+
+            let msg = "Error during account logout.";
+            if (languageType == 1) msg = "حدث خطأ أثناء تسجيل الخروج من الحساب.";
+            else if (languageType == 2) msg = "Erreur lors de la déconnexion du compte.";
+
+            return helper.failure(res, msg, {});
         }
     },
+
     getCmsContent: async (req, res) => {
         try {
+            const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
             const { type } = req.query;
+
             if (![1, 2, 3].includes(Number(type))) {
-                return helper.failure(
-                    res,
-                    "Invalid type. Use 1 for Privacy Policy, 3 for Terms and Conditions, 2 for About us."
-                );
+                let msg = "Invalid type. Use 1 for Privacy Policy, 3 for Terms and Conditions, 2 for About us.";
+                if (languageType == 1) msg = "نوع غير صالح. استخدم 1 لسياسة الخصوصية، 3 للشروط والأحكام، 2 من نحن.";
+                else if (languageType == 2) msg = "Type invalide. Utilisez 1 pour la politique de confidentialité, 3 pour les termes et conditions, 2 pour À propos de nous.";
+                return helper.failure(res, msg);
             }
+
             const cmsContent = await db.cms.findOne({
-                where: {
-                    type: Number(type),
-                },
+                where: { type: Number(type) },
             });
 
             if (!cmsContent) {
-                return helper.failure(res, "Content not found.");
+                let msg = "Content not found.";
+                if (languageType == 1) msg = "المحتوى غير موجود.";
+                else if (languageType == 2) msg = "Contenu non trouvé.";
+                return helper.failure(res, msg);
             }
 
             let message = "";
             switch (Number(type)) {
                 case 1:
                     message = "Privacy policy guidelines retrieved successfully.";
+                    if (languageType == 1) message = "تم جلب إرشادات سياسة الخصوصية بنجاح.";
+                    else if (languageType == 2) message = "Directives de la politique de confidentialité récupérées avec succès.";
                     break;
                 case 2:
                     message = "About us content retrieved successfully.";
+                    if (languageType == 1) message = "تم جلب محتوى من نحن بنجاح.";
+                    else if (languageType == 2) message = "Contenu À propos de nous récupéré avec succès.";
                     break;
                 case 3:
                     message = "Terms and conditions retrieved successfully.";
-
+                    if (languageType == 1) message = "تم جلب الشروط والأحكام بنجاح.";
+                    else if (languageType == 2) message = "Termes et conditions récupérés avec succès.";
                     break;
             }
 
             return helper.success(res, message, cmsContent);
+
         } catch (error) {
-            return helper.failure(res, error);
+            console.error('getCmsContent error:', error);
+
+            let msg = "Something went wrong.";
+            if (languageType == 1) msg = "حدث خطأ ما.";
+            else if (languageType == 2) msg = "Une erreur est survenue.";
+            return helper.failure(res, msg);
         }
     },
+
+
     notificationOnOff: async (req, res) => {
         try {
+            const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
             const isNotificationOn = parseInt(req.body.isNotificationOn, 10);
 
             if (![0, 1].includes(isNotificationOn)) {
-                return helper.failure(res, "Invalid value. Use 1 or 0 as integer.");
+                let msg = "Invalid value. Use 1 or 0 as integer.";
+                if (languageType == 1) msg = "قيمة غير صالحة. استخدم 1 أو 0 كعدد صحيح.";
+                else if (languageType == 2) msg = "Valeur invalide. Utilisez 1 ou 0 comme entier.";
+                return helper.failure(res, msg);
             }
+
             let user = await db.users.findOne({
                 where: { id: req.user.id },
                 raw: true,
             });
 
             if (!user) {
-                return helper.failure(res, "User not found.");
+                let msg = "User not found.";
+                if (languageType == 1) msg = "المستخدم غير موجود.";
+                else if (languageType == 2) msg = "Utilisateur non trouvé.";
+                return helper.failure(res, msg);
             }
 
-            const msg = isNotificationOn === 1 ? "Notifications ON." : "Notifications OFF.";
+            let msg = isNotificationOn === 1 ? "Notifications ON." : "Notifications OFF.";
+            if (languageType == 1) msg = isNotificationOn === 1 ? "تم تفعيل الإشعارات." : "تم إيقاف الإشعارات.";
+            else if (languageType == 2) msg = isNotificationOn === 1 ? "Notifications activées." : "Notifications désactivées.";
 
             await db.users.update(
                 { isNotificationOn: isNotificationOn.toString() },
                 { where: { id: req.user.id } }
             );
 
-            return helper.success(res, msg, { isNotificationOn: isNotificationOn });
+            return helper.success(res, msg, { isNotificationOn });
+
         } catch (error) {
-            return helper.failure(res, "Something went wrong.", {});
+            console.error('notificationOnOff error:', error);
+            let msg = "Something went wrong.";
+            if (languageType == 1) msg = "حدث خطأ ما.";
+            else if (languageType == 2) msg = "Une erreur est survenue.";
+            return helper.failure(res, msg, {});
         }
     },
+
     createContactUs: async (req, res) => {
         try {
+            const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
+
             const v = new Validator(req.body, {
                 name: "required",
                 email: "required|email",
@@ -477,17 +567,26 @@ module.exports = {
 
             const create_contact = await db.contactus.create(supportData);
 
-            return helper.success(
-                res,
-                "Information submitted successfully.",
-                create_contact
-            );
+            let msg = "Information submitted successfully.";
+            if (languageType == 1) msg = "تم إرسال المعلومات بنجاح.";
+            else if (languageType == 2) msg = "Informations soumises avec succès.";
+
+            return helper.success(res, msg, create_contact);
+
         } catch (error) {
-            return helper.failure(res, "Something went wrong. Please try again.");
+            console.error('createContactUs error:', error);
+            let msg = "Something went wrong. Please try again.";
+            if (languageType == 1) msg = "حدث خطأ ما. يرجى المحاولة مرة أخرى.";
+            else if (languageType == 2) msg = "Une erreur s'est produite. Veuillez réessayer.";
+
+            return helper.failure(res, msg);
         }
     },
+
     vehicleAdd: async (req, res) => {
         try {
+            const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
+
             const v = new Validator(req.body, {
                 vehicleBrand: "required",
                 vehicleModel: "required",
@@ -517,60 +616,55 @@ module.exports = {
             const driverId = req.user.id;
 
             const driver = await db.users.findOne({
-                where: {
-                    id: driverId,
-                    role: "2"
-                }
+                where: { id: driverId, role: "2" }
             });
 
             if (!driver) {
-                return helper.failure(res, 'User not found or not authorized as driver');
+                let msg = 'User not found or not authorized as driver';
+                if (languageType == 1) msg = "المستخدم غير موجود أو غير مخول كسائق";
+                else if (languageType == 2) msg = "Utilisateur introuvable ou non autorisé en tant que conducteur";
+                return helper.failure(res, msg);
             }
 
-            const existingVehicle = await db.vehicleDetails.findOne({
-                where: { driverId }
-            });
-
+            const existingVehicle = await db.vehicleDetails.findOne({ where: { driverId } });
             if (existingVehicle) {
-                return helper.failure(res, 'Vehicle already registered for this driver');
+                let msg = 'Vehicle already registered for this driver';
+                if (languageType == 1) msg = "تم تسجيل مركبة لهذا السائق بالفعل";
+                else if (languageType == 2) msg = "Véhicule déjà enregistré pour ce conducteur";
+                return helper.failure(res, msg);
             }
 
-            const existingVehicleNumber = await db.vehicleDetails.findOne({
-                where: { vehicleNumber }
-            });
-
+            const existingVehicleNumber = await db.vehicleDetails.findOne({ where: { vehicleNumber } });
             if (existingVehicleNumber) {
-                return helper.failure(res, 'Vehicle number already registered');
+                let msg = 'Vehicle number already registered';
+                if (languageType == 1) msg = "رقم المركبة مسجل بالفعل";
+                else if (languageType == 2) msg = "Numéro de véhicule déjà enregistré";
+                return helper.failure(res, msg);
             }
 
             const transaction = await db.sequelize.transaction();
 
             try {
                 const vehicle = await db.vehicleDetails.create({
-                    driverId: driverId,
-                    vehicleBrand: vehicleBrand,
-                    vehicleModel: vehicleModel,
-                    vehicleYear: vehicleYear,
-                    vehicleNumber: vehicleNumber,
-                    vehicleColor: vehicleColor,
-                    vehicleDocument: vehicleDocument,
-                    drivingLicence: drivingLicence,
-                    passengerCount: passengerCount
+                    driverId,
+                    vehicleBrand,
+                    vehicleModel,
+                    vehicleYear,
+                    vehicleNumber,
+                    vehicleColor,
+                    vehicleDocument,
+                    drivingLicence,
+                    passengerCount
                 }, { transaction });
 
                 await db.users.update(
                     { vehicle: "1", isProfileComplete: '1' },
-                    {
-                        where: { id: driverId },
-                        transaction
-                    }
+                    { where: { id: driverId }, transaction }
                 );
 
                 await transaction.commit();
 
-                const updatedUser = await db.users.findOne({
-                    where: { id: driverId },
-                });
+                const updatedUser = await db.users.findOne({ where: { id: driverId } });
 
                 const responseData = {
                     id: vehicle.id,
@@ -585,7 +679,11 @@ module.exports = {
                     userVehicleStatus: updatedUser.vehicle
                 };
 
-                return helper.success(res, 'Vehicle added successfully', responseData);
+                let msg = 'Vehicle added successfully';
+                if (languageType == 1) msg = "تمت إضافة المركبة بنجاح";
+                else if (languageType == 2) msg = "Véhicule ajouté avec succès";
+
+                return helper.success(res, msg, responseData);
 
             } catch (error) {
                 await transaction.rollback();
@@ -593,9 +691,17 @@ module.exports = {
             }
 
         } catch (error) {
-            return helper.failure(res, `Something went wrong while adding vehicle: ${error.message}`);
+            console.error('vehicleAdd error:', error);
+
+            let msg = `Something went wrong while adding vehicle: ${error.message}`;
+            if (languageType == 1) msg = `حدث خطأ أثناء إضافة المركبة: ${error.message}`;
+            else if (languageType == 2) msg = `Une erreur s'est produite lors de l'ajout du véhicule : ${error.message}`;
+
+            return helper.failure(res, msg);
         }
     },
+
+
     fileUploadDriver: async (req, res) => {
         try {
             if (!req.files || !req.files.file) {
@@ -623,31 +729,60 @@ module.exports = {
     },
     home: async (req, res) => {
         try {
+            const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
             const userId = req.user.id;
+
             const userStatus = await db.users.findOne({
                 where: { id: userId },
                 attributes: ['status', 'block', 'suspend'],
                 raw: true
             });
-            if (!userStatus) {
-                return helper.failure(res, "User not found.");
-            }
-            if (userStatus.status === "0") {
-                return helper.error2(res, "Your account has been deactivated by admin.");
-            }
-            if (userStatus.block === "1") {
-                return helper.error1(res, "Your account has been blocked by admin.");
-            }
-            if (userStatus.suspend === "1") {
-                return helper.error3(res, "Your account has been suspended by admin.");
-            }
-            const responseData = await db.banners.findAll();
-            return helper.success(res, 'All banner detail.', responseData);
-        } catch (error) {
-            return helper.failure(res, "Something went wrong.");
 
+            if (!userStatus) {
+                let msg = "User not found.";
+                if (languageType == 1) msg = "المستخدم غير موجود.";
+                else if (languageType == 2) msg = "Utilisateur non trouvé.";
+                return helper.failure(res, msg);
+            }
+
+            if (userStatus.status === "0") {
+                let msg = "Your account has been deactivated by admin.";
+                if (languageType == 1) msg = "تم تعطيل حسابك من قبل المسؤول.";
+                else if (languageType == 2) msg = "Votre compte a été désactivé par l’administrateur.";
+                return helper.error2(res, msg);
+            }
+
+            if (userStatus.block === "1") {
+                let msg = "Your account has been blocked by admin.";
+                if (languageType == 1) msg = "تم حظر حسابك من قبل المسؤول.";
+                else if (languageType == 2) msg = "Votre compte a été bloqué par l’administrateur.";
+                return helper.error1(res, msg);
+            }
+
+            if (userStatus.suspend === "1") {
+                let msg = "Your account has been suspended by admin.";
+                if (languageType == 1) msg = "تم تعليق حسابك من قبل المسؤول.";
+                else if (languageType == 2) msg = "Votre compte a été suspendu par l’administrateur.";
+                return helper.error3(res, msg);
+            }
+
+            const responseData = await db.banners.findAll();
+
+            let msg = 'All banner detail.';
+            if (languageType == 1) msg = "جميع تفاصيل البانر.";
+            else if (languageType == 2) msg = "Tous les détails des bannières.";
+
+            return helper.success(res, msg, responseData);
+
+        } catch (error) {
+            console.error('home error:', error);
+            let msg = "Something went wrong.";
+            if (languageType == 1) msg = "حدث خطأ ما.";
+            else if (languageType == 2) msg = "Une erreur est survenue.";
+            return helper.failure(res, msg);
         }
     },
+
     vehicleEdit: async (req, res) => {
         try {
             const v = new Validator(req.body, {
@@ -937,7 +1072,42 @@ module.exports = {
         }
     },
 
+    testLocation: async (req, res) => {
+        try {
+            const userId = req.user.id;
+            const { location, latitude, longitude } = req.body;
 
+            if (!location || !latitude || !longitude) {
+                return helper.failed(res, "location, latitude, and longitude are required");
+            }
+            const data = await db.testingLocation.create({
+                userId,
+                location,
+                latitude,
+                longitude
+            });
+
+            return helper.success(res, "Created successfully", data);
+        } catch (error) {
+            console.log(error, "error in testLocation API");
+            return helper.failed(res, "Something went wrong");
+        }
+    },
+     getLocations: async (req, res) => {
+    try {
+      const userId = req.user.id;
+
+      const locations = await db.testingLocation.findAll({
+        where: { userId },
+        order: [['createdAt', 'DESC']] // latest first
+      });
+
+      return helper.success(res, "Locations fetched successfully", locations);
+    } catch (error) {
+      console.log(error, "error in getLocations API");
+      return helper.failed(res, "Something went wrong");
+    }
+  }
 
 
 }
