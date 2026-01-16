@@ -2456,7 +2456,6 @@ module.exports = {
                                         cancelledBy: "user"
                                     });
                                 }
-
                                 if (global.onlineUsers?.[driver.id]) {
                                     global.onlineUsers[driver.id].forEach(socketId => {
                                         io.to(socketId).emit("rideStatusUpdate", {
