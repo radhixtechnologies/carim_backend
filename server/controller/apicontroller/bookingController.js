@@ -629,7 +629,7 @@ module.exports = {
                 for (const driver of freeDrivers) {
                     await db.notifications.create({
                         sender_id: userId,
-                        receiver_id: driver.id,  
+                        receiver_id: driver.id,
                         message: "New ride request created",
                         type: 1,
                         status: 0,
@@ -1202,10 +1202,15 @@ module.exports = {
                         { where: { bookingId, driverId } }
                     );
                     await db.notifications.create({
-                        userId: driverId,
-                        bookingId: bookingId,
-                        type: 2, // or 1 = driver action
-                        message: languageType === 1 ? "لقد قبلت طلب الرحلة" : languageType === 2 ? "Vous avez accepté la demande de course" : "You have accepted the ride request",
+                        sender_id: driverId,
+                        receiver_id: userId,
+                        bookingId,
+                        type: 2,
+                        message:
+                            languageType === 1 ? "لقد قبلت طلب الرحلة" :
+                                languageType === 2 ? "Vous avez accepté la demande de course" :
+                                    "You have accepted the ride request",
+                        is_read: 0,
                         status: 0
                     });
                 }
@@ -1230,10 +1235,15 @@ module.exports = {
                     await db.users.update({ lastFreeTime: new Date() }, { where: { id: driverId } });
 
                     await db.notifications.create({
-                        userId: driverId,
-                        bookingId: bookingId,
+                        sender_id: driverId,
+                        receiver_id: userId,
+                        bookingId,
                         type: 2,
-                        message: languageType === 1 ? "لقد رفضت طلب الرحلة" : languageType === 2 ? "Vous avez rejeté la demande de course" : "You have rejected the ride request",
+                        message:
+                            languageType === 1 ? "لقد رفضت طلب الرحلة" :
+                                languageType === 2 ? "Vous avez rejeté la demande de course" :
+                                    "You have rejected the ride request",
+                        is_read: 0,
                         status: 0
                     });
                     if (bookingUser.rejectCount + 1 >= totalDrivers) {
