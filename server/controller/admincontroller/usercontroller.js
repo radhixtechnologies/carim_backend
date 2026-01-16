@@ -393,7 +393,8 @@ module.exports = {
                         type: pushType,
                         senderId: "0",
                         sender_name: "Admin",
-                        sender_image: ""
+                        sender_image: "",
+                        type: 6,
                     });
                 }
                 await db.notifications.create({
