@@ -1755,9 +1755,8 @@ module.exports = function (io) {
           raw: true,
         });
 
-        /* ==============================================================
-             EMIT SOCKET TO RECEIVER (NO CHANGE IN YOUR LOGIC)
-           ============================================================== */
+        //  EMIT SOCKET TO RECEIVER 
+
         if (socketUser) {
           io.to(socketUser.socket_id).emit("user_constant_list", null);
           io.to(socketUser.socketId).emit("send_message", getMsgData);
@@ -1766,9 +1765,7 @@ module.exports = function (io) {
         // Your same echo back to sender
         socket.emit("send_message", getMsgData);
 
-        /* ==============================================================
-                       PUSH NOTIFICATION (ONLY THIS ADDED)
-           ============================================================== */
+        //  PUSH NOTIFICATION 
 
         if (socketUser && socketUser.deviceToken) {
           const payload = {
