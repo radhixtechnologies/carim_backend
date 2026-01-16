@@ -56,6 +56,7 @@ router.post("/cancelRide", bookingController.cancelRide(io));
 router.post("/report", bookingController.report);
 router.post("/blockUser", bookingController.blockUser(io));
 router.post("/driverWaletRecharge", bookingController.driverWaletRecharge);
+router.get('/Notificationlist', bookingController.Notificationlist);
 
 
 router.post('/testLocation', authController.testLocation);

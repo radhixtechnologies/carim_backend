@@ -2307,147 +2307,75 @@ module.exports = {
     //         }
     //     };
     // },
- cancelRide: (io) => {
-    return async (req, res) => {
-        try {
-            const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default=English
-            const loggedInUserId = req.user.id;
-            const loggedInUserRole = req.user.role; // "1" = user, "2" = driver
-            const { bookingId } = req.body;
+    cancelRide: (io) => {
+        return async (req, res) => {
+            try {
+                const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default=English
+                const loggedInUserId = req.user.id;
+                const loggedInUserRole = req.user.role; // "1" = user, "2" = driver
+                const { bookingId } = req.body;
 
-            let msgBookingRequired = "Booking ID is required.";
-            if (languageType == 1) msgBookingRequired = "رقم تعريف الحجز مطلوب.";
-            else if (languageType == 2) msgBookingRequired = "L'ID de réservation est requis.";
+                let msgBookingRequired = "Booking ID is required.";
+                if (languageType == 1) msgBookingRequired = "رقم تعريف الحجز مطلوب.";
+                else if (languageType == 2) msgBookingRequired = "L'ID de réservation est requis.";
 
-            if (!bookingId) return helper.failure(res, msgBookingRequired);
+                if (!bookingId) return helper.failure(res, msgBookingRequired);
 
-            // Allow only cancellable statuses
-            const whereCond = {
-                id: bookingId,
-                status: { [Op.in]: ["0", "1"] },         // <-- FIX: status allowed 0,1
-                request: { [Op.in]: ["0", "1"] }        // <-- FIX: request allowed 0,1
-            };
+                // Allow only cancellable statuses
+                const whereCond = {
+                    id: bookingId,
+                    status: { [Op.in]: ["0", "1"] },         // <-- FIX: status allowed 0,1
+                    request: { [Op.in]: ["0", "1"] }        // <-- FIX: request allowed 0,1
+                };
 
-            if (loggedInUserRole === "1") whereCond.userId = loggedInUserId;
-            else if (loggedInUserRole === "2") whereCond.driverId = loggedInUserId;
-            else {
-                let msgRoleErr = "Only users or drivers can cancel a ride.";
-                if (languageType == 1) msgRoleErr = "فقط المستخدمين أو السائقين يمكنهم إلغاء الرحلة.";
-                else if (languageType == 2) msgRoleErr = "Seuls les utilisateurs ou les conducteurs peuvent annuler une course.";
-                return helper.failure(res, msgRoleErr);
-            }
-
-            const booking = await db.bookings.findOne({ where: whereCond });
-
-            let msgCannotCancel = "Ride cannot be cancelled or already processed.";
-            if (languageType == 1) msgCannotCancel = "لا يمكن إلغاء الرحلة أو تم معالجتها بالفعل.";
-            else if (languageType == 2) msgCannotCancel = "La course ne peut pas être annulée ou a déjà été traitée.";
-
-            if (!booking) return helper.failure(res, msgCannotCancel);
-
-            const driverId = booking.driverId;
-            const request = booking.request;
-            const newStatus = loggedInUserRole === "1" ? "5" : "4"; // user=5, driver=4
-
-            await booking.update({ status: newStatus });
-
-            const isDriverBusy = async (id) => {
-                return await db.bookings.findOne({
-                    where: { driverId: id, status: { [Op.in]: ["0", "1", "2"] } }
-                });
-            };
-
-            /* ================= USER CANCEL ================= */
-            if (loggedInUserRole === "1") {
-
-                if (request === "0" || request === "1") {
-
-                    const busyRide = await isDriverBusy(driverId);
-
-                    if (!busyRide && request === "1" && driverId) {
-
-                        const driverToken = await db.users.findOne({
-                            where: { id: driverId },
-                            attributes: ["deviceToken"],
-                            raw: true
-                        });
-
-                        if (driverToken?.deviceToken) {
-                            let msgPush = "Ride cancelled by user";
-                            if (languageType == 1) msgPush = "تم إلغاء الرحلة بواسطة المستخدم";
-                            else if (languageType == 2) msgPush = "Course annulée par l'utilisateur";
-
-                            helper.sendNotification_android(driverToken.deviceToken, {
-                                message: msgPush,
-                                type: 5,
-                                bookingId: booking.id.toString(),
-                                cancelledBy: "user"
-                            });
-                        }
-
-                        // SOCKET SEND TO DRIVER
-                        if (global.onlineUsers?.[driverId]) {
-                            global.onlineUsers[driverId].forEach(socketId => {
-                                io.to(socketId).emit("rideStatusUpdate", {
-                                    success: true,
-                                    message: "Ride cancelled by user",
-                                    bookingId: booking.id,
-                                    status: "5",
-                                    cancelledBy: "user"
-                                });
-                            });
-                        }
-                    }
+                if (loggedInUserRole === "1") whereCond.userId = loggedInUserId;
+                else if (loggedInUserRole === "2") whereCond.driverId = loggedInUserId;
+                else {
+                    let msgRoleErr = "Only users or drivers can cancel a ride.";
+                    if (languageType == 1) msgRoleErr = "فقط المستخدمين أو السائقين يمكنهم إلغاء الرحلة.";
+                    else if (languageType == 2) msgRoleErr = "Seuls les utilisateurs ou les conducteurs peuvent annuler une course.";
+                    return helper.failure(res, msgRoleErr);
                 }
 
-                // Request = "0" → broadcast to all nearby drivers
-                if (request === "0") {
-                    const pickupLat = parseFloat(booking.pickupLatitude);
-                    const pickupLng = parseFloat(booking.pickupLongitude);
-                    const MAX_DISTANCE = 30;
+                const booking = await db.bookings.findOne({ where: whereCond });
 
-                    const drivers = await db.users.findAll({
-                        where: { role: "2", online: "1" },
-                        attributes: ["id", "latitude", "longitude"],
-                        raw: true
+                let msgCannotCancel = "Ride cannot be cancelled or already processed.";
+                if (languageType == 1) msgCannotCancel = "لا يمكن إلغاء الرحلة أو تم معالجتها بالفعل.";
+                else if (languageType == 2) msgCannotCancel = "La course ne peut pas être annulée ou a déjà été traitée.";
+
+                if (!booking) return helper.failure(res, msgCannotCancel);
+
+                const driverId = booking.driverId;
+                const request = booking.request;
+                const newStatus = loggedInUserRole === "1" ? "5" : "4"; // user=5, driver=4
+
+                await booking.update({ status: newStatus });
+
+                const isDriverBusy = async (id) => {
+                    return await db.bookings.findOne({
+                        where: { driverId: id, status: { [Op.in]: ["0", "1", "2"] } }
                     });
+                };
 
-                    const toRad = (v) => (v * Math.PI) / 180;
-                    const distanceInKm = (lat1, lon1, lat2, lon2) => {
-                        const R = 6371;
-                        const dLat = toRad(lat2 - lat1);
-                        const dLon = toRad(lon2 - lon1);
-                        const a = Math.sin(dLat / 2) ** 2 +
-                            Math.cos(toRad(lat1)) *
-                            Math.cos(toRad(lat2)) *
-                            Math.sin(dLon / 2) ** 2;
-                        return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
-                    };
+                /* ================= USER CANCEL ================= */
+                if (loggedInUserRole === "1") {
 
-                    for (const driver of drivers) {
-                        if (!driver.latitude || !driver.longitude) continue;
+                    if (request === "0" || request === "1") {
 
-                        const dist = distanceInKm(
-                            pickupLat,
-                            pickupLng,
-                            parseFloat(driver.latitude),
-                            parseFloat(driver.longitude)
-                        );
+                        const busyRide = await isDriverBusy(driverId);
 
-                        const busyRide = await isDriverBusy(driver.id);
-
-                        if (dist <= MAX_DISTANCE && !busyRide) {
+                        if (!busyRide && request === "1" && driverId) {
 
                             const driverToken = await db.users.findOne({
-                                where: { id: driver.id },
+                                where: { id: driverId },
                                 attributes: ["deviceToken"],
                                 raw: true
                             });
 
                             if (driverToken?.deviceToken) {
-                                let msgPush = "Ride request cancelled by user";
-                                if (languageType == 1) msgPush = "تم إلغاء طلب الرحلة بواسطة المستخدم";
-                                else if (languageType == 2) msgPush = "Demande de course annulée par l'utilisateur";
+                                let msgPush = "Ride cancelled by user";
+                                if (languageType == 1) msgPush = "تم إلغاء الرحلة بواسطة المستخدم";
+                                else if (languageType == 2) msgPush = "Course annulée par l'utilisateur";
 
                                 helper.sendNotification_android(driverToken.deviceToken, {
                                     message: msgPush,
@@ -2457,11 +2385,12 @@ module.exports = {
                                 });
                             }
 
-                            if (global.onlineUsers?.[driver.id]) {
-                                global.onlineUsers[driver.id].forEach(socketId => {
+                            // SOCKET SEND TO DRIVER
+                            if (global.onlineUsers?.[driverId]) {
+                                global.onlineUsers[driverId].forEach(socketId => {
                                     io.to(socketId).emit("rideStatusUpdate", {
                                         success: true,
-                                        message: "Ride request cancelled by user",
+                                        message: "Ride cancelled by user",
                                         bookingId: booking.id,
                                         status: "5",
                                         cancelledBy: "user"
@@ -2470,71 +2399,142 @@ module.exports = {
                             }
                         }
                     }
+
+                    // Request = "0" → broadcast to all nearby drivers
+                    if (request === "0") {
+                        const pickupLat = parseFloat(booking.pickupLatitude);
+                        const pickupLng = parseFloat(booking.pickupLongitude);
+                        const MAX_DISTANCE = 30;
+
+                        const drivers = await db.users.findAll({
+                            where: { role: "2", online: "1" },
+                            attributes: ["id", "latitude", "longitude"],
+                            raw: true
+                        });
+
+                        const toRad = (v) => (v * Math.PI) / 180;
+                        const distanceInKm = (lat1, lon1, lat2, lon2) => {
+                            const R = 6371;
+                            const dLat = toRad(lat2 - lat1);
+                            const dLon = toRad(lon2 - lon1);
+                            const a = Math.sin(dLat / 2) ** 2 +
+                                Math.cos(toRad(lat1)) *
+                                Math.cos(toRad(lat2)) *
+                                Math.sin(dLon / 2) ** 2;
+                            return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+                        };
+
+                        for (const driver of drivers) {
+                            if (!driver.latitude || !driver.longitude) continue;
+
+                            const dist = distanceInKm(
+                                pickupLat,
+                                pickupLng,
+                                parseFloat(driver.latitude),
+                                parseFloat(driver.longitude)
+                            );
+
+                            const busyRide = await isDriverBusy(driver.id);
+
+                            if (dist <= MAX_DISTANCE && !busyRide) {
+
+                                const driverToken = await db.users.findOne({
+                                    where: { id: driver.id },
+                                    attributes: ["deviceToken"],
+                                    raw: true
+                                });
+
+                                if (driverToken?.deviceToken) {
+                                    let msgPush = "Ride request cancelled by user";
+                                    if (languageType == 1) msgPush = "تم إلغاء طلب الرحلة بواسطة المستخدم";
+                                    else if (languageType == 2) msgPush = "Demande de course annulée par l'utilisateur";
+
+                                    helper.sendNotification_android(driverToken.deviceToken, {
+                                        message: msgPush,
+                                        type: 5,
+                                        bookingId: booking.id.toString(),
+                                        cancelledBy: "user"
+                                    });
+                                }
+
+                                if (global.onlineUsers?.[driver.id]) {
+                                    global.onlineUsers[driver.id].forEach(socketId => {
+                                        io.to(socketId).emit("rideStatusUpdate", {
+                                            success: true,
+                                            message: "Ride request cancelled by user",
+                                            bookingId: booking.id,
+                                            status: "5",
+                                            cancelledBy: "user"
+                                        });
+                                    });
+                                }
+                            }
+                        }
+                    }
                 }
-            }
 
-            /* ================= DRIVER CANCEL ================= */
-            if (loggedInUserRole === "2") {
-                const userId = booking.userId;
+                /* ================= DRIVER CANCEL ================= */
+                if (loggedInUserRole === "2") {
+                    const userId = booking.userId;
 
-                const userToken = await db.users.findOne({
-                    where: { id: userId },
-                    attributes: ["deviceToken"],
-                    raw: true
-                });
-
-                if (userToken?.deviceToken) {
-                    let msgPush = "Ride cancelled by driver";
-                    if (languageType == 1) msgPush = "تم إلغاء الرحلة بواسطة السائق";
-                    else if (languageType == 2) msgPush = "Course annulée par le conducteur";
-
-                    helper.sendNotification_android(userToken.deviceToken, {
-                        message: msgPush,
-                        type: 4,
-                        bookingId: booking.id.toString(),
-                        cancelledBy: "driver"
+                    const userToken = await db.users.findOne({
+                        where: { id: userId },
+                        attributes: ["deviceToken"],
+                        raw: true
                     });
-                }
 
-                if (global.onlineUsers?.[userId]) {
-                    global.onlineUsers[userId].forEach(socketId => {
-                        io.to(socketId).emit("rideStatusUpdate", {
-                            success: true,
-                            message: "Ride cancelled by driver",
-                            bookingId: booking.id,
-                            status: "4",
+                    if (userToken?.deviceToken) {
+                        let msgPush = "Ride cancelled by driver";
+                        if (languageType == 1) msgPush = "تم إلغاء الرحلة بواسطة السائق";
+                        else if (languageType == 2) msgPush = "Course annulée par le conducteur";
+
+                        helper.sendNotification_android(userToken.deviceToken, {
+                            message: msgPush,
+                            type: 4,
+                            bookingId: booking.id.toString(),
                             cancelledBy: "driver"
                         });
-                    });
+                    }
+
+                    if (global.onlineUsers?.[userId]) {
+                        global.onlineUsers[userId].forEach(socketId => {
+                            io.to(socketId).emit("rideStatusUpdate", {
+                                success: true,
+                                message: "Ride cancelled by driver",
+                                bookingId: booking.id,
+                                status: "4",
+                                cancelledBy: "driver"
+                            });
+                        });
+                    }
                 }
+
+                let msgSuccess = loggedInUserRole === "1"
+                    ? "Ride cancelled by user successfully."
+                    : "Ride cancelled by driver successfully.";
+                if (languageType == 1) msgSuccess = loggedInUserRole === "1"
+                    ? "تم إلغاء الرحلة بواسطة المستخدم بنجاح."
+                    : "تم إلغاء الرحلة بواسطة السائق بنجاح.";
+                else if (languageType == 2) msgSuccess = loggedInUserRole === "1"
+                    ? "Course annulée par l'utilisateur avec succès."
+                    : "Course annulée par le conducteur avec succès.";
+
+                return helper.success(res, msgSuccess, {
+                    bookingId: booking.id,
+                    cancelledBy: loggedInUserRole === "1" ? "user" : "driver",
+                    status: newStatus,
+                    message: msgSuccess
+                });
+
+            } catch (error) {
+                console.error(error);
+                let errMsg = "Something went wrong while cancelling the ride.";
+                if (languageType == 1) errMsg = "حدث خطأ أثناء إلغاء الرحلة.";
+                else if (languageType == 2) errMsg = "Une erreur est survenue lors de l'annulation de la course.";
+                return helper.failure(res, errMsg);
             }
-
-            let msgSuccess = loggedInUserRole === "1"
-                ? "Ride cancelled by user successfully."
-                : "Ride cancelled by driver successfully.";
-            if (languageType == 1) msgSuccess = loggedInUserRole === "1"
-                ? "تم إلغاء الرحلة بواسطة المستخدم بنجاح."
-                : "تم إلغاء الرحلة بواسطة السائق بنجاح.";
-            else if (languageType == 2) msgSuccess = loggedInUserRole === "1"
-                ? "Course annulée par l'utilisateur avec succès."
-                : "Course annulée par le conducteur avec succès.";
-
-            return helper.success(res, msgSuccess, {
-                bookingId: booking.id,
-                cancelledBy: loggedInUserRole === "1" ? "user" : "driver",
-                status: newStatus,
-                message: msgSuccess
-            });
-
-        } catch (error) {
-            console.error(error);
-            let errMsg = "Something went wrong while cancelling the ride.";
-            if (languageType == 1) errMsg = "حدث خطأ أثناء إلغاء الرحلة.";
-            else if (languageType == 2) errMsg = "Une erreur est survenue lors de l'annulation de la course.";
-            return helper.failure(res, errMsg);
-        }
-    };
-},
+        };
+    },
 
 
 
@@ -2685,7 +2685,36 @@ module.exports = {
 
             return helper.failure(res, errorMessage);
         }
-    }
+    },
+
+    Notificationlist: async (req, res) => {
+        try {
+            const notifications = await db.notifications.findAll({
+                attributes: {
+                    include: [
+                        [
+                            db.sequelize.literal(
+                                `(SELECT firstName FROM users WHERE users.id = notifications.sender_id)`
+                            ),
+                            'senderName'
+                        ],
+                        [
+                            db.sequelize.literal(
+                                `(SELECT image FROM users WHERE users.id = notifications.sender_id)`
+                            ),
+                            'senderImage'
+                        ]
+                    ]
+                },
+                where: { receiver_id: req.user.id },
+            });
+            return helper.success(res, "Get All Notifications Successfully", notifications);
+        } catch (error) {
+            console.error("Error fetching notifications:", error);
+
+        }
+
+    },
 
 
 
