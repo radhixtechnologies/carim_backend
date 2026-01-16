@@ -337,27 +337,87 @@ module.exports = {
             return helper.error(res, error.message);
         }
     },
-    approveDriver: async (req, res) => {
-        try {
-            const { id, approve } = req.body;
-            const driver = await db.users.findOne({ where: { id, role: '2' } });
-            if (!driver) {
-                return helper.error(res, "Driver not found");
-            }
-            if (!['0', '1', '2'].includes(approve)) {
-                return helper.error(res, "Invalid approval status");
-            }
-            await db.users.update({ approve }, { where: { id } });
-            const updatedDriver = await db.users.findOne({ where: { id } });
-            return helper.success(res, "Driver approval status updated successfully", {
-                id: updatedDriver.id,
-                approve: updatedDriver.approve,
-                success: true
-            });
-        } catch (error) {
-            return helper.error(res, error.message);
+    // approveDriver: async (req, res) => {
+    //     try {
+    //         const { id, approve } = req.body;
+    //         const driver = await db.users.findOne({ where: { id, role: '2' } });
+    //         if (!driver) {
+    //             return helper.error(res, "Driver not found");
+    //         }
+    //         if (!['0', '1', '2'].includes(approve)) {
+    //             return helper.error(res, "Invalid approval status");
+    //         }
+    //         await db.users.update({ approve }, { where: { id } });
+    //         const updatedDriver = await db.users.findOne({ where: { id } });
+    //         return helper.success(res, "Driver approval status updated successfully", {
+    //             id: updatedDriver.id,
+    //             approve: updatedDriver.approve,
+    //             success: true
+    //         });
+    //     } catch (error) {
+    //         return helper.error(res, error.message);
+    //     }
+    // },
+approveDriver: async (req, res) => {
+    try {
+        const { id, approve } = req.body;
+
+        const driver = await db.users.findOne({ where: { id, role: '2' } });
+        if (!driver) {
+            return helper.error(res, "Driver not found");
         }
-    },
+
+        if (!['0', '1', '2'].includes(approve)) {
+            return helper.error(res, "Invalid approval status");
+        }
+
+        await db.users.update({ approve }, { where: { id } });
+
+        const updatedDriver = await db.users.findOne({ where: { id } });
+
+        // ===================== PUSH NOTIFICATION =====================
+        if (updatedDriver.deviceToken) {
+
+            let pushMessage = "";
+            let pushType = "driver_approval";
+
+            if (approve === '1') {
+                pushMessage = "Your account has been approved. You can now accept rides.";
+            } else if (approve === '2') {
+                pushMessage = "Your account has been rejected by the admin.";
+            } 
+
+            if (pushMessage) {
+                helper.sendNotification_android(updatedDriver.deviceToken, {
+                    message: pushMessage,
+                    type: pushType,
+                    senderId: "0",                
+                    sender_name: "Admin",        
+                    sender_image: ""             
+                });
+            }
+            await db.notifications.create({
+                sender_id: 1,
+                receiver_id: updatedDriver.id,
+                message: pushMessage,
+                is_read: 0,
+                type: pushType === "driver_approval" ? 1 : 0, 
+                status: 1 
+            });
+        }
+
+        // ===================== SAME RESPONSE — NO CHANGE =====================
+        return helper.success(res, "Driver approval status updated successfully", {
+            id: updatedDriver.id,
+            approve: updatedDriver.approve,
+            success: true
+        });
+
+    } catch (error) {
+        return helper.error(res, error.message);
+    }
+},
+
 
 
     

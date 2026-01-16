@@ -1,67 +1,121 @@
 const path = require('path');
 const uuid = require("uuid").v4;
+const axios = require("axios")
 const FCM = require("fcm-node");
 const util = require('util')
-const { google } = require('googleapis');
-const fcmfile = require('./carim-app-firebase-adminsdk-fbsvc-b0dc2c7c48.json');
-const SCOPES = ['https://www.googleapis.com/auth/cloud-platform'];
-const push_projectName = "Carim";
-const jwtClient = new google.auth.JWT(
-    fcmfile.client_email,
-    null,
-    fcmfile.private_key,
-    SCOPES,
-    null
-);
+const admin = require("firebase-admin");
+const serviceAccount = require("./carim-app-firebase-adminsdk-fbsvc-b0dc2c7c48.json");
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+});
 module.exports = {
 
-    sendNotification_android: async (token, noti_data) => {
+    // sendNotification_android: async (token, noti_data) => {
+    //     try {
+    //         console.log(token,"iiiiiiiiiiiiiiiiiiiiii");
+    //                     console.log(noti_data,"noti_datanoti_datanoti_datanoti_data");
+
+    //         jwtClient.authorize(async (err, tokens) => {
+    //             if (err) {
+    //                 console.log('Error during JWT authorization:', err);
+    //                 return;
+    //             }
+    //             const accessToken = tokens.access_token;
+    //             const apiUrl = `https://fcm.googleapis.com/v1/projects/${push_projectName}/messages:send`;
+    //             const headers = {
+    //                 'Content-Type': 'application/json',
+    //                 'Authorization': `Bearer ${accessToken}`
+    //             };
+
+    //             const data = {
+    //                 "message": {
+    //                     "token": token,
+    //                     "notification": {
+    //                         "title": "Carim",
+    //                         "body": noti_data.message,
+    //                     },
+
+    //                     "data": {
+    //                         "title": "Carim",
+    //                         "body": noti_data.message,
+    //                         "type": JSON.stringify(noti_data.type),
+    //                         "senderId": JSON.stringify(noti_data.senderId),
+    //                         "sender_name": noti_data.sender_name,
+    //                         "sender_image": noti_data.sender_image,
+
+    //                     },
+    //                 }
+    //             }
+    //             console.log(headers, data, "==========================");
+
+    //             try {
+    //                 const response = await axios.post(apiUrl, data, { headers });
+    //                 console.log('Push sent successfully:', response.data);
+    //             } catch (error) {
+    //                 console.error('Error sending push notification:', error.response ? error.response.data : error.data);
+    //             }
+    //         });
+    //     } catch (error) {
+    //         console.error('Error in sendNotification_android:', error);
+    //     }
+    // },
+
+
+    sendNotification_android: async function (token, noti_data) {
+        if (!token || token.trim() === "") {
+            console.warn("No device token provided, skipping push notification.");
+            return false;
+        }
+        console.log(token, "token");
+        console.log(noti_data, "noti_data");
         try {
-            jwtClient.authorize(async (err, tokens) => {
-                if (err) {
-                    console.log('Error during JWT authorization:', err);
-                    return;
-                }
-                const accessToken = tokens.access_token;
-                const apiUrl = `https://fcm.googleapis.com/v1/projects/${push_projectName}/messages:send`;
-                const headers = {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${accessToken}`
-                };
-
-                const data = {
-                    "message": {
-                        "token": token,
-                        "notification": {
-                            "title": "Carim",
-                            "body": noti_data.message,
+            const message = {
+                token: token,
+                notification: {
+                    title: noti_data.title || "Carim",
+                    body: noti_data.message || "",
+                },
+                data: {
+                    titleData: String(noti_data.title || "Notification"),
+                    messageData: String(noti_data.message || ""),
+                    senderId: String(noti_data.senderId || ""),
+                    type: String(noti_data.type || ""),
+                    notificationId: String(noti_data.notificationId || "0"),
+                    bookingId: String(noti_data.bookingId || 0),
+                    ...(noti_data.senderName && { senderName: String(noti_data.senderName) }),
+                    ...(noti_data.senderImage && { senderImage: String(noti_data.senderImage) }),
+                    ...(noti_data.phoneNumber && { phoneNumber: String(noti_data.phoneNumber) }),
+                },                
+                apns: {
+                    payload: {
+                        aps: {
+                            sound: "default",
+                            badge: 1,
                         },
-
-                        "data": {
-                            "title": "Carim",
-                            "body": noti_data.message,
-                            "type": JSON.stringify(noti_data.type),
-                            "senderId": JSON.stringify(noti_data.senderId),
-                            "sender_name": noti_data.sender_name,
-                            "sender_image": noti_data.sender_image,
-
-                        },
-                    }
-                }
-                console.log(headers, data, "==========================");
-
-                try {
-                    const response = await axios.post(apiUrl, data, { headers });
-                    console.log('Push sent successfully:', response.data);
-                } catch (error) {
-                    console.error('Error sending push notification:', error.response ? error.response.data : error.data);
-                }
-            });
+                    },
+                },
+                android: {
+                    notification: {
+                        sound: "default",
+                        channelId: "default",
+                    },
+                },
+            };
+            console.log(message,"iiiiiiiiiiiiiiiiiiiiiiii");
+            
+            const response = await admin.messaging().send(message);
+            console.log("Push sent successfully:", response);
+            return true;
         } catch (error) {
-            console.error('Error in sendNotification_android:', error);
+            console.error("Error sending push notification:", error.message || error);
+            if (error.code === 'messaging/invalid-registration-token' ||
+                error.code === 'messaging/registration-token-not-registered') {
+                console.log(`Invalid token: ${token}, you may want to remove it from database`);
+            }
+
+            throw error;
         }
     },
-
 
     success: function (res, message = "", body = {}) {
         return res.status(200).json({
