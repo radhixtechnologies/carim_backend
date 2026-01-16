@@ -1198,6 +1198,13 @@ module.exports = {
                         { status: 1 },
                         { where: { bookingId, driverId } }
                     );
+                    await db.notifications.create({
+                        userId: driverId,
+                        bookingId,
+                        type: 2, // or 1 = driver action
+                        message: languageType === 1 ? "لقد قبلت طلب الرحلة" : languageType === 2 ? "Vous avez accepté la demande de course" : "You have accepted the ride request",
+                        status: 0
+                    });
                 }
 
                 // ================= REJECT =================
@@ -1219,6 +1226,13 @@ module.exports = {
                     const totalDrivers = await db.users.count({ where: { role: '2', online: '1', approve: '1' } });
                     await db.users.update({ lastFreeTime: new Date() }, { where: { id: driverId } });
 
+                    await db.notifications.create({
+                        userId: driverId,
+                        bookingId,
+                        type: 2,
+                        message: languageType === 1 ? "لقد رفضت طلب الرحلة" : languageType === 2 ? "Vous avez rejeté la demande de course" : "You have rejected the ride request",
+                        status: 0
+                    });
                     if (bookingUser.rejectCount + 1 >= totalDrivers) {
                         await bookingUser.update({ status: '4', request: '2' });
 
@@ -2351,6 +2365,17 @@ module.exports = {
 
                 await booking.update({ status: newStatus });
 
+                await db.notifications.create({
+                    userId: loggedInUserId,        // actor (user or driver)
+                    bookingId: booking.id,
+                    type: 3,                  // ride action
+                    message: languageType == 1
+                        ? (loggedInUserRole === "1" ? "لقد ألغيت الرحلة" : "لقد ألغيت الرحلة")
+                        : languageType == 2
+                            ? (loggedInUserRole === "1" ? "Vous avez annulé la course" : "Vous avez annulé la course")
+                            : (loggedInUserRole === "1" ? "You have cancelled the ride" : "You have cancelled the ride"),
+                    status: 0
+                });
                 const isDriverBusy = async (id) => {
                     return await db.bookings.findOne({
                         where: { driverId: id, status: { [Op.in]: ["0", "1", "2"] } }
@@ -2402,6 +2427,7 @@ module.exports = {
 
                     // Request = "0" → broadcast to all nearby drivers
                     if (request === "0") {
+
                         const pickupLat = parseFloat(booking.pickupLatitude);
                         const pickupLng = parseFloat(booking.pickupLongitude);
                         const MAX_DISTANCE = 30;
