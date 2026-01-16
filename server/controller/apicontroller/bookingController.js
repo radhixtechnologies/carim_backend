@@ -2379,18 +2379,14 @@ module.exports = {
                 await booking.update({ status: newStatus });
 
                 await db.notifications.create({
-                    sender_id: loggedInUserId,                     // who cancelled
-                    receiver_id: loggedInUserRole === "1"          // who receives
-                        ? booking.driverId                         // user cancelled → send to driver
-                        : booking.userId,                          // driver cancelled → send to user
+                    userId: loggedInUserId,        // actor (user or driver)
                     bookingId: booking.id,
-                    type: 3,                                        // ride action
+                    type: 3,                  // ride action
                     message: languageType == 1
                         ? (loggedInUserRole === "1" ? "لقد ألغيت الرحلة" : "لقد ألغيت الرحلة")
                         : languageType == 2
                             ? (loggedInUserRole === "1" ? "Vous avez annulé la course" : "Vous avez annulé la course")
                             : (loggedInUserRole === "1" ? "You have cancelled the ride" : "You have cancelled the ride"),
-                    is_read: 0,
                     status: 0
                 });
                 const isDriverBusy = async (id) => {
