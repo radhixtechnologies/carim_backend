@@ -631,7 +631,8 @@ module.exports = {
                     receiver_id: 0,
                     message: "New ride request created",
                     type: 1,
-                    status: 0
+                    status: 0,
+                    bookingId: newBooking.id
                 });
 
                 // ---------------- SEND PUSH NOTIFICATION ----------------
@@ -1200,7 +1201,7 @@ module.exports = {
                     );
                     await db.notifications.create({
                         userId: driverId,
-                        bookingId,
+                        bookingId: bookingId,
                         type: 2, // or 1 = driver action
                         message: languageType === 1 ? "لقد قبلت طلب الرحلة" : languageType === 2 ? "Vous avez accepté la demande de course" : "You have accepted the ride request",
                         status: 0
@@ -1228,7 +1229,7 @@ module.exports = {
 
                     await db.notifications.create({
                         userId: driverId,
-                        bookingId,
+                         bookingId: bookingId,
                         type: 2,
                         message: languageType === 1 ? "لقد رفضت طلب الرحلة" : languageType === 2 ? "Vous avez rejeté la demande de course" : "You have rejected the ride request",
                         status: 0
