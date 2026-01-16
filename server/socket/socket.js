@@ -836,7 +836,12 @@ module.exports = function (io) {
         if (driverStatus.suspend === "1") return socket.emit("rideStatusUpdate", { success: false, message: getMessage("Driver suspended", "تم تعليق السائق", "Conducteur suspendu") });
 
         const user = booking.userbook;
-        if (!user) return socket.emit("rideStatusUpdate", { success: false, message: getMessage("User not found", "المستخدم غير موجود", "Utilisateur introuvable") });
+        if (!user)
+          return socket.emit("rideStatusUpdate",
+            {
+              success: false,
+              message: getMessage("User not found", "المستخدم غير موجود", "Utilisateur introuvable")
+            });
 
         if (user.status === "0") return socket.emit("rideStatusUpdate", { success: false, message: getMessage("User deactivated", "تم تعطيل المستخدم", "Utilisateur désactivé") });
         if (user.block === "1") return socket.emit("rideStatusUpdate", { success: false, message: getMessage("User blocked", "تم حظر المستخدم", "Utilisateur bloqué") });
@@ -846,12 +851,14 @@ module.exports = function (io) {
           const userId = booking.userbook?.id;
           if (userId && onlineUsers[userId]) {
             onlineUsers[userId].forEach(sid => {
-              io.to(sid).emit("rideStatusUpdate", { success: true, message, bookingId: booking.id, status: statusData, otpVerified });
+              io.to(sid).emit("rideStatusUpdate",
+                { success: true, message, bookingId: booking.id, status: statusData, otpVerified });
             });
           }
           if (driverId && onlineUsers[driverId]) {
             onlineUsers[driverId].forEach(sid => {
-              io.to(sid).emit("rideStatusUpdate", { success: true, message, bookingId: booking.id, status: statusData, otpVerified });
+              io.to(sid).emit("rideStatusUpdate",
+                { success: true, message, bookingId: booking.id, status: statusData, otpVerified });
             });
           }
         };
@@ -863,21 +870,36 @@ module.exports = function (io) {
             await booking.update({ status: "1" });
             emitToBoth(getMessage("Driver arrived", "وصل السائق", "Le conducteur est arrivé"), "1");
             if (user.deviceToken)
-              helper.sendNotification_android(user.deviceToken, { message: getMessage("Your driver has arrived.", "وصل سائقك.", "Votre conducteur est arrivé."), type: "ride_arrived", senderId: driverId });
-            return socket.emit("rideStatusUpdate", { success: true, message: getMessage("Driver arrived successfully", "تم وصول السائق بنجاح", "Arrivée du conducteur réussie"), data: { bookingId: booking.id, status: "1" } });
+              helper.sendNotification_android(user.deviceToken,
+                { message: getMessage("Your driver has arrived.", "وصل سائقك.", "Votre conducteur est arrivé."), type: "ride_arrived", senderId: driverId });
+            return socket.emit("rideStatusUpdate",
+              { success: true, message: getMessage("Driver arrived successfully", "تم وصول السائق بنجاح", "Arrivée du conducteur réussie"), data: { bookingId: booking.id, status: "1" } });
 
           case "2": // START RIDE
-            if (currentStatus === '2') return socket.emit("rideStatusUpdate", { success: false, status: currentStatus, message: getMessage("Ride already started.", "تم بدء الرحلة بالفعل.", "Le trajet a déjà commencé.") });
-            if (!otp) return socket.emit("rideStatusUpdate", { success: false, message: getMessage("OTP is required to start the ride.", "مطلوب OTP لبدء الرحلة.", "OTP requis pour démarrer le trajet.") });
-            if (booking.userbook.rideOtp !== otp) return socket.emit("rideStatusUpdate", { success: false, message: getMessage("OTP does not match.", "OTP غير متطابق.", "L'OTP ne correspond pas.") });
-            await db.bookings.update({ status: status, otpbooking: otp }, { where: { id: bookingId } });
-            emitToBoth(getMessage("Ride has started", "تم بدء الرحلة", "Le trajet a commencé"), status, true);
+            if (currentStatus === '2') return socket.emit("rideStatusUpdate",
+              { success: false, status: currentStatus, message: getMessage("Ride already started.", "تم بدء الرحلة بالفعل.", "Le trajet a déjà commencé.") });
+            if (!otp) return socket.emit("rideStatusUpdate",
+              { success: false, message: getMessage("OTP is required to start the ride.", "مطلوب OTP لبدء الرحلة.", "OTP requis pour démarrer le trajet.") });
+            if (booking.userbook.rideOtp !== otp)
+              return socket.emit("rideStatusUpdate",
+                {
+                  success: false,
+                  message: getMessage("OTP does not match.", "OTP غير متطابق.", "L'OTP ne correspond pas.")
+                });
+            await db.bookings.update({ status: status, otpbooking: otp },
+              { where: { id: bookingId } });
+            emitToBoth(getMessage("Ride has started", "تم بدء الرحلة", "Le trajet a commencé"),
+              status, true);
             if (user.deviceToken)
-              helper.sendNotification_android(user.deviceToken, { message: getMessage("Your ride has started.", "تم بدء رحلتك.", "Votre trajet a commencé."), type: "ride_started", senderId: driverId });
-            return socket.emit("rideStatusUpdate", { success: true, message: getMessage("Ride started successfully", "تم بدء الرحلة بنجاح", "Le trajet a commencé avec succès"), data: { bookingId: booking.id, status, otpVerified: true } });
+              helper.sendNotification_android(user.deviceToken,
+                { message: getMessage("Your ride has started.", "تم بدء رحلتك.", "Votre trajet a commencé."), type: "ride_started", senderId: driverId });
+            return socket.emit("rideStatusUpdate",
+              { success: true, message: getMessage("Ride started successfully", "تم بدء الرحلة بنجاح", "Le trajet a commencé avec succès"), data: { bookingId: booking.id, status, otpVerified: true } });
 
           case "3": // FINISHED
-            if (currentStatus !== '2') return socket.emit("rideStatusUpdate", { success: false, status: currentStatus, message: getMessage("Cannot finish ride. Ride must be started first.", "لا يمكن إنهاء الرحلة. يجب بدء الرحلة أولاً.", "Impossible de terminer le trajet. Le trajet doit d'abord être commencé.") });
+            if (currentStatus !== '2')
+              return socket.emit("rideStatusUpdate",
+                { success: false, status: currentStatus, message: getMessage("Cannot finish ride. Ride must be started first.", "لا يمكن إنهاء الرحلة. يجب بدء الرحلة أولاً.", "Impossible de terminer le trajet. Le trajet doit d'abord être commencé.") });
             await booking.update({ status: status });
             emitToBoth(getMessage("Ride finished successfully", "تم الانتهاء من الرحلة بنجاح", "Trajet terminé avec succès"), status);
             if (user.deviceToken)
@@ -888,7 +910,7 @@ module.exports = function (io) {
             if (currentStatus !== '2') return socket.emit("rideStatusUpdate", { success: false, status: currentStatus, message: getMessage("Cannot cancel. Ride must be started first.", "لا يمكن الإلغاء. يجب بدء الرحلة أولاً.", "Impossible d'annuler. Le trajet doit d'abord être commencé.") });
             await booking.update({ status: status });
             emitToBoth(getMessage("Ride cancelled successfully", "تم إلغاء الرحلة بنجاح", "Trajet annulé avec succès"), status);
-            if (user.deviceToken) 
+            if (user.deviceToken)
               helper.sendNotification_android(user.deviceToken, { message: getMessage("Your ride has been cancelled.", "تم إلغاء رحلتك.", "Votre trajet a été annulé."), type: "ride_cancelled", senderId: driverId });
             return socket.emit("rideStatusUpdate", { success: true, message: getMessage("Ride cancelled successfully", "تم إلغاء الرحلة بنجاح", "Trajet annulé avec succès"), data: { bookingId: booking.id, status } });
 
