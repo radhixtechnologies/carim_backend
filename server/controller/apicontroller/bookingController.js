@@ -626,14 +626,16 @@ module.exports = {
                 });
 
                 // ---------------- SAVE NOTIFICATION ----------------
-                await db.notifications.create({
-                    sender_id: userId,
-                    receiver_id: 0,
-                    message: "New ride request created",
-                    type: 1,
-                    status: 0,
-                    bookingId: newBooking.id
-                });
+                for (const driver of freeDrivers) {
+                    await db.notifications.create({
+                        sender_id: userId,
+                        receiver_id: driver.id,  
+                        message: "New ride request created",
+                        type: 1,
+                        status: 0,
+                        bookingId: newBooking.id
+                    });
+                }
 
                 // ---------------- SEND PUSH NOTIFICATION ----------------
                 for (const driver of freeDrivers) {
@@ -1229,7 +1231,7 @@ module.exports = {
 
                     await db.notifications.create({
                         userId: driverId,
-                         bookingId: bookingId,
+                        bookingId: bookingId,
                         type: 2,
                         message: languageType === 1 ? "لقد رفضت طلب الرحلة" : languageType === 2 ? "Vous avez rejeté la demande de course" : "You have rejected the ride request",
                         status: 0
