@@ -1,6 +1,8 @@
 let db = require("../models");
 const Sequelize = require("sequelize");
 const Op = Sequelize.Op;
+const helper = require('../helper/helper');
+
 
 global.onlineUsers = {};
 
@@ -886,7 +888,8 @@ module.exports = function (io) {
             if (currentStatus !== '2') return socket.emit("rideStatusUpdate", { success: false, status: currentStatus, message: getMessage("Cannot cancel. Ride must be started first.", "لا يمكن الإلغاء. يجب بدء الرحلة أولاً.", "Impossible d'annuler. Le trajet doit d'abord être commencé.") });
             await booking.update({ status: status });
             emitToBoth(getMessage("Ride cancelled successfully", "تم إلغاء الرحلة بنجاح", "Trajet annulé avec succès"), status);
-            if (user.deviceToken) sendNotification_android(user.deviceToken, { message: getMessage("Your ride has been cancelled.", "تم إلغاء رحلتك.", "Votre trajet a été annulé."), type: "ride_cancelled", senderId: driverId });
+            if (user.deviceToken) 
+              helper.sendNotification_android(user.deviceToken, { message: getMessage("Your ride has been cancelled.", "تم إلغاء رحلتك.", "Votre trajet a été annulé."), type: "ride_cancelled", senderId: driverId });
             return socket.emit("rideStatusUpdate", { success: true, message: getMessage("Ride cancelled successfully", "تم إلغاء الرحلة بنجاح", "Trajet annulé avec succès"), data: { bookingId: booking.id, status } });
 
           case "0": // ON THE WAY

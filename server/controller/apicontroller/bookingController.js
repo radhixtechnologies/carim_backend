@@ -1291,7 +1291,7 @@ module.exports = {
 
                     helper.sendNotification_android(
                         booking.userbook.deviceToken,
-                        { message: pushMessage, type: request === "1" ? "ride_accept" : "ride_reject", senderId: driverId, sender_name: driver.firstName + " " + driver.lastName, sender_image: driver.image }
+                        { message: pushMessage, type: 2, senderId: driverId, sender_name: driver.firstName + " " + driver.lastName, sender_image: driver.image }
                     );
                 }
 
@@ -2379,7 +2379,7 @@ module.exports = {
 
                                 helper.sendNotification_android(driverToken.deviceToken, {
                                     message: msgPush,
-                                    type: 5,
+                                    type: 3,
                                     bookingId: booking.id.toString(),
                                     cancelledBy: "user"
                                 });
@@ -2451,7 +2451,7 @@ module.exports = {
 
                                     helper.sendNotification_android(driverToken.deviceToken, {
                                         message: msgPush,
-                                        type: 5,
+                                        type: 3,
                                         bookingId: booking.id.toString(),
                                         cancelledBy: "user"
                                     });
