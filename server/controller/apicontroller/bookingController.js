@@ -1201,6 +1201,19 @@ module.exports = {
                         { status: 1 },
                         { where: { bookingId, driverId } }
                     );
+                    const rideReq = await db.rideRequest.findOne({ where: { bookingId } });
+
+                    if (!rideReq) {
+                        let msg = languageType === 1 ? "تمت معالجة الحجز بالفعل" :
+                            languageType === 2 ? "Réservation déjà traitée" :
+                                "Booking already processed";
+                        return helper.failure(res, msg);
+                    }
+
+                    // Get the userId from ride request
+                    const userId = rideReq.userId; // ✅ now defined
+
+
                     await db.notifications.create({
                         sender_id: driverId,
                         receiver_id: userId,
@@ -1235,15 +1248,10 @@ module.exports = {
                     await db.users.update({ lastFreeTime: new Date() }, { where: { id: driverId } });
 
                     await db.notifications.create({
-                        sender_id: driverId,
-                        receiver_id: userId,
-                        bookingId,
+                        userId: driverId,
+                        bookingId: bookingId,
                         type: 2,
-                        message:
-                            languageType === 1 ? "لقد رفضت طلب الرحلة" :
-                                languageType === 2 ? "Vous avez rejeté la demande de course" :
-                                    "You have rejected the ride request",
-                        is_read: 0,
+                        message: languageType === 1 ? "لقد رفضت طلب الرحلة" : languageType === 2 ? "Vous avez rejeté la demande de course" : "You have rejected the ride request",
                         status: 0
                     });
                     if (bookingUser.rejectCount + 1 >= totalDrivers) {
