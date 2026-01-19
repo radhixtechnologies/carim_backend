@@ -668,9 +668,9 @@ module.exports = {
             const v = new Validator(req.body, {
                 vehicleBrand: "required",
                 vehicleModel: "required",
-                vehicleYear: "required",
+           
                 vehicleNumber: "required",
-                vehicleColor: "required",
+   
                 vehicleDocument: "required",
                 drivingLicence: "required"
             });
