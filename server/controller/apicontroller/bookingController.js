@@ -2368,7 +2368,7 @@ module.exports = {
                         if (!busyRide && request === "1" && driverId) {
 
                             const driverToken = await db.users.findOne({
-                                where: { id: driverId },
+                                where: { id: driverId, approve: "1", },
                                 attributes: ["deviceToken"],
                                 raw: true
                             });
@@ -2409,7 +2409,7 @@ module.exports = {
                         const MAX_DISTANCE = 30;
 
                         const drivers = await db.users.findAll({
-                            where: { role: "2", online: "1" },
+                            where: { role: "2", online: "1", approve: "1", },
                             attributes: ["id", "latitude", "longitude"],
                             raw: true
                         });
@@ -2441,7 +2441,7 @@ module.exports = {
                             if (dist <= MAX_DISTANCE && !busyRide) {
 
                                 const driverToken = await db.users.findOne({
-                                    where: { id: driver.id },
+                                    where: { id: driver.id , approve: "1",},
                                     attributes: ["deviceToken"],
                                     raw: true
                                 });

@@ -259,9 +259,6 @@ module.exports = {
                 return helper.failure(res, msg);
             }
 
-            // -------------------------------
-            //  Only verify when OTP matches
-            // -------------------------------
             if (req.body.otp == user.otp) {
                 const loginTime = helper.unixTimestamp();
 
