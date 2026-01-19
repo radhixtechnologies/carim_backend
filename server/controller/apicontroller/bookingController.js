@@ -2369,9 +2369,7 @@ module.exports = {
 
                             const driverToken = await db.users.findOne({
                                 where: {
-                                    id: driverId, approve: "1", status: "1",
-                                    block: "0",
-                                    suspend: "0"
+                                    id: driverId, approve: "1",
                                 },
                                 attributes: ["deviceToken"],
                                 raw: true
@@ -2414,9 +2412,7 @@ module.exports = {
 
                         const drivers = await db.users.findAll({
                             where: {
-                                role: "2", online: "1", approve: "1", status: "1",
-                                block: "0",
-                                suspend: "0"
+                                role: "2", online: "1", approve: "1",
                             },
                             attributes: ["id", "latitude", "longitude"],
                             raw: true
@@ -2489,10 +2485,7 @@ module.exports = {
                     const userToken = await db.users.findOne({
                         where: {
                             id: userId, approve: "1",
-                            status: "1",
-                            block: "0",
-                            suspend: "0"
-                        },
+                                            },
                         attributes: ["deviceToken"],
                         raw: true
                     });
