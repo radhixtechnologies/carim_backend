@@ -493,84 +493,84 @@ module.exports = {
     //         return helper.failure(res, msg);
     //     }
     // },
-getCmsContent: async (req, res) => {
-    try {
-        const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
-        const { type } = req.query;
+    getCmsContent: async (req, res) => {
+        try {
+            const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
+            const { type } = req.query;
 
-        if (![1, 2, 3].includes(Number(type))) {
-            let msg = "Invalid type. Use 1 for Privacy Policy, 3 for Terms and Conditions, 2 for About us.";
-            if (languageType == 1) msg = "نوع غير صالح. استخدم 1 لسياسة الخصوصية، 3 للشروط والأحكام، 2 من نحن.";
-            else if (languageType == 2) msg = "Type invalide. Utilisez 1 pour la politique de confidentialité, 3 pour les termes et conditions, 2 pour À propos de nous.";
+            if (![1, 2, 3].includes(Number(type))) {
+                let msg = "Invalid type. Use 1 for Privacy Policy, 3 for Terms and Conditions, 2 for About us.";
+                if (languageType == 1) msg = "نوع غير صالح. استخدم 1 لسياسة الخصوصية، 3 للشروط والأحكام، 2 من نحن.";
+                else if (languageType == 2) msg = "Type invalide. Utilisez 1 pour la politique de confidentialité, 3 pour les termes et conditions, 2 pour À propos de nous.";
+                return helper.failure(res, msg);
+            }
+
+            const cmsContent = await db.cms.findOne({
+                where: { type: Number(type) },
+            });
+
+            if (!cmsContent) {
+                let msg = "Content not found.";
+                if (languageType == 1) msg = "المحتوى غير موجود.";
+                else if (languageType == 2) msg = "Contenu non trouvé.";
+                return helper.failure(res, msg);
+            }
+
+            let message = "";
+            let translatedTitle = "";
+
+            switch (Number(type)) {
+                case 1: // Privacy Policy
+                    message = "Privacy policy guidelines retrieved successfully.";
+                    translatedTitle = "Privacy Policy";
+                    if (languageType == 1) {
+                        message = "تم جلب إرشادات سياسة الخصوصية بنجاح.";
+                        translatedTitle = "سياسة الخصوصية";
+                    } else if (languageType == 2) {
+                        message = "Directives de la politique de confidentialité récupérées avec succès.";
+                        translatedTitle = "Politique de confidentialité";
+                    }
+                    break;
+
+                case 2: // About Us
+                    message = "About us content retrieved successfully.";
+                    translatedTitle = "About Us";
+                    if (languageType == 1) {
+                        message = "تم جلب محتوى من نحن بنجاح.";
+                        translatedTitle = "من نحن";
+                    } else if (languageType == 2) {
+                        message = "Contenu À propos de nous récupéré avec succès.";
+                        translatedTitle = "À propos de nous";
+                    }
+                    break;
+
+                case 3: // Terms & Conditions
+                    message = "Terms and conditions retrieved successfully.";
+                    translatedTitle = "Terms & Conditions";
+                    if (languageType == 1) {
+                        message = "تم جلب الشروط والأحكام بنجاح.";
+                        translatedTitle = "الشروط والأحكام";
+                    } else if (languageType == 2) {
+                        message = "Termes et conditions récupérés avec succès.";
+                        translatedTitle = "Termes et conditions";
+                    }
+                    break;
+            }
+
+            return helper.success(res, message, {
+                ...cmsContent.dataValues,
+                title: translatedTitle
+            });
+
+        } catch (error) {
+            console.error('getCmsContent error:', error);
+
+            let msg = "Something went wrong.";
+            if (languageType == 1) msg = "حدث خطأ ما.";
+            else if (languageType == 2) msg = "Une erreur est survenue.";
             return helper.failure(res, msg);
         }
-
-        const cmsContent = await db.cms.findOne({
-            where: { type: Number(type) },
-        });
-
-        if (!cmsContent) {
-            let msg = "Content not found.";
-            if (languageType == 1) msg = "المحتوى غير موجود.";
-            else if (languageType == 2) msg = "Contenu non trouvé.";
-            return helper.failure(res, msg);
-        }
-
-        let message = "";
-        let translatedTitle = "";
-
-        switch (Number(type)) {
-            case 1: // Privacy Policy
-                message = "Privacy policy guidelines retrieved successfully.";
-                translatedTitle = "Privacy Policy";
-                if (languageType == 1) {
-                    message = "تم جلب إرشادات سياسة الخصوصية بنجاح.";
-                    translatedTitle = "سياسة الخصوصية";
-                } else if (languageType == 2) {
-                    message = "Directives de la politique de confidentialité récupérées avec succès.";
-                    translatedTitle = "Politique de confidentialité";
-                }
-                break;
-
-            case 2: // About Us
-                message = "About us content retrieved successfully.";
-                translatedTitle = "About Us";
-                if (languageType == 1) {
-                    message = "تم جلب محتوى من نحن بنجاح.";
-                    translatedTitle = "من نحن";
-                } else if (languageType == 2) {
-                    message = "Contenu À propos de nous récupéré avec succès.";
-                    translatedTitle = "À propos de nous";
-                }
-                break;
-
-            case 3: // Terms & Conditions
-                message = "Terms and conditions retrieved successfully.";
-                translatedTitle = "Terms & Conditions";
-                if (languageType == 1) {
-                    message = "تم جلب الشروط والأحكام بنجاح.";
-                    translatedTitle = "الشروط والأحكام";
-                } else if (languageType == 2) {
-                    message = "Termes et conditions récupérés avec succès.";
-                    translatedTitle = "Termes et conditions";
-                }
-                break;
-        }
-
-        return helper.success(res, message, {
-            ...cmsContent.dataValues,
-            title: translatedTitle
-        });
-
-    } catch (error) {
-        console.error('getCmsContent error:', error);
-
-        let msg = "Something went wrong.";
-        if (languageType == 1) msg = "حدث خطأ ما.";
-        else if (languageType == 2) msg = "Une erreur est survenue.";
-        return helper.failure(res, msg);
-    }
-},
+    },
 
 
     notificationOnOff: async (req, res) => {

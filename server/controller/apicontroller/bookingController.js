@@ -2387,9 +2387,9 @@ module.exports = {
                 await booking.update({ status: newStatus });
 
                 await db.notifications.create({
-                    userId: loggedInUserId,        // actor (user or driver)
+                    userId: loggedInUserId,        
                     bookingId: booking.id,
-                    type: 3,                  // ride action
+                    type: 3,                 
                     message: languageType == 1
                         ? (loggedInUserRole === "1" ? "لقد ألغيت الرحلة" : "لقد ألغيت الرحلة")
                         : languageType == 2
