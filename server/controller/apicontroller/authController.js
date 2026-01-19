@@ -668,9 +668,7 @@ module.exports = {
             const v = new Validator(req.body, {
                 vehicleBrand: "required",
                 vehicleModel: "required",
-           
                 vehicleNumber: "required",
-   
                 vehicleDocument: "required",
                 drivingLicence: "required"
             });
@@ -688,6 +686,7 @@ module.exports = {
                 vehicleColor,
                 vehicleDocument,
                 drivingLicence,
+                insurance,
                 passengerCount
             } = req.body;
 
@@ -732,6 +731,7 @@ module.exports = {
                     vehicleColor,
                     vehicleDocument,
                     drivingLicence,
+                    insurance,
                     passengerCount
                 }, { transaction });
 
@@ -753,6 +753,7 @@ module.exports = {
                     vehicleColor: vehicle.vehicleColor,
                     vehicleDocument: vehicle.vehicleDocument,
                     drivingLicence: vehicle.drivingLicence,
+                    insurance: vehicle.insurance,
                     passengerCount: vehicle.passengerCount,
                     userVehicleStatus: updatedUser.vehicle
                 };
@@ -880,6 +881,7 @@ module.exports = {
                 vehicleNumber,
                 vehicleColor,
                 vehicleDocument,
+                insurance,
                 drivingLicence,
                 passengerCount
             } = req.body;
@@ -930,6 +932,7 @@ module.exports = {
                 vehicleColor,
                 vehicleDocument,
                 drivingLicence,
+                insurance,
                 passengerCount,
                 updatedAt: new Date()
             }, {
@@ -947,6 +950,7 @@ module.exports = {
                 vehicleColor: updatedVehicle.vehicleColor,
                 vehicleDocument: updatedVehicle.vehicleDocument,
                 drivingLicence: updatedVehicle.drivingLicence,
+                insurance: updatedVehicle.insurance,
                 passengerCount: updatedVehicle.passengerCount,
                 updatedAt: updatedVehicle.updatedAt
             };
