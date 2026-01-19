@@ -2368,7 +2368,11 @@ module.exports = {
                         if (!busyRide && request === "1" && driverId) {
 
                             const driverToken = await db.users.findOne({
-                                where: { id: driverId, approve: "1", },
+                                where: {
+                                    id: driverId, approve: "1", status: "1",
+                                    block: "0",
+                                    suspend: "0"
+                                },
                                 attributes: ["deviceToken"],
                                 raw: true
                             });
@@ -2409,7 +2413,11 @@ module.exports = {
                         const MAX_DISTANCE = 30;
 
                         const drivers = await db.users.findAll({
-                            where: { role: "2", online: "1", approve: "1", },
+                            where: {
+                                role: "2", online: "1", approve: "1", status: "1",
+                                block: "0",
+                                suspend: "0"
+                            },
                             attributes: ["id", "latitude", "longitude"],
                             raw: true
                         });
@@ -2441,7 +2449,7 @@ module.exports = {
                             if (dist <= MAX_DISTANCE && !busyRide) {
 
                                 const driverToken = await db.users.findOne({
-                                    where: { id: driver.id , approve: "1",},
+                                    where: { id: driver.id, approve: "1", },
                                     attributes: ["deviceToken"],
                                     raw: true
                                 });
@@ -2479,7 +2487,12 @@ module.exports = {
                     const userId = booking.userId;
 
                     const userToken = await db.users.findOne({
-                        where: { id: userId },
+                        where: {
+                            id: userId, approve: "1",
+                            status: "1",
+                            block: "0",
+                            suspend: "0"
+                        },
                         attributes: ["deviceToken"],
                         raw: true
                     });
