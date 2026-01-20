@@ -214,6 +214,12 @@ module.exports = function(sequelize, DataTypes) {
     lastFreeTime: {
       type: DataTypes.DATE,
       allowNull: true
+    },
+    languageType: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+      comment: "0=english , 1=arabic, 2=french"
     }
   }, {
     sequelize,
