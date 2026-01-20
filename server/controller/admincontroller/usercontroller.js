@@ -127,9 +127,6 @@ module.exports = {
         }
     },
 
-
-
-
     userStatus: async (req, res) => {
         try {
             const { id, status } = req.body;
