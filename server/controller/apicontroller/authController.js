@@ -22,7 +22,7 @@ module.exports = {
                 return helper.failure(res, errorsResponse);
             }
 
-            const { deviceToken, deviceType, phoneNumber, countryCode, role } = req.body;
+            const { deviceToken, deviceType, phoneNumber, countryCode, role} = req.body;
 
             const existingUser = await db.users.findOne({
                 where: { phoneNumber, countryCode, role, deletedAt: null }

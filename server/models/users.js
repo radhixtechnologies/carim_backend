@@ -215,7 +215,7 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.DATE,
       allowNull: true
     },
-    languageType: {
+    languagee_type: {
       type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 0,
