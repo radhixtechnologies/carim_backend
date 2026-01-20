@@ -261,24 +261,7 @@ module.exports = {
             return helper.error(res, error.message);
         }
     },
-    // block: async (req, res) => {
-    //     try {
-    //         const { id, block } = req.body;
-    //         const user = await db.users.findOne({ where: { id } });
-    //         if (!user) {
-    //             return helper.error(res, "User not found");
-    //         }
-    //         await db.users.update({ block }, { where: { id } });
-    //         const updatedUser = await db.users.findOne({ where: { id } });
-    //         return helper.success(res, "Block status updated successfully", {
-    //             id: updatedUser.id,
-    //             block: updatedUser.block,
-    //             success: true
-    //         });
-    //     } catch (error) {
-    //         return helper.error(res, error.message);
-    //     }
-    // },
+
     block: async (req, res) => {
         try {
             const { id, block } = req.body;
@@ -337,74 +320,134 @@ module.exports = {
             return helper.error(res, error.message);
         }
     },
+
     // approveDriver: async (req, res) => {
     //     try {
     //         const { id, approve } = req.body;
+
     //         const driver = await db.users.findOne({ where: { id, role: '2' } });
     //         if (!driver) {
     //             return helper.error(res, "Driver not found");
     //         }
+
     //         if (!['0', '1', '2'].includes(approve)) {
     //             return helper.error(res, "Invalid approval status");
     //         }
+
     //         await db.users.update({ approve }, { where: { id } });
+
     //         const updatedDriver = await db.users.findOne({ where: { id } });
+
+    //         // ===================== PUSH NOTIFICATION =====================
+    //         if (updatedDriver.deviceToken) {
+
+    //             let pushMessage = "";
+    //             let pushType = "driver_approval";
+
+    //             if (approve === '1') {
+    //                 pushMessage = "Your account has been approved. You can now accept rides.";
+    //             } else if (approve === '2') {
+    //                 pushMessage = "Your account has been rejected by the admin.";
+    //             }
+
+    //             if (pushMessage) {
+    //                 helper.sendNotification_android(updatedDriver.deviceToken, {
+    //                     message: pushMessage,
+    //                     type: pushType,
+    //                     senderId: "0",
+    //                     sender_name: "Admin",
+    //                     sender_image: "",
+    //                     type: 6,
+    //                 });
+    //             }
+    //             await db.notifications.create({
+    //                 sender_id: 1,
+    //                 receiver_id: updatedDriver.id,
+    //                 message: pushMessage,
+    //                 is_read: 0,
+    //                 type: pushType === "driver_approval" ? 1 : 0,
+    //                 status: 1
+    //             });
+    //         }
+
+    //         // ===================== SAME RESPONSE — NO CHANGE =====================
     //         return helper.success(res, "Driver approval status updated successfully", {
     //             id: updatedDriver.id,
     //             approve: updatedDriver.approve,
     //             success: true
     //         });
+
     //     } catch (error) {
     //         return helper.error(res, error.message);
     //     }
     // },
     approveDriver: async (req, res) => {
         try {
-            const { id, approve } = req.body;
+            const getPushMessage = (lang, en, ar, fr) => {
+                if (lang === 1) return ar;
+                if (lang === 2) return fr;
+                return en;
+            };
 
-            const driver = await db.users.findOne({ where: { id, role: '2' } });
+            const { id, approve } = req.body;
+            const driver = await db.users.findOne({
+                where: { id, role: '2' }
+            });
             if (!driver) {
                 return helper.error(res, "Driver not found");
             }
-
             if (!['0', '1', '2'].includes(approve)) {
                 return helper.error(res, "Invalid approval status");
             }
 
             await db.users.update({ approve }, { where: { id } });
 
-            const updatedDriver = await db.users.findOne({ where: { id } });
+            const updatedDriver = await db.users.findOne({
+                where: { id },
+                attributes: ['id', 'approve', 'deviceToken', 'languagee_type']
+            });
 
             // ===================== PUSH NOTIFICATION =====================
             if (updatedDriver.deviceToken) {
-
                 let pushMessage = "";
-                let pushType = "driver_approval";
+                const pushType = "driver_approval";
+                const lang = Number(updatedDriver.languagee_type) || 0;
 
                 if (approve === '1') {
-                    pushMessage = "Your account has been approved. You can now accept rides.";
-                } else if (approve === '2') {
-                    pushMessage = "Your account has been rejected by the admin.";
+                    pushMessage = getPushMessage(
+                        lang,
+                        "Your account has been approved. You can now accept rides.",
+                        "تمت الموافقة على حسابك. يمكنك الآن قبول الرحلات.",
+                        "Votre compte a été approuvé. Vous pouvez maintenant accepter des courses."
+                    );
+                }
+                else if (approve === '2') {
+                    pushMessage = getPushMessage(
+                        lang,
+                        "Your account has been rejected by the admin.",
+                        "تم رفض حسابك من قبل المسؤول.",
+                        "Votre compte a été rejeté par l’administrateur."
+                    );
                 }
 
                 if (pushMessage) {
                     helper.sendNotification_android(updatedDriver.deviceToken, {
                         message: pushMessage,
-                        type: pushType,
+                        type: 6,
                         senderId: "0",
                         sender_name: "Admin",
-                        sender_image: "",
-                        type: 6,
+                        sender_image: ""
+                    });
+
+                    await db.notifications.create({
+                        sender_id: 1,
+                        receiver_id: updatedDriver.id,
+                        message: pushMessage,
+                        is_read: 0,
+                        type: 1,
+                        status: 1
                     });
                 }
-                await db.notifications.create({
-                    sender_id: 1,
-                    receiver_id: updatedDriver.id,
-                    message: pushMessage,
-                    is_read: 0,
-                    type: pushType === "driver_approval" ? 1 : 0,
-                    status: 1
-                });
             }
 
             // ===================== SAME RESPONSE — NO CHANGE =====================
@@ -420,65 +463,6 @@ module.exports = {
     },
 
 
-
-
-    // doucmentList: async (req, res) => {
-    //     try {
-    //         let { page, limit, search, dateFilter, driverId } = req.query;
-    //         page = parseInt(page) || 1;
-    //         limit = parseInt(limit) || 10;
-    //         const offset = (page - 1) * limit;
-    //         dateFilter = dateFilter || "all";
-
-    //         const Op = db.Sequelize.Op;
-    //         const whereCondition = { role: "2" };
-
-    //         if (driverId && driverId.trim() !== "") {
-    //             whereCondition.id = driverId;
-    //         }
-
-    //         if (search && search.trim() !== "") {
-    //             whereCondition[Op.or] = [
-    //                 { name: { [Op.like]: `%${search}%` } },
-    //                 { email: { [Op.like]: `%${search}%` } },
-    //             ];
-    //         }
-
-    //         if (dateFilter !== 'all') {
-    //             const daysAgo = parseInt(dateFilter, 10);
-    //             if (!isNaN(daysAgo)) {
-    //                 const startDate = new Date();
-    //                 startDate.setDate(startDate.getDate() - daysAgo);
-
-    //                 whereCondition.createdAt = {
-    //                     [Op.gte]: startDate,
-    //                 };
-    //             }
-    //         }
-
-    //         const { count, rows } = await db.users.findAndCountAll({
-    //             where: whereCondition,
-    //             include: [
-    //                 {
-    //                     model: db.driverDocuments,
-    //                     as: 'documents',
-    //                 }
-    //             ],
-    //             offset,
-    //             limit,
-    //             order: [["id", "DESC"]],
-    //         });
-
-    //         return helper.success(res, "All driver Detail", {
-    //             data: rows,
-    //             currentPage: page,
-    //             totalPages: Math.ceil(count / limit),
-    //             totalUsers: count,
-    //         });
-    //     } catch (error) {
-    //         return helper.error(res, error.message);
-    //     }
-    // },
     documentVerified: async (req, res) => {
         try {
             const { id, documentVerify } = req.body;
