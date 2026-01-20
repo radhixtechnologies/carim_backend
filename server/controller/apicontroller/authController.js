@@ -22,7 +22,7 @@ module.exports = {
                 return helper.failure(res, errorsResponse);
             }
 
-            const { deviceToken, deviceType, phoneNumber, countryCode, role} = req.body;
+            const { deviceToken, deviceType, phoneNumber,languagee_type, countryCode, role} = req.body;
 
             const existingUser = await db.users.findOne({
                 where: { phoneNumber, countryCode, role, deletedAt: null }
@@ -94,6 +94,7 @@ module.exports = {
                     deviceType: deviceType || null,
                     loginTime: helper.unixTimestamp(),
                     otp,
+                    languagee_type,
                     rideOtp,
                     status: "1"
                 });
