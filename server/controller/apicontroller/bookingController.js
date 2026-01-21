@@ -554,7 +554,7 @@ module.exports = {
         };
     },
 
-    
+
     driverAccptReject: (io) => {
         return async (req, res) => {
             let languageType = Number(req.headers.languagetype);
@@ -1549,7 +1549,8 @@ module.exports = {
                             ),
                             'senderImage'
                         ]
-                    ]
+                    ],
+                    order: [['id', 'DESC']]
                 },
                 where: { receiver_id: req.user.id },
             });
