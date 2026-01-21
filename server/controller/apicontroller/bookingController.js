@@ -1216,6 +1216,8 @@ module.exports = {
                 // ================= SOCKET (NO CHANGE) =================
                 if (booking.userbook?.socketId) {
                     io.to(booking.userbook.socketId).emit("rideStatusUpdate", {
+                        success: true,
+                        message: 'Driver has accepted your ride request',
                         bookingId: booking.id,
                         driverId,
                         request,

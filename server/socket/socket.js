@@ -765,7 +765,7 @@ module.exports = function (io) {
               true
             );
 
-            // 🔔 PUSH TO USER - RIDE STARTED
+            //  PUSH TO USER - RIDE STARTED
             if (user.deviceToken) {
               helper.sendNotification_android(user.deviceToken, {
                 message: getUserMsg(
@@ -791,7 +791,7 @@ module.exports = function (io) {
               "3"
             );
 
-            // 🔔 PUSH TO USER - RIDE COMPLETED
+            //  PUSH TO USER - RIDE COMPLETED
             if (user.deviceToken) {
               helper.sendNotification_android(user.deviceToken, {
                 message: getUserMsg(
