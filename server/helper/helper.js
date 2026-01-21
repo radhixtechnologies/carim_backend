@@ -85,11 +85,12 @@ module.exports = {
                     ...(noti_data.senderName && { senderName: String(noti_data.senderName) }),
                     ...(noti_data.senderImage && { senderImage: String(noti_data.senderImage) }),
                     ...(noti_data.phoneNumber && { phoneNumber: String(noti_data.phoneNumber) }),
-                },                
+                },
                 apns: {
                     payload: {
                         aps: {
-                            sound: "default",
+                            // sound: "default",
+                            sound: "user_app.caf",
                             badge: 1,
                         },
                     },
@@ -101,8 +102,8 @@ module.exports = {
                     },
                 },
             };
-            console.log(message,"iiiiiiiiiiiiiiiiiiiiiiii");
-            
+            console.log(message, "iiiiiiiiiiiiiiiiiiiiiiii");
+
             const response = await admin.messaging().send(message);
             console.log("Push sent successfully:", response);
             return true;
