@@ -1207,13 +1207,14 @@ module.exports = {
                             message: pushMessage,
                             type: 2,
                             senderId: driverId,
+                            bookingId: booking.id,
                             sender_name: driver.firstName + " " + driver.lastName,
                             sender_image: driver.image
                         }
                     );
                 }
 
-                // ================= SOCKET (NO CHANGE) =================
+                // ================= SOCKET =================
                 if (booking.userbook?.socketId) {
                     io.to(booking.userbook.socketId).emit("rideStatusUpdate", {
                         success: true,
