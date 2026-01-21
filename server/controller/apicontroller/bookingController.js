@@ -2329,7 +2329,7 @@ module.exports = {
             const userId = req.user.id;
             const { languagee_type } = req.body;  // 0 = English, 1 = Arabic, 2 = French
             if (languagee_type === undefined) {
-                return helper.failed(res, "languagee_type is required");
+                return helper.error(res, "languagee_type is required");
             }
 
             await db.users.update(
@@ -2345,7 +2345,7 @@ module.exports = {
             );
         } catch (error) {
             console.log("languageTypeChange error =>", error);
-            return helper.failed(res, "Something went wrong");
+            return helper.error(res, "Something went wrong");
         }
     }
 

@@ -706,7 +706,7 @@ module.exports = function (io) {
                   "وصل سائقك.",
                   "Votre conducteur est arrivé."
                 ),
-                type: "ride_arrived",
+                type: 7,
                 senderId: driverId
               });
             break;
