@@ -2324,6 +2324,32 @@ module.exports = {
 
     },
 
+    languageTypeChange: async (req, res) => {
+        try {
+            const userId = req.user.id;
+            const { languagee_type } = req.body;  // 0 = English, 1 = Arabic, 2 = French
+            if (languagee_type === undefined) {
+                return helper.failed(res, "languagee_type is required");
+            }
+
+            await db.users.update(
+                { languagee_type },
+                { where: { id: userId } }
+            );
+
+            const data = await db.users.findOne({
+                where: { id: userId }
+            });
+
+            return helper.success(res, "Language change successfully", data
+            );
+        } catch (error) {
+            console.log("languageTypeChange error =>", error);
+            return helper.failed(res, "Something went wrong");
+        }
+    }
+
+
 
 
 

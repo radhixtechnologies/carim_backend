@@ -61,6 +61,7 @@ router.get('/Notificationlist', bookingController.Notificationlist);
 
 router.post('/testLocation', authController.testLocation);
 router.get('/getLocations', authController.getLocations);
+router.post('/languageTypeChange', bookingController.languageTypeChange);
 
 
 
