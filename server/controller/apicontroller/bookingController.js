@@ -354,7 +354,7 @@ module.exports = {
                         sender_id: userId,
                         receiver_id: driver.id,
                         message: "New ride request created",
-                        type: 1,
+                        type: 10,
                         status: 0,
                         bookingId: newBooking.id
                     });
