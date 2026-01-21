@@ -1550,9 +1550,10 @@ module.exports = {
                             'senderImage'
                         ]
                     ],
-                    order: [['id', 'DESC']]
+                    
                 },
                 where: { receiver_id: req.user.id },
+                order: [['id', 'DESC']]
             });
             return helper.success(res, "Get All Notifications Successfully", notifications);
         } catch (error) {
