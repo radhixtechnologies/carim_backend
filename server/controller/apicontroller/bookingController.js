@@ -908,8 +908,10 @@ module.exports = {
                     otherDrivers.forEach(item => {
                         if (item.user?.socketId) {
                             io.to(item.user.socketId).emit("rideStatusUpdate", {
+                                success: true,
                                 bookingId,
-                                message: "Ride accepted by another driver"
+                                message: "Ride accepted by another driver",
+                                status: '6'
                             });
                         }
                     });
