@@ -365,7 +365,8 @@ module.exports = {
                         raw: true
                     });
 
-                    if (driverData?.deviceToken && driverData.deviceToken.length > 10) {
+                    if (driverData?.deviceToken && driverData.deviceToken.length > 10 &&
+                        String(driver.approve) === '1') {
 
                         const msg = getPushMessage(
                             Number(driverData.languagee_type),
@@ -1101,7 +1102,7 @@ module.exports = {
                 let lastFreeTime = driver.lastFreeTime
                     ? new Date(driver.lastFreeTime)
                     : new Date(Date.now() - 60 * 1000); // default 1 minute
-                    
+
                 // ===== REJECTED REQUESTS FILTER =====
                 const rejectedRequests = await db.rideRequest.findAll({
                     where: { driverId, status: 2 },
