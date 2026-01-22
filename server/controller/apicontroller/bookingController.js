@@ -1100,8 +1100,8 @@ module.exports = {
                 // ===== GET DRIVER LAST FREE TIME =====
                 let lastFreeTime = driver.lastFreeTime
                     ? new Date(driver.lastFreeTime)
-                    : new Date(Date.now() - 10 * 1000);  // default 10 sec
-
+                    : new Date(Date.now() - 60 * 1000); // default 1 minute
+                    
                 // ===== REJECTED REQUESTS FILTER =====
                 const rejectedRequests = await db.rideRequest.findAll({
                     where: { driverId, status: 2 },
