@@ -90,3 +90,4 @@ db.users.hasMany(db.userBanks, { foreignKey: 'userId', as: 'banks' });
 db.transferscreenshot.belongsTo(db.users, { foreignKey: 'driverId', as: 'screenshotdriver' });
 
 
+db.rideRequest.belongsTo(db.users, { foreignKey: 'driverId', as: 'user' });

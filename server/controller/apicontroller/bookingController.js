@@ -879,11 +879,13 @@ module.exports = {
                         return helper.failure(res, msg);
                     }
 
+                    // Accept for current driver
                     await db.rideRequest.update(
                         { status: 1 },
                         { where: { bookingId, driverId } }
                     );
 
+                    // Reject for all other drivers
                     await db.rideRequest.update(
                         { status: 2 },
                         {
@@ -893,6 +895,24 @@ module.exports = {
                             }
                         }
                     );
+
+                    // ===== SOCKET: Remove booking for other drivers =====
+                    const otherDrivers = await db.rideRequest.findAll({
+                        where: {
+                            bookingId,
+                            driverId: { [Sequelize.Op.ne]: driverId }
+                        },
+                        include: [{ model: db.users, as: 'user', attributes: ['socketId'] }] // as 'user' must match association
+                    });
+
+                    otherDrivers.forEach(item => {
+                        if (item.user?.socketId) {
+                            io.to(item.user.socketId).emit("rideStatusUpdate", {
+                                bookingId,
+                                message: "Ride accepted by another driver"
+                            });
+                        }
+                    });
                 }
 
                 // ================= REJECT =================
@@ -945,7 +965,7 @@ module.exports = {
                     );
                 }
 
-                // ================= SOCKET =================
+                // ================= SOCKET TO USER =================
                 if (booking.userbook?.socketId) {
                     io.to(booking.userbook.socketId).emit("rideStatusUpdate", {
                         success: true,
@@ -957,6 +977,7 @@ module.exports = {
                     });
                 }
 
+                // ===== RESPONSES (UNCHANGED) =====
                 let resMsgAccept = "Booking accepted successfully. Driver on the way.";
                 let resMsgReject = "Booking rejected successfully";
 
@@ -983,6 +1004,8 @@ module.exports = {
             }
         };
     },
+
+
 
 
 
