@@ -10,65 +10,83 @@ admin.initializeApp({
 });
 module.exports = {
 
-    // sendNotification_android: async (token, noti_data) => {
+
+
+    // sendNotification_android: async function (token, noti_data) {
+    //     if (!token || token.trim() === "") {
+    //         console.warn("No device token provided, skipping push notification.");
+    //         return false;
+    //     }
+    //     console.log(token, "token");
+    //     console.log(noti_data, "noti_data");
     //     try {
-    //         console.log(token,"iiiiiiiiiiiiiiiiiiiiii");
-    //                     console.log(noti_data,"noti_datanoti_datanoti_datanoti_data");
-
-    //         jwtClient.authorize(async (err, tokens) => {
-    //             if (err) {
-    //                 console.log('Error during JWT authorization:', err);
-    //                 return;
-    //             }
-    //             const accessToken = tokens.access_token;
-    //             const apiUrl = `https://fcm.googleapis.com/v1/projects/${push_projectName}/messages:send`;
-    //             const headers = {
-    //                 'Content-Type': 'application/json',
-    //                 'Authorization': `Bearer ${accessToken}`
-    //             };
-
-    //             const data = {
-    //                 "message": {
-    //                     "token": token,
-    //                     "notification": {
-    //                         "title": "Carim",
-    //                         "body": noti_data.message,
+    //         const message = {
+    //             token: token,
+    //             notification: {
+    //                 title: noti_data.title || "Carim",
+    //                 body: noti_data.message || "",
+    //             },
+    //             data: {
+    //                 titleData: String(noti_data.title || "Notification"),
+    //                 messageData: String(noti_data.message || ""),
+    //                 senderId: String(noti_data.senderId || ""),
+    //                 type: String(noti_data.type || ""),
+    //                 notificationId: String(noti_data.notificationId || "0"),
+    //                 bookingId: String(noti_data.bookingId || 0),
+    //                 ...(noti_data.senderName && { senderName: String(noti_data.senderName) }),
+    //                 ...(noti_data.senderImage && { senderImage: String(noti_data.senderImage) }),
+    //                 ...(noti_data.phoneNumber && { phoneNumber: String(noti_data.phoneNumber) }),
+    //             },
+    //             apns: {
+    //                 payload: {
+    //                     aps: {
+    //                         // sound: "default",
+    //                         sound: "user_app.caf",
+    //                         badge: 1,
     //                     },
+    //                 },
+    //             },
+    //             android: {
+    //                 notification: {
+    //                     sound: "default",
+    //                     channelId: "default",
+    //                 },
+    //             },
+    //         };
+    //         console.log(message, "iiiiiiiiiiiiiiiiiiiiiiii");
 
-    //                     "data": {
-    //                         "title": "Carim",
-    //                         "body": noti_data.message,
-    //                         "type": JSON.stringify(noti_data.type),
-    //                         "senderId": JSON.stringify(noti_data.senderId),
-    //                         "sender_name": noti_data.sender_name,
-    //                         "sender_image": noti_data.sender_image,
-
-    //                     },
-    //                 }
-    //             }
-    //             console.log(headers, data, "==========================");
-
-    //             try {
-    //                 const response = await axios.post(apiUrl, data, { headers });
-    //                 console.log('Push sent successfully:', response.data);
-    //             } catch (error) {
-    //                 console.error('Error sending push notification:', error.response ? error.response.data : error.data);
-    //             }
-    //         });
+    //         const response = await admin.messaging().send(message);
+    //         console.log("Push sent successfully:", response);
+    //         return true;
     //     } catch (error) {
-    //         console.error('Error in sendNotification_android:', error);
+    //         console.error("Error sending push notification:", error.message || error);
+    //         if (error.code === 'messaging/invalid-registration-token' ||
+    //             error.code === 'messaging/registration-token-not-registered') {
+    //             console.log(`Invalid token: ${token}, you may want to remove it from database`);
+    //         }
+
+    //         throw error;
     //     }
     // },
-
 
     sendNotification_android: async function (token, noti_data) {
         if (!token || token.trim() === "") {
             console.warn("No device token provided, skipping push notification.");
             return false;
         }
-        console.log(token, "token");
-        console.log(noti_data, "noti_data");
+
         try {
+            console.log(token, "Device token");
+            console.log(noti_data, "Notification data");
+
+            // ------------------ Role-based Sound ------------------
+            const role = Number(noti_data.targetRole || 1); // 1=user, 2=driver
+
+            const androidSound = role === "2" ? "driver_alert" : "default";
+            const androidChannel = role === "2" ? "driver_channel" : "default";
+            const iosSound = role === "2" ? "push_sound.caf" : "user_app.caf";
+
+            // ------------------ FCM Message ------------------
             const message = {
                 token: token,
                 notification: {
@@ -82,41 +100,46 @@ module.exports = {
                     type: String(noti_data.type || ""),
                     notificationId: String(noti_data.notificationId || "0"),
                     bookingId: String(noti_data.bookingId || 0),
+                    targetRole: String(role),
                     ...(noti_data.senderName && { senderName: String(noti_data.senderName) }),
                     ...(noti_data.senderImage && { senderImage: String(noti_data.senderImage) }),
                     ...(noti_data.phoneNumber && { phoneNumber: String(noti_data.phoneNumber) }),
+                    sound: iosSound, // optional, can be used by app
                 },
                 apns: {
                     payload: {
                         aps: {
-                            // sound: "default",
-                            sound: "user_app.caf",
+                            sound: iosSound, // driver sound for iOS
                             badge: 1,
                         },
                     },
                 },
                 android: {
                     notification: {
-                        sound: "default",
-                        channelId: "default",
+                        sound: androidSound, // driver_alert for Android
+                        channelId: androidChannel, // must exist in app
                     },
                 },
             };
-            console.log(message, "iiiiiiiiiiiiiiiiiiiiiiii");
+
+            console.log(message, "FCM message payload");
 
             const response = await admin.messaging().send(message);
             console.log("Push sent successfully:", response);
+
             return true;
         } catch (error) {
             console.error("Error sending push notification:", error.message || error);
+
             if (error.code === 'messaging/invalid-registration-token' ||
                 error.code === 'messaging/registration-token-not-registered') {
-                console.log(`Invalid token: ${token}, you may want to remove it from database`);
+                console.log(`Invalid token: ${token}, remove from DB`);
             }
 
             throw error;
         }
     },
+
 
     success: function (res, message = "", body = {}) {
         return res.status(200).json({
