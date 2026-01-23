@@ -441,7 +441,7 @@ module.exports = {
                         receiver_id: updatedDriver.id,
                         message: pushMessage,
                         is_read: 0,
-                        type: 1,
+                        type: 6,
                         status: 1
                     });
                 }

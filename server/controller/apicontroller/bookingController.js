@@ -1551,8 +1551,6 @@ module.exports = {
 
                 // ================= USER CANCEL =================
                 if (loggedInUserRole === "1") {
-
-                    // ❌ DO NOT SEND PUSH IF RIDE ALREADY STARTED
                     if (booking.status !== "2") {
 
                         // -------- notify accepted driver --------
