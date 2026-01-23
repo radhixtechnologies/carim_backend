@@ -954,7 +954,7 @@ module.exports = {
                             status: booking.status,
                             request: booking.request,
                             bookingDate: booking.bookingDate,
-                            bookingPrice:booking.bookingPrice,
+                            bookingPrice: booking.bookingPrice,
                             orderId: booking.orderId,
                             rideOpen: booking.rideOpen
                         }))
@@ -1229,6 +1229,51 @@ module.exports = {
                 return helper.failure(res, msg);
             }
 
+            /* ================= DISTANCE CALCULATION (NEW ONLY) ================= */
+
+            const toRad = v => v * Math.PI / 180;
+            const calculateDistance = (a, b, c, d) => {
+                const R = 6371;
+                const dLat = toRad(c - a);
+                const dLon = toRad(d - b);
+                const x =
+                    Math.sin(dLat / 2) ** 2 +
+                    Math.cos(toRad(a)) *
+                    Math.cos(toRad(c)) *
+                    Math.sin(dLon / 2) ** 2;
+                return R * (2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x)));
+            };
+
+            let rideDistanceKm = "";
+
+            if (
+                booking.pickupLatitude &&
+                booking.pickupLongitude &&
+                booking.dropLatitude &&
+                booking.dropLongitude
+            ) {
+                const pickupLat = parseFloat(booking.pickupLatitude);
+                const pickupLng = parseFloat(booking.pickupLongitude);
+                const dropLat = parseFloat(booking.dropLatitude);
+                const dropLng = parseFloat(booking.dropLongitude);
+
+                if (
+                    !isNaN(pickupLat) &&
+                    !isNaN(pickupLng) &&
+                    !isNaN(dropLat) &&
+                    !isNaN(dropLng)
+                ) {
+                    rideDistanceKm = calculateDistance(
+                        pickupLat,
+                        pickupLng,
+                        dropLat,
+                        dropLng
+                    ).toFixed(2);
+                }
+            }
+
+            /* ================= END DISTANCE ================= */
+
             let successMsg = "Booking details fetched successfully";
             if (languageType == 1) successMsg = "تم جلب تفاصيل الحجز بنجاح";
             else if (languageType == 2) successMsg = "Détails de la réservation récupérés avec succès";
@@ -1250,7 +1295,8 @@ module.exports = {
                 request: booking.request,
                 bookingDate: booking.bookingDate,
                 bookingPrice: booking.bookingPrice,
-                rideOpen: booking.rideOpen
+                rideOpen: booking.rideOpen,
+                rideDistanceKm
             });
 
         } catch (error) {
@@ -1262,7 +1308,7 @@ module.exports = {
         }
     },
 
-   
+
     cancelRide: (io) => {
         return async (req, res) => {
 
