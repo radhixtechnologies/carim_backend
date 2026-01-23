@@ -443,7 +443,6 @@ module.exports = {
         }
     },
 
-
     resendOTP: async (req, res) => {
         try {
             const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
@@ -496,8 +495,6 @@ module.exports = {
             return helper.failure(res, msg);
         }
     },
-
-
     createAccount: async (req, res) => {
         try {
             const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
