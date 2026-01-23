@@ -169,6 +169,14 @@ module.exports = {
             body: body
         });
     },
+     error8: function (res, message = "", body = {}) {
+        return res.status(408).json({
+            success: false,
+            status: 408,
+            message: message,
+            body: body
+        });
+    },
 
     error1: function (res, message = "", body = {}) {
         return res.status(405).json({

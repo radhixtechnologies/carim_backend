@@ -132,28 +132,24 @@ module.exports = {
       }
       
 
-      // if (userData.deviceToken && userData.deviceToken !== decoded.deviceToken) {
-      //   await db.users.update(
-      //     {
-      //       deviceToken: decoded.deviceToken,
-      //       loginTime: new Date(),
-      //     },
-      //     {
-      //       where: {
-      //         id: decoded.id,
-      //       },
-      //     }
-      //   );
-      //   return helper.error(res, "Session expired - logged in on another device", 401);
-      // }
+      if (userData.deviceToken && userData.deviceToken !== decoded.deviceToken) {
+        await db.users.update(
+          {
+            deviceToken: decoded.deviceToken,
+            loginTime: new Date(),
+          },
+          {
+            where: {
+              id: decoded.id,
+            },
+          }
+        );
+        return helper.error8(res, "Session expired - logged in on another device",);
+      }
       if (userData.status === "0") {
         return helper.error2(res, "Your account has been deactivated by admin.");
       }
      
-
-      // if (userData.role === "2" && userData.approve === "0") {
-      //   return helper.failure(res, "Your account is not approved by admin.");
-      // }
       req.user = userData;
       next();
     } catch (error) {
