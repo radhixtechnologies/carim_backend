@@ -146,7 +146,6 @@ module.exports = {
       //   );
       //   return helper.error8(res, "Session expired - logged in on another device",);
       // }
-
       if (userData.loginTime !== decoded.loginTime) {
         return helper.error8(
           res,
