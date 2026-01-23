@@ -79,14 +79,15 @@ module.exports = {
             console.log(token, "Device token");
             console.log(noti_data, "Notification data");
 
-            // ------------------ Role-based Sound ------------------
-            const role = Number(noti_data.targetRole || 1); // 1=user, 2=driver
+            // - ROLE 
+            const role = String(noti_data.targetRole || "1");
 
-            const androidSound = role === "2" ? "driver_alert" : "default";
-            const androidChannel = role === "2" ? "driver_channel" : "default";
-            const iosSound = role === "2" ? "push_sound.caf" : "user_app.caf";
+            const isDriver = role === "2";
+            const androidSound = isDriver ? "driver_alert" : "default";
+            const androidChannel = isDriver ? "driver_channel" : "default";
+            const iosSound = isDriver ? "push_sound.caf" : "user_app.caf";
 
-            // ------------------ FCM Message ------------------
+            // ------------------ FCM PAYLOAD ------------------
             const message = {
                 token: token,
                 notification: {
@@ -99,40 +100,43 @@ module.exports = {
                     senderId: String(noti_data.senderId || ""),
                     type: String(noti_data.type || ""),
                     notificationId: String(noti_data.notificationId || "0"),
-                    bookingId: String(noti_data.bookingId || 0),
-                    targetRole: String(role),
+                    bookingId: String(noti_data.bookingId || "0"),
+                    targetRole: role,
+                    sound: iosSound, // optional (useful for app logic)
+
                     ...(noti_data.senderName && { senderName: String(noti_data.senderName) }),
                     ...(noti_data.senderImage && { senderImage: String(noti_data.senderImage) }),
                     ...(noti_data.phoneNumber && { phoneNumber: String(noti_data.phoneNumber) }),
-                    sound: iosSound, // optional, can be used by app
                 },
                 apns: {
                     payload: {
                         aps: {
-                            sound: iosSound, // driver sound for iOS
+                            sound: iosSound, //  DRIVER iOS SOUND
                             badge: 1,
                         },
                     },
                 },
                 android: {
                     notification: {
-                        sound: androidSound, // driver_alert for Android
-                        channelId: androidChannel, // must exist in app
+                        sound: androidSound,       // DRIVER ANDROID SOUND
+                        channelId: androidChannel //  MUST MATCH APP CHANNEL
                     },
                 },
             };
 
-            console.log(message, "FCM message payload");
+            console.log("FCM message payload =>", message);
 
             const response = await admin.messaging().send(message);
             console.log("Push sent successfully:", response);
 
             return true;
         } catch (error) {
-            console.error("Error sending push notification:", error.message || error);
+            console.error("Error sending push notification:", error);
 
-            if (error.code === 'messaging/invalid-registration-token' ||
-                error.code === 'messaging/registration-token-not-registered') {
+            if (
+                error.code === "messaging/invalid-registration-token" ||
+                error.code === "messaging/registration-token-not-registered"
+            ) {
                 console.log(`Invalid token: ${token}, remove from DB`);
             }
 
