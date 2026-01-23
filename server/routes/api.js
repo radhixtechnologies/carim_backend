@@ -8,7 +8,7 @@ const bookingController = require('../controller/apicontroller/bookingController
 
 module.exports = (io) => {
     
-router.use(middleware.authenticateHeader);
+// router.use(middleware.authenticateHeader);
 router.get("/getcms", authController.getCmsContent);
 //fileupload
 router.post('/fileupload', authController.fileUploadDriver)

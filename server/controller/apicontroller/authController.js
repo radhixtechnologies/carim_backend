@@ -161,6 +161,7 @@ module.exports = {
             const rideOtp = '1111';
 
             // 🔹 generate loginTime once
+
             const loginTime = helper.unixTimestamp();
 
             if (existingUser) {
@@ -393,10 +394,13 @@ module.exports = {
             }
 
             if (req.body.otp == user.otp) {
-                const loginTime = helper.unixTimestamp();
+                // const loginTime = helper.unixTimestamp();
 
                 const token = jwt.sign(
-                    { loginTime: loginTime, id: user.id },
+                    {
+                        //  loginTime: loginTime,
+                        id: user.id
+                    },
                     process.env.JWT_SECRET
                 );
 
@@ -404,7 +408,7 @@ module.exports = {
                     {
                         otpVerify: "1",
                         otp: 0,
-                        loginTime: loginTime
+                        // loginTime: loginTime
                     },
                     { where: { id: user.id } }
                 );

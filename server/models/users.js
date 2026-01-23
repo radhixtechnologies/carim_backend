@@ -75,11 +75,6 @@ module.exports = function(sequelize, DataTypes) {
       defaultValue: "1",
       comment: "0=>incative,1=>active"
     },
-    loginTime: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      defaultValue: 0
-    },
     bio: {
       type: DataTypes.STRING(900),
       allowNull: false,
@@ -220,6 +215,10 @@ module.exports = function(sequelize, DataTypes) {
       allowNull: false,
       defaultValue: 0,
       comment: "0=english , 1=arabic, 2=french"
+    },
+    loginTime: {
+      type: DataTypes.STRING(255),
+      allowNull: true
     }
   }, {
     sequelize,

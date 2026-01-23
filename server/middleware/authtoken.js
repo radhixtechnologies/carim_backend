@@ -123,13 +123,25 @@ module.exports = {
       const accessToken = tokenParts[1];
 
       const decoded = jwt.verify(accessToken, secret);
+      // const loginTime = helper.unixTimestamp();
+                  console.log(decoded,"decodeddecodeddecoded");
+                  
 
       const userData = await db.users.findByPk(decoded.id, {
         attributes: { exclude: ["password"] },
       });
+     
       if (!userData) {
         return helper.error(res, "Invalid token or user not found.");
       }
+
+       const userData1 = await db.users.findOne({
+        attributes: { exclude: ["password"] },
+        where : {
+          id: decoded.id,
+          loginTime : decoded.loginTime
+        }
+      });
 
 
       // if (userData.deviceToken && userData.deviceToken !== decoded.deviceToken) {
@@ -146,7 +158,7 @@ module.exports = {
       //   );
       //   return helper.error8(res, "Session expired - logged in on another device",);
       // }
-      if (userData.loginTime !== decoded.loginTime) {
+      if (!userData1) {
         return helper.error8(
           res,
           "Session expired - logged in on another device"
