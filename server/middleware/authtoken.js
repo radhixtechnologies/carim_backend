@@ -130,26 +130,33 @@ module.exports = {
       if (!userData) {
         return helper.error(res, "Invalid token or user not found.");
       }
-      
 
-      if (userData.deviceToken && userData.deviceToken !== decoded.deviceToken) {
-        await db.users.update(
-          {
-            deviceToken: decoded.deviceToken,
-            loginTime: new Date(),
-          },
-          {
-            where: {
-              id: decoded.id,
-            },
-          }
+
+      // if (userData.deviceToken && userData.deviceToken !== decoded.deviceToken) {
+      //   await db.users.update(
+      //     {
+      //       deviceToken: decoded.deviceToken,
+      //       loginTime: new Date(),
+      //     },
+      //     {
+      //       where: {
+      //         id: decoded.id,
+      //       },
+      //     }
+      //   );
+      //   return helper.error8(res, "Session expired - logged in on another device",);
+      // }
+
+      if (userData.loginTime !== decoded.loginTime) {
+        return helper.error8(
+          res,
+          "Session expired - logged in on another device"
         );
-        return helper.error8(res, "Session expired - logged in on another device",);
       }
       if (userData.status === "0") {
         return helper.error2(res, "Your account has been deactivated by admin.");
       }
-     
+
       req.user = userData;
       next();
     } catch (error) {
