@@ -683,7 +683,7 @@ module.exports = {
                             driverId,
                             request: '1',
                             status: '0',
-                            rideOpen: '0'
+                            
                         },
                         {
                             where: {
