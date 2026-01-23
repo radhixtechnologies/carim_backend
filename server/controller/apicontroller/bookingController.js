@@ -1138,8 +1138,6 @@ module.exports = {
                             bookingPrice: booking.bookingPrice,
                             orderId: booking.orderId,
                             rideOpen: booking.rideOpen,
-
-                            // ✅ ONLY NEW KEY
                             rideDistanceKm
                         };
                     })
