@@ -160,8 +160,6 @@ module.exports = {
             const otp = '1111';
             const rideOtp = '1111';
 
-            // 🔹 generate loginTime once
-
             const loginTime = helper.unixTimestamp();
 
             if (existingUser) {
@@ -205,7 +203,7 @@ module.exports = {
                     online: '1',
                     otp,
                     rideOtp,
-                    loginTime, // <-- same loginTime
+                    loginTime, 
                     updatedAt: helper.unixTimestamp(),
                 };
                 if (deviceToken) {
@@ -218,7 +216,6 @@ module.exports = {
                 user = await db.users.findOne({ where: { id: user.id, deletedAt: null } });
 
             } else {
-                // check phone number exists with another role
                 const userWithSamePhone = await db.users.findOne({
                     where: { phoneNumber, countryCode, deletedAt: null }
                 });
@@ -236,7 +233,7 @@ module.exports = {
                     role,
                     deviceToken: deviceToken || null,
                     deviceType: deviceType || null,
-                    loginTime, // <-- same loginTime
+                    loginTime, 
                     otp,
                     rideOtp,
                     languagee_type,
@@ -245,8 +242,6 @@ module.exports = {
 
                 isNewUser = true;
             }
-
-            // 🔹 generate JWT token using same loginTime
             const token = jwt.sign({ id: user.id, loginTime }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
             const responseData = { ...user.toJSON(), token, otp };

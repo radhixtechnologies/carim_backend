@@ -32,66 +32,7 @@ module.exports = {
     }
   },
 
-  // authenticateJWT: async (req, res, next) => {
-  //   try {
-  //     const secretCryptoKey = ENV.encrypt_sec_key
-  //     const authHeader = req.headers.authorization;
-  //     if (!authHeader) {
-  //       return res.status(401).json({
-  //         success: false,
-  //         code: 401,
-  //         message: "Unauthorized: No token provided",
-  //         body: {},
-  //       });
-  //     }
-
-  //     const token = authHeader.split(" ")[1];
-
-  //     jwt.verify(token, secretCryptoKey, async (err, payload) => {
-
-
-
-  //       if (err) {
-  //         return res.status(403).json({
-  //           success: false,
-  //           code: 401,
-  //           message: "Forbidden: Invalid token",
-  //           body: {},
-  //         });
-  //       }
-  //       const existingUser = await db.users.findOne({ where: { id: payload.id, login_time: payload.login_time } });
-
-  //       if (!existingUser) {
-  //         return helper.forbidden(res, "Session expired because this email was logged in on another device.");
-  //       }
-
-  //       if (existingUser.status == 0) {
-  //         return helper.forbidden(res, "Your account is in‑active by admin.");
-  //       }
-  //       if (!existingUser) {
-  //         return res.status(404).json({
-  //           success: false,
-  //           code: 401,
-  //           message: "Token expired",
-  //           body: {},
-  //         });
-  //       }
-
-
-
-  //       req.user = existingUser.dataValues;
-  //       next();
-  //     });
-  //   } catch (error) {
-  //     console.error("JWT Authentication Error:", error);
-  //     return res.status(500).json({
-  //       success: false,
-  //       code: 500,
-  //       message: "Internal Server Error",
-  //       body: {},
-  //     });
-  //   }
-  // },
+ 
   authenticateHeader: async function (req, res, next) {
     const v = new Validator(req.headers, {
       secret_key: "required|string",
@@ -123,10 +64,7 @@ module.exports = {
       const accessToken = tokenParts[1];
 
       const decoded = jwt.verify(accessToken, secret);
-      // const loginTime = helper.unixTimestamp();
-                  console.log(decoded,"decodeddecodeddecoded");
-                  
-
+   
       const userData = await db.users.findByPk(decoded.id, {
         attributes: { exclude: ["password"] },
       });
