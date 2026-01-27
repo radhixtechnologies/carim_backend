@@ -1847,7 +1847,7 @@ module.exports = {
                                 sound: "user_app.caf",
                                 type: 3,
                                 titleData: "Notification",
-                                messageData: pushMsg
+                                message: pushMsg
                             });
                         }
                     }
@@ -1880,7 +1880,7 @@ module.exports = {
                             sound: "driver_app.caf",
                             type: 4,
                             titleData: "Notification",
-                            messageData: pushMsg
+                            message: pushMsg
                         });
                     }
                 }
