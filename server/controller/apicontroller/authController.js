@@ -200,7 +200,7 @@ module.exports = {
 
                 // 🔹 update user loginTime, device info, OTP
                 const updateData = {
-                    online: '1',
+                    // online: '1',
                     otp,
                     rideOtp,
                     loginTime, 

@@ -1052,9 +1052,9 @@ module.exports = function (io) {
       try {
         const { userId, status } = data;
         // status = '1' => online, status = '0' => offline
-
+        const onlineStatus = String(status);
         const [updated] = await db.users.update(
-          { online: status },
+          { online: onlineStatus },
           {
             where: {
               id: userId
