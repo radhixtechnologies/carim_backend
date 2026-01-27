@@ -1600,7 +1600,11 @@ module.exports = {
                     status: newStatus,
 
                 });
-
+                io.emit("rideStatusUpdate", {
+                    bookingId: booking.id,
+                    status: newStatus,
+                    cancelledBy: loggedInUserRole === "1" ? "user" : "driver"
+                });
                 // ================= SELF NOTIFICATION =================
                 await db.notifications.create({
                     userId: loggedInUserId,
