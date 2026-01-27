@@ -978,7 +978,7 @@ module.exports = {
 
                 // ===== DRIVER CHECK =====
                 const driver = await db.users.findOne({
-                    where: { id: driverId ,online:"1"},
+                    where: { id: driverId },
                     attributes: ['status', 'block', 'suspend', "approve", "lastFreeTime"],
                     raw: true
                 });
