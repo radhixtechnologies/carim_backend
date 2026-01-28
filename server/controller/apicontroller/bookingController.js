@@ -178,6 +178,295 @@ module.exports = {
         }
     },
 
+    // bookRide: (io) => {
+    //     return async (req, res) => {
+    //         let languageType = Number(req.headers.languagetype) || 0;
+
+    //         const getPushMessage = (lang, en, ar, fr) => {
+    //             if (lang === 1) return ar;
+    //             if (lang === 2) return fr;
+    //             return en;
+    //         };
+    //         try {
+    //             const userId = req.user.id;
+
+    //             // ---------------- USER STATUS CHECK ----------------
+    //             const userStatus = await db.users.findOne({
+    //                 where: { id: userId },
+    //                 attributes: ['status', 'block', 'suspend'],
+    //                 raw: true
+    //             });
+
+    //             if (!userStatus) {
+    //                 let msg = languageType === 1 ? "المستخدم غير موجود." : languageType === 2 ? "Utilisateur non trouvé." : "User not found.";
+    //                 return helper.failure(res, msg);
+    //             }
+    //             if (userStatus.status === "0") {
+    //                 let msg = languageType === 1 ? "تم تعطيل حسابك من قبل المسؤول." : languageType === 2 ? "Votre compte a été désactivé par l’administrateur." : "Your account has been deactivated by admin.";
+    //                 return helper.error2(res, msg);
+    //             }
+    //             if (userStatus.block === "1") {
+    //                 let msg = languageType === 1 ? "تم حظر حسابك من قبل المسؤول." : languageType === 2 ? "Votre compte a été bloqué par l’administrateur." : "Your account has been blocked by admin.";
+    //                 return helper.error1(res, msg);
+    //             }
+    //             if (userStatus.suspend === "1") {
+    //                 let msg = languageType === 1 ? "تم تعليق حسابك من قبل المسؤول." : languageType === 2 ? "Votre compte a été suspendu par l’administrateur." : "Your account has been suspended by admin.";
+    //                 return helper.error3(res, msg);
+    //             }
+
+    //             const {
+    //                 pickupLocation,
+    //                 dropLocation,
+    //                 pickupLatitude,
+    //                 pickupLongitude,
+    //                 dropLatitude,
+    //                 dropLongitude,
+    //                 rideOpen
+    //             } = req.body;
+
+    //             // ---------------- PICKUP REQUIRED ----------------
+    //             if (!pickupLocation || !pickupLatitude || !pickupLongitude) {
+    //                 let msg = languageType === 1 ? "موقع الالتقاط والإحداثيات مطلوبة." : languageType === 2 ? "Le lieu de prise en charge et les coordonnées sont requis." : "Pickup location and coordinates are required.";
+    //                 return helper.failure(res, msg);
+    //             }
+
+    //             if (rideOpen == 0) {
+    //                 if (!dropLocation || !dropLatitude || !dropLongitude) {
+    //                     let msg = languageType === 1 ? "مواقع الالتقاط والتسليم مطلوبة." : languageType === 2 ? "Les lieux de prise en charge et de dépôt sont requis." : "Pickup and drop locations are required.";
+    //                     return helper.failure(res, msg);
+    //                 }
+    //             }
+
+    //             const pickupLat = parseFloat(pickupLatitude);
+    //             const pickupLng = parseFloat(pickupLongitude);
+    //             if (isNaN(pickupLat) || isNaN(pickupLng)) {
+    //                 let msg = languageType === 1 ? "إحداثيات الالتقاط غير صالحة." : languageType === 2 ? "Coordonnées de prise en charge non valides." : "Invalid pickup coordinates.";
+    //                 return helper.failure(res, msg);
+    //             }
+
+    //             // ---------------- DISTANCE CALCULATION ----------------
+    //             const toRad = v => v * Math.PI / 180;
+    //             const calculateDistance = (a, b, c, d) => {
+    //                 const R = 6371;
+    //                 const dLat = toRad(c - a);
+    //                 const dLon = toRad(d - b);
+    //                 const x = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a)) * Math.cos(toRad(c)) * Math.sin(dLon / 2) ** 2;
+    //                 return R * (2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x)));
+    //             };
+
+    //             let rideDistanceKm = null;
+    //             let bookingPrice = "";
+
+    //             // ---------------- ADMIN PRICE ----------------
+    //             const adminData = await db.users.findOne({
+    //                 where: { role: '0' },
+    //                 attributes: ['rideAmount'],
+    //                 raw: true
+    //             });
+
+    //             const pricePerKm = adminData?.rideAmount ? parseFloat(adminData.rideAmount) : 10;
+    //             if (isNaN(pricePerKm) || pricePerKm <= 0) {
+    //                 let msg = languageType === 1 ? "المبلغ المحدد للرحلة من قبل المسؤول غير صالح" : languageType === 2 ? "Le montant du trajet défini par l’administrateur est invalide" : "Invalid ride amount set by admin";
+    //                 return helper.failure(res, msg);
+    //             }
+
+    //             if (rideOpen == 0 || (rideOpen == 1 && dropLatitude && dropLongitude)) {
+    //                 const dropLat = parseFloat(dropLatitude);
+    //                 const dropLng = parseFloat(dropLongitude);
+    //                 if (isNaN(dropLat) || isNaN(dropLng)) {
+    //                     let msg = languageType === 1 ? "إحداثيات الوجهة غير صالحة." : languageType === 2 ? "Coordonnées de dépôt non valides." : "Invalid drop coordinates.";
+    //                     return helper.failure(res, msg);
+    //                 }
+
+    //                 rideDistanceKm = calculateDistance(pickupLat, pickupLng, dropLat, dropLng);
+    //                 if (rideDistanceKm > 30) {
+    //                     let msg = languageType === 1 ? "يجب أن تكون وجهة التسليم ضمن 30 كم" : languageType === 2 ? "Le lieu de dépôt doit être dans un rayon de 30 km" : "Drop location must be within 30 km";
+    //                     return helper.failure(res, msg);
+    //                 }
+
+    //                 bookingPrice = Math.round(rideDistanceKm * pricePerKm).toString();
+    //             }
+
+    //             // ---------------- ACTIVE RIDE CHECK ----------------
+    //             const existingBooking = await db.bookings.findOne({
+    //                 where: {
+    //                     userId,
+    //                     status: { [Sequelize.Op.in]: ['0', '1', '2'] },
+    //                     request: '0'
+    //                 }
+    //             });
+
+    //             if (existingBooking) {
+    //                 let msg = languageType === 1 ? "لديك بالفعل طلب رحلة نشطة" : languageType === 2 ? "Vous avez déjà une demande de course active" : "You already have an active ride request";
+    //                 return helper.failure(res, msg);
+    //             }
+
+    //             // ---------------- GET DRIVERS (BUSY FILTERED) ----------------
+    //             const drivers = await db.users.findAll({
+    //                 where: { role: '2', online: '1', approve: '1' },
+    //                 attributes: ['id', 'latitude', 'longitude'],
+    //                 include: [{
+    //                     model: db.bookings,
+    //                     as: "driverbook",
+    //                     required: false,
+    //                     where: {
+    //                         status: { [Sequelize.Op.in]: ['0', '1', '2'] },
+    //                         request: '1'
+    //                     }
+    //                 }]
+    //             });
+
+    //             const freeDrivers = drivers.filter(d => !d.driverbook || d.driverbook.length === 0);
+
+    //             // ---------------- CHECK DRIVER AVAILABILITY ----------------
+    //             let driverAvailable = false;
+    //             for (const driver of freeDrivers) {
+    //                 if (!driver.latitude || !driver.longitude) continue;
+    //                 const driverDistance = calculateDistance(pickupLat, pickupLng, parseFloat(driver.latitude), parseFloat(driver.longitude));
+    //                 if (driverDistance <= 30) {
+    //                     driverAvailable = true;
+    //                     break;
+    //                 }
+    //             }
+
+    //             if (!driverAvailable) {
+    //                 let msg = languageType === 1 ? "لا يوجد سائقون متاحون ضمن 30 كم" : languageType === 2 ? "Aucun chauffeur disponible dans un rayon de 30 km" : "No drivers available within 30 km";
+    //                 return helper.failure(res, msg);
+    //             }
+
+    //             // ---------------- CREATE BOOKING ----------------
+    //             const orderId = Math.floor(100000 + Math.random() * 900000).toString();
+    //             const isOpenRideWithoutDrop = rideOpen == 1 && (!dropLatitude || !dropLongitude);
+    //             const finalDropLocation = isOpenRideWithoutDrop ? "" : dropLocation;
+    //             const finalDropLatitude = isOpenRideWithoutDrop ? "" : dropLatitude?.toString();
+    //             const finalDropLongitude = isOpenRideWithoutDrop ? "" : dropLongitude?.toString();
+    //             const finalBookingPrice = isOpenRideWithoutDrop ? "" : bookingPrice;
+
+    //             const newBooking = await db.bookings.create({
+    //                 userId,
+    //                 driverId: null,
+    //                 orderId,
+    //                 status: '0',
+    //                 pickupLocation,
+    //                 dropLocation: finalDropLocation,
+    //                 pickupLatitude: pickupLatitude.toString(),
+    //                 pickupLongitude: pickupLongitude.toString(),
+    //                 dropLatitude: finalDropLatitude,
+    //                 dropLongitude: finalDropLongitude,
+    //                 bookingPrice: finalBookingPrice,
+    //                 request: '0',
+    //                 rideOpen
+    //             });
+
+    //             // ---------------- SAVE NOTIFICATION ----------------
+    //             for (const driver of freeDrivers) {
+    //                 await db.notifications.create({
+    //                     sender_id: userId,
+    //                     receiver_id: driver.id,
+    //                     message: "New ride request created",
+    //                     type: 1,
+    //                     status: 0,
+    //                     bookingId: newBooking.id
+    //                 });
+    //             }
+
+    //             // ---------------- SEND PUSH NOTIFICATION ----------------
+    //             for (const driver of freeDrivers) {
+    //                 if (!driver.id) continue;
+
+    //                 const driverToken = await db.users.findOne({
+    //                     where: { id: driver.id },
+    //                     attributes: ["deviceToken", "languagee_type"],
+    //                     raw: true
+    //                 });
+
+    //                 if (driverToken?.deviceToken && driverToken.deviceToken.length > 10) {
+    //                     const msg = getPushMessage(
+    //                         Number(driverToken.languagee_type),
+    //                         "New ride request available",
+    //                         "طلب رحلة جديد متاح",
+    //                         "Nouvelle demande de course disponible"
+    //                     );
+    //                     const notiData = {
+    //                         message: msg,
+    //                         type: 1,
+    //                         senderId: userId.toString(),
+    //                         sender_name: "",
+    //                         sender_image: ""
+    //                     };
+
+    //                     try {
+    //                         helper.sendNotification_android(driverToken.deviceToken, notiData);
+    //                     } catch (err) {
+    //                         console.log(`Error sending push notification for driver ${driver.id}:`, err.message);
+    //                     }
+    //                 }
+    //             }
+
+    //             // ---------------- CREATE RIDE REQUEST FOR FREE DRIVERS ----------------
+    //             const rideRequestData = [];
+    //             for (const driver of freeDrivers) {
+    //                 if (!driver.latitude || !driver.longitude) continue;
+
+    //                 const driverDistance = calculateDistance(pickupLat, pickupLng, parseFloat(driver.latitude), parseFloat(driver.longitude));
+    //                 if (driverDistance <= 30) {
+    //                     rideRequestData.push({
+    //                         bookingId: newBooking.id,
+    //                         userId: userId,
+    //                         driverId: driver.id,
+    //                         status: 0
+    //                     });
+    //                 }
+    //             }
+    //             if (rideRequestData.length > 0) {
+    //                 await db.rideRequest.bulkCreate(rideRequestData);
+    //             }
+
+    //             // ---------------- SOCKET EMIT ----------------
+    //             freeDrivers.forEach(driver => {
+    //                 if (global.onlineUsers && onlineUsers[driver.id]?.length) {
+    //                     onlineUsers[driver.id].forEach(sockId => {
+    //                         io.to(sockId).emit("newRideRequest", {
+    //                             bookingId: newBooking.id,
+    //                             orderId: newBooking.orderId,
+    //                             pickupLocation,
+    //                             dropLocation: finalDropLocation,
+    //                             pickupLatitude,
+    //                             pickupLongitude,
+    //                             dropLatitude: finalDropLatitude,
+    //                             dropLongitude: finalDropLongitude,
+    //                             status: '0',
+    //                             request: '0',
+    //                             rideOpen
+    //                         });
+    //                     });
+    //                 }
+    //             });
+
+    //             // ---------------- RESPONSE ----------------
+    //             let msg = languageType === 1 ? 'تم إرسال طلب حجز الرحلة بنجاح' : languageType === 2 ? 'Demande de réservation de course envoyée avec succès' : 'Ride booking request sent successfully';
+    //             let waitingMsg = languageType === 1 ? 'في انتظار قبول السائق لطلبك' : languageType === 2 ? 'En attente que le chauffeur accepte votre demande' : 'Waiting for driver to accept your request';
+
+    //             return helper.success(res, msg, {
+    //                 bookingId: newBooking.id,
+    //                 orderId: newBooking.orderId,
+    //                 status: newBooking.status,
+    //                 request: newBooking.request,
+    //                 bookingPrice: finalBookingPrice,
+    //                 rideDistanceKm: rideDistanceKm ? rideDistanceKm.toFixed(2) : "",
+    //                 message: waitingMsg
+    //             });
+
+    //         } catch (error) {
+    //             console.error('Booking error:', error);
+
+    //             // ---------------- SAFE LANGUAGE TYPE ----------------
+    //             languageType = Number(req.headers.languagetype) || 0;
+    //             let msg = languageType === 1 ? "حدث خطأ أثناء حجز الرحلة." : languageType === 2 ? "Une erreur est survenue lors de la réservation de la course." : "Something went wrong while booking the ride.";
+    //             return helper.failure(res, msg);
+    //         }
+    //     };
+    // },
     bookRide: (io) => {
         return async (req, res) => {
             let languageType = Number(req.headers.languagetype) || 0;
@@ -187,31 +476,47 @@ module.exports = {
                 if (lang === 2) return fr;
                 return en;
             };
+
             try {
                 const userId = req.user.id;
 
                 // ---------------- USER STATUS CHECK ----------------
-                const userStatus = await db.users.findOne({
+                const userData = await db.users.findOne({
                     where: { id: userId },
-                    attributes: ['status', 'block', 'suspend'],
+                    attributes: ['status', 'block', 'suspend', 'role'],
                     raw: true
                 });
 
-                if (!userStatus) {
-                    let msg = languageType === 1 ? "المستخدم غير موجود." : languageType === 2 ? "Utilisateur non trouvé." : "User not found.";
-                    return helper.failure(res, msg);
+                if (!userData) {
+                    return helper.failure(res,
+                        languageType === 1 ? "المستخدم غير موجود."
+                            : languageType === 2 ? "Utilisateur non trouvé."
+                                : "User not found."
+                    );
                 }
-                if (userStatus.status === "0") {
-                    let msg = languageType === 1 ? "تم تعطيل حسابك من قبل المسؤول." : languageType === 2 ? "Votre compte a été désactivé par l’administrateur." : "Your account has been deactivated by admin.";
-                    return helper.error2(res, msg);
+
+                if (userData.status === "0") {
+                    return helper.error2(res,
+                        languageType === 1 ? "تم تعطيل حسابك من قبل المسؤول."
+                            : languageType === 2 ? "Votre compte a été désactivé par l’administrateur."
+                                : "Your account has been deactivated by admin."
+                    );
                 }
-                if (userStatus.block === "1") {
-                    let msg = languageType === 1 ? "تم حظر حسابك من قبل المسؤول." : languageType === 2 ? "Votre compte a été bloqué par l’administrateur." : "Your account has been blocked by admin.";
-                    return helper.error1(res, msg);
+
+                if (userData.block === "1") {
+                    return helper.error1(res,
+                        languageType === 1 ? "تم حظر حسابك من قبل المسؤول."
+                            : languageType === 2 ? "Votre compte a été bloqué par l’administrateur."
+                                : "Your account has been blocked by admin."
+                    );
                 }
-                if (userStatus.suspend === "1") {
-                    let msg = languageType === 1 ? "تم تعليق حسابك من قبل المسؤول." : languageType === 2 ? "Votre compte a été suspendu par l’administrateur." : "Your account has been suspended by admin.";
-                    return helper.error3(res, msg);
+
+                if (userData.suspend === "1") {
+                    return helper.error3(res,
+                        languageType === 1 ? "تم تعليق حسابك من قبل المسؤول."
+                            : languageType === 2 ? "Votre compte a été suspendu par l’administrateur."
+                                : "Your account has been suspended by admin."
+                    );
                 }
 
                 const {
@@ -224,37 +529,39 @@ module.exports = {
                     rideOpen
                 } = req.body;
 
-                // ---------------- PICKUP REQUIRED ----------------
                 if (!pickupLocation || !pickupLatitude || !pickupLongitude) {
-                    let msg = languageType === 1 ? "موقع الالتقاط والإحداثيات مطلوبة." : languageType === 2 ? "Le lieu de prise en charge et les coordonnées sont requis." : "Pickup location and coordinates are required.";
-                    return helper.failure(res, msg);
+                    return helper.failure(res,
+                        languageType === 1 ? "موقع الالتقاط والإحداثيات مطلوبة."
+                            : languageType === 2 ? "Le lieu de prise en charge et les coordonnées sont requis."
+                                : "Pickup location and coordinates are required."
+                    );
                 }
 
-                if (rideOpen == 0) {
-                    if (!dropLocation || !dropLatitude || !dropLongitude) {
-                        let msg = languageType === 1 ? "مواقع الالتقاط والتسليم مطلوبة." : languageType === 2 ? "Les lieux de prise en charge et de dépôt sont requis." : "Pickup and drop locations are required.";
-                        return helper.failure(res, msg);
-                    }
+                if (rideOpen == 0 && (!dropLocation || !dropLatitude || !dropLongitude)) {
+                    return helper.failure(res,
+                        languageType === 1 ? "مواقع الالتقاط والتسليم مطلوبة."
+                            : languageType === 2 ? "Les lieux de prise en charge et de dépôt sont requis."
+                                : "Pickup and drop locations are required."
+                    );
                 }
 
                 const pickupLat = parseFloat(pickupLatitude);
                 const pickupLng = parseFloat(pickupLongitude);
-                if (isNaN(pickupLat) || isNaN(pickupLng)) {
-                    let msg = languageType === 1 ? "إحداثيات الالتقاط غير صالحة." : languageType === 2 ? "Coordonnées de prise en charge non valides." : "Invalid pickup coordinates.";
-                    return helper.failure(res, msg);
-                }
 
-                // ---------------- DISTANCE CALCULATION ----------------
                 const toRad = v => v * Math.PI / 180;
                 const calculateDistance = (a, b, c, d) => {
                     const R = 6371;
                     const dLat = toRad(c - a);
                     const dLon = toRad(d - b);
-                    const x = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a)) * Math.cos(toRad(c)) * Math.sin(dLon / 2) ** 2;
+                    const x =
+                        Math.sin(dLat / 2) ** 2 +
+                        Math.cos(toRad(a)) *
+                        Math.cos(toRad(c)) *
+                        Math.sin(dLon / 2) ** 2;
                     return R * (2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x)));
                 };
 
-                let rideDistanceKm = null;
+                let rideDistanceKm = "";
                 let bookingPrice = "";
 
                 // ---------------- ADMIN PRICE ----------------
@@ -265,43 +572,37 @@ module.exports = {
                 });
 
                 const pricePerKm = adminData?.rideAmount ? parseFloat(adminData.rideAmount) : 10;
-                if (isNaN(pricePerKm) || pricePerKm <= 0) {
-                    let msg = languageType === 1 ? "المبلغ المحدد للرحلة من قبل المسؤول غير صالح" : languageType === 2 ? "Le montant du trajet défini par l’administrateur est invalide" : "Invalid ride amount set by admin";
-                    return helper.failure(res, msg);
-                }
 
                 if (rideOpen == 0 || (rideOpen == 1 && dropLatitude && dropLongitude)) {
                     const dropLat = parseFloat(dropLatitude);
                     const dropLng = parseFloat(dropLongitude);
-                    if (isNaN(dropLat) || isNaN(dropLng)) {
-                        let msg = languageType === 1 ? "إحداثيات الوجهة غير صالحة." : languageType === 2 ? "Coordonnées de dépôt non valides." : "Invalid drop coordinates.";
-                        return helper.failure(res, msg);
-                    }
 
                     rideDistanceKm = calculateDistance(pickupLat, pickupLng, dropLat, dropLng);
-                    if (rideDistanceKm > 30) {
-                        let msg = languageType === 1 ? "يجب أن تكون وجهة التسليم ضمن 30 كم" : languageType === 2 ? "Le lieu de dépôt doit être dans un rayon de 30 km" : "Drop location must be within 30 km";
-                        return helper.failure(res, msg);
-                    }
-
                     bookingPrice = Math.round(rideDistanceKm * pricePerKm).toString();
                 }
 
-                // ---------------- ACTIVE RIDE CHECK ----------------
-                const existingBooking = await db.bookings.findOne({
-                    where: {
-                        userId,
-                        status: { [Sequelize.Op.in]: ['0', '1', '2'] },
-                        request: '0'
-                    }
-                });
+                // ---------------- ACTIVE RIDE CHECK (ROLE BASED) ----------------
+                // role = 1 → single active ride
+                // role = 3 → multiple rides allowed
+                if (userData.role == '1') {
+                    const existingBooking = await db.bookings.findOne({
+                        where: {
+                            userId,
+                            status: { [Sequelize.Op.in]: ['0', '1', '2'] },
+                            request: '0'
+                        }
+                    });
 
-                if (existingBooking) {
-                    let msg = languageType === 1 ? "لديك بالفعل طلب رحلة نشطة" : languageType === 2 ? "Vous avez déjà une demande de course active" : "You already have an active ride request";
-                    return helper.failure(res, msg);
+                    if (existingBooking) {
+                        return helper.failure(res,
+                            languageType === 1 ? "لديك بالفعل طلب رحلة نشطة"
+                                : languageType === 2 ? "Vous avez déjà une demande de course active"
+                                    : "You already have an active ride request"
+                        );
+                    }
                 }
 
-                // ---------------- GET DRIVERS (BUSY FILTERED) ----------------
+                // ---------------- GET FREE DRIVERS ----------------
                 const drivers = await db.users.findAll({
                     where: { role: '2', online: '1', approve: '1' },
                     attributes: ['id', 'latitude', 'longitude'],
@@ -318,47 +619,32 @@ module.exports = {
 
                 const freeDrivers = drivers.filter(d => !d.driverbook || d.driverbook.length === 0);
 
-                // ---------------- CHECK DRIVER AVAILABILITY ----------------
-                let driverAvailable = false;
-                for (const driver of freeDrivers) {
-                    if (!driver.latitude || !driver.longitude) continue;
-                    const driverDistance = calculateDistance(pickupLat, pickupLng, parseFloat(driver.latitude), parseFloat(driver.longitude));
-                    if (driverDistance <= 30) {
-                        driverAvailable = true;
-                        break;
-                    }
-                }
-
-                if (!driverAvailable) {
-                    let msg = languageType === 1 ? "لا يوجد سائقون متاحون ضمن 30 كم" : languageType === 2 ? "Aucun chauffeur disponible dans un rayon de 30 km" : "No drivers available within 30 km";
-                    return helper.failure(res, msg);
+                if (!freeDrivers.length) {
+                    return helper.failure(res,
+                        languageType === 1 ? "لا يوجد سائقون متاحون"
+                            : languageType === 2 ? "Aucun chauffeur disponible"
+                                : "No drivers available"
+                    );
                 }
 
                 // ---------------- CREATE BOOKING ----------------
                 const orderId = Math.floor(100000 + Math.random() * 900000).toString();
-                const isOpenRideWithoutDrop = rideOpen == 1 && (!dropLatitude || !dropLongitude);
-                const finalDropLocation = isOpenRideWithoutDrop ? "" : dropLocation;
-                const finalDropLatitude = isOpenRideWithoutDrop ? "" : dropLatitude?.toString();
-                const finalDropLongitude = isOpenRideWithoutDrop ? "" : dropLongitude?.toString();
-                const finalBookingPrice = isOpenRideWithoutDrop ? "" : bookingPrice;
-
                 const newBooking = await db.bookings.create({
                     userId,
-                    driverId: null,
                     orderId,
                     status: '0',
                     pickupLocation,
-                    dropLocation: finalDropLocation,
-                    pickupLatitude: pickupLatitude.toString(),
-                    pickupLongitude: pickupLongitude.toString(),
-                    dropLatitude: finalDropLatitude,
-                    dropLongitude: finalDropLongitude,
-                    bookingPrice: finalBookingPrice,
+                    dropLocation: dropLocation || "",
+                    pickupLatitude,
+                    pickupLongitude,
+                    dropLatitude: dropLatitude || "",
+                    dropLongitude: dropLongitude || "",
+                    bookingPrice,
                     request: '0',
                     rideOpen
                 });
 
-                // ---------------- SAVE NOTIFICATION ----------------
+                // ---------------- NOTIFICATION & SOCKET ----------------
                 for (const driver of freeDrivers) {
                     await db.notifications.create({
                         sender_id: userId,
@@ -370,100 +656,28 @@ module.exports = {
                     });
                 }
 
-                // ---------------- SEND PUSH NOTIFICATION ----------------
-                for (const driver of freeDrivers) {
-                    if (!driver.id) continue;
-
-                    const driverToken = await db.users.findOne({
-                        where: { id: driver.id },
-                        attributes: ["deviceToken", "languagee_type"],
-                        raw: true
-                    });
-
-                    if (driverToken?.deviceToken && driverToken.deviceToken.length > 10) {
-                        const msg = getPushMessage(
-                            Number(driverToken.languagee_type),
-                            "New ride request available",
-                            "طلب رحلة جديد متاح",
-                            "Nouvelle demande de course disponible"
-                        );
-                        const notiData = {
-                            message: msg,
-                            type: 1,
-                            senderId: userId.toString(),
-                            sender_name: "",
-                            sender_image: ""
-                        };
-
-                        try {
-                            helper.sendNotification_android(driverToken.deviceToken, notiData);
-                        } catch (err) {
-                            console.log(`Error sending push notification for driver ${driver.id}:`, err.message);
-                        }
-                    }
-                }
-
-                // ---------------- CREATE RIDE REQUEST FOR FREE DRIVERS ----------------
-                const rideRequestData = [];
-                for (const driver of freeDrivers) {
-                    if (!driver.latitude || !driver.longitude) continue;
-
-                    const driverDistance = calculateDistance(pickupLat, pickupLng, parseFloat(driver.latitude), parseFloat(driver.longitude));
-                    if (driverDistance <= 30) {
-                        rideRequestData.push({
-                            bookingId: newBooking.id,
-                            userId: userId,
-                            driverId: driver.id,
-                            status: 0
-                        });
-                    }
-                }
-                if (rideRequestData.length > 0) {
-                    await db.rideRequest.bulkCreate(rideRequestData);
-                }
-
-                // ---------------- SOCKET EMIT ----------------
                 freeDrivers.forEach(driver => {
-                    if (global.onlineUsers && onlineUsers[driver.id]?.length) {
+                    if (global.onlineUsers?.[driver.id]) {
                         onlineUsers[driver.id].forEach(sockId => {
-                            io.to(sockId).emit("newRideRequest", {
-                                bookingId: newBooking.id,
-                                orderId: newBooking.orderId,
-                                pickupLocation,
-                                dropLocation: finalDropLocation,
-                                pickupLatitude,
-                                pickupLongitude,
-                                dropLatitude: finalDropLatitude,
-                                dropLongitude: finalDropLongitude,
-                                status: '0',
-                                request: '0',
-                                rideOpen
-                            });
+                            io.to(sockId).emit("newRideRequest", newBooking);
                         });
                     }
                 });
 
-                // ---------------- RESPONSE ----------------
-                let msg = languageType === 1 ? 'تم إرسال طلب حجز الرحلة بنجاح' : languageType === 2 ? 'Demande de réservation de course envoyée avec succès' : 'Ride booking request sent successfully';
-                let waitingMsg = languageType === 1 ? 'في انتظار قبول السائق لطلبك' : languageType === 2 ? 'En attente que le chauffeur accepte votre demande' : 'Waiting for driver to accept your request';
-
-                return helper.success(res, msg, {
-                    bookingId: newBooking.id,
-                    orderId: newBooking.orderId,
-                    status: newBooking.status,
-                    request: newBooking.request,
-                    bookingPrice: finalBookingPrice,
-                    rideDistanceKm: rideDistanceKm ? rideDistanceKm.toFixed(2) : "",
-                    message: waitingMsg
-                });
+                return helper.success(res,
+                    languageType === 1 ? "تم إرسال طلب حجز الرحلة بنجاح"
+                        : languageType === 2 ? "Demande de réservation envoyée avec succès"
+                            : "Ride booking request sent successfully",
+                    newBooking
+                );
 
             } catch (error) {
-                console.error('Booking error:', error);
-
-                // ---------------- SAFE LANGUAGE TYPE ----------------
-                languageType = Number(req.headers.languagetype) || 0;
-                let msg = languageType === 1 ? "حدث خطأ أثناء حجز الرحلة." : languageType === 2 ? "Une erreur est survenue lors de la réservation de la course." : "Something went wrong while booking the ride.";
-                return helper.failure(res, msg);
+                console.error("Booking Error:", error);
+                return helper.failure(res,
+                    languageType === 1 ? "حدث خطأ أثناء حجز الرحلة."
+                        : languageType === 2 ? "Une erreur est survenue lors de la réservation."
+                            : "Something went wrong while booking the ride."
+                );
             }
         };
     },
@@ -830,188 +1044,7 @@ module.exports = {
         };
     },
 
-    // requestList: (io) => {
-    //     return async (req, res) => {
-    //         try {
-    //             const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default=English
-    //             const driverId = req.user.id;
 
-    //             // ===== DRIVER CHECK =====
-    //             const driver = await db.users.findOne({
-    //                 where: { id: driverId },
-    //                 attributes: ['status', 'block', 'suspend', "approve", "lastFreeTime"],
-    //                 raw: true
-    //             });
-
-    //             if (!driver) {
-    //                 let msg = "Driver not found.";
-    //                 if (languageType == 1) msg = "السائق غير موجود.";
-    //                 else if (languageType == 2) msg = "Chauffeur non trouvé.";
-    //                 return helper.error(res, msg);
-    //             }
-
-    //             if (driver.status === "0") {
-    //                 let msg = "Your account has been deactivated by admin.";
-    //                 if (languageType == 1) msg = "تم تعطيل حسابك من قبل المسؤول.";
-    //                 else if (languageType == 2) msg = "Votre compte a été désactivé par l’administrateur.";
-    //                 return helper.error2(res, msg);
-    //             }
-
-    //             if (driver.block === "1") {
-    //                 let msg = "Your account has been blocked by admin.";
-    //                 if (languageType == 1) msg = "تم حظر حسابك من قبل المسؤول.";
-    //                 else if (languageType == 2) msg = "Votre compte a été bloqué par l’administrateur.";
-    //                 return helper.error1(res, msg);
-    //             }
-
-    //             if (driver.suspend === "1") {
-    //                 let msg = "Your account has been suspended by admin.";
-    //                 if (languageType == 1) msg = "تم تعليق حسابك من قبل المسؤول.";
-    //                 else if (languageType == 2) msg = "Votre compte a été suspendu par l’administrateur.";
-    //                 return helper.error3(res, msg);
-    //             }
-
-    //             if (driver.approve !== "1") {
-    //                 let msg = "Your account is not approved by admin yet.";
-    //                 if (languageType == 1) msg = "لم يتم اعتماد حسابك من قبل المسؤول بعد.";
-    //                 else if (languageType == 2) msg = "Votre compte n’a pas encore été approuvé par l’administrateur.";
-    //                 return helper.success(res, msg, { totalRequests: 0, requests: [] });
-    //             }
-
-    //             // ===== CLEAN EXPIRED BOOKINGS =====
-    //             const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
-    //             await db.bookings.destroy({
-    //                 where: {
-    //                     driverId: null,
-    //                     status: '0',
-    //                     request: '0',
-    //                     rejectCount: '0',
-    //                     bookingDate: { [Sequelize.Op.lt]: oneMinuteAgo }
-    //                 },
-    //                 force: true
-    //             });
-
-    //             // ===== ACTIVE RIDE CHECK =====
-    //             const activeRide = await db.bookings.findOne({
-    //                 where: { driverId, status: { [Sequelize.Op.in]: ['0', '1', '2'] } }
-    //             });
-
-    //             if (activeRide) {
-    //                 let msg = "You are currently on a ride";
-    //                 if (languageType == 1) msg = "أنت حاليًا في رحلة";
-    //                 else if (languageType == 2) msg = "Vous êtes actuellement en course";
-    //                 return helper.success(res, msg, { totalRequests: 0, requests: [] });
-    //             }
-
-    //             // ===== GET DRIVER LAST FREE TIME =====
-    //             let lastFreeTime = driver.lastFreeTime
-    //                 ? new Date(driver.lastFreeTime)
-    //                 : new Date(Date.now() - 60 * 1000);
-
-    //             // ===== REJECTED REQUESTS FILTER =====
-    //             const rejectedRequests = await db.rideRequest.findAll({
-    //                 where: { driverId, status: 2 },
-    //                 attributes: ['bookingId'],
-    //                 raw: true
-    //             });
-
-    //             const rejectedBookingIds = rejectedRequests.map(r => r.bookingId);
-
-    //             // ===== FETCH REQUESTS =====
-    //             const requests = await db.bookings.findAll({
-    //                 where: {
-    //                     driverId: null,
-    //                     status: '0',
-    //                     request: '0',
-    //                     bookingDate: { [Sequelize.Op.gt]: lastFreeTime },
-    //                     ...(rejectedBookingIds.length && { id: { [Sequelize.Op.notIn]: rejectedBookingIds } })
-    //                 },
-    //                 include: [{ model: db.users, as: 'userbook' }],
-    //                 order: [['id', 'DESC']]
-    //             });
-
-    //             /* ================= DISTANCE CALCULATION (ONLY ADDITION) ================= */
-
-    //             const toRad = v => v * Math.PI / 180;
-    //             const calculateDistance = (a, b, c, d) => {
-    //                 const R = 6371;
-    //                 const dLat = toRad(c - a);
-    //                 const dLon = toRad(d - b);
-    //                 const x =
-    //                     Math.sin(dLat / 2) ** 2 +
-    //                     Math.cos(toRad(a)) *
-    //                     Math.cos(toRad(c)) *
-    //                     Math.sin(dLon / 2) ** 2;
-    //                 return R * (2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x)));
-    //             };
-
-    //             /* ================= END DISTANCE ================= */
-
-    //             let successMsg = "Pending ride requests fetched successfully";
-    //             if (languageType == 1) successMsg = "تم جلب طلبات الرحلات المعلقة بنجاح";
-    //             else if (languageType == 2) successMsg = "Demandes de course en attente récupérées avec succès";
-
-    //             return helper.success(res, successMsg, {
-    //                 totalRequests: requests.length,
-    //                 requests: requests.map(booking => {
-    //                     let rideDistanceKm = "";
-
-    //                     if (
-    //                         booking.pickupLatitude &&
-    //                         booking.pickupLongitude &&
-    //                         booking.dropLatitude &&
-    //                         booking.dropLongitude
-    //                     ) {
-    //                         const pickupLat = parseFloat(booking.pickupLatitude);
-    //                         const pickupLng = parseFloat(booking.pickupLongitude);
-    //                         const dropLat = parseFloat(booking.dropLatitude);
-    //                         const dropLng = parseFloat(booking.dropLongitude);
-
-    //                         if (
-    //                             !isNaN(pickupLat) &&
-    //                             !isNaN(pickupLng) &&
-    //                             !isNaN(dropLat) &&
-    //                             !isNaN(dropLng)
-    //                         ) {
-    //                             rideDistanceKm = calculateDistance(
-    //                                 pickupLat,
-    //                                 pickupLng,
-    //                                 dropLat,
-    //                                 dropLng
-    //                             ).toFixed(2);
-    //                         }
-    //                     }
-
-    //                     return {
-    //                         bookingId: booking.id,
-    //                         userId: booking.userId,
-    //                         userDetails: booking.userbook,
-    //                         pickupLocation: booking.pickupLocation,
-    //                         dropLocation: booking.dropLocation,
-    //                         pickupLatitude: booking.pickupLatitude,
-    //                         pickupLongitude: booking.pickupLongitude,
-    //                         dropLatitude: booking.dropLatitude,
-    //                         dropLongitude: booking.dropLongitude,
-    //                         status: booking.status,
-    //                         request: booking.request,
-    //                         bookingDate: booking.bookingDate,
-    //                         bookingPrice: booking.bookingPrice,
-    //                         orderId: booking.orderId,
-    //                         rideOpen: booking.rideOpen,
-    //                         rideDistanceKm
-    //                     };
-    //                 })
-    //             });
-
-    //         } catch (error) {
-    //             console.log("requestList error:", error);
-    //             let msg = "Something went wrong while fetching requests.";
-    //             if (languageType == 1) msg = "حدث خطأ أثناء جلب الطلبات.";
-    //             else if (languageType == 2) msg = "Une erreur est survenue lors de la récupération des demandes.";
-    //             return helper.error(res, msg);
-    //         }
-    //     };
-    // },
     requestList: (io) => {
         return async (req, res) => {
             try {
@@ -1208,7 +1241,6 @@ module.exports = {
             }
         };
     },
-
 
     updatedPickupLocation: async (req, res) => {
         try {
@@ -1548,210 +1580,6 @@ module.exports = {
     },
 
 
-    // cancelRide: (io) => {
-    //     return async (req, res) => {
-
-    //         const getPushMessage = (lang, en, ar, fr) => {
-    //             if (lang === 1) return ar;
-    //             if (lang === 2) return fr;
-    //             return en;
-    //         };
-
-    //         try {
-    //             const languageType = Number(req.headers.languagetype) || 0;
-    //             const loggedInUserId = req.user.id;
-    //             const loggedInUserRole = req.user.role; // 1=user, 2=driver
-    //             const { bookingId } = req.body;
-
-    //             // ================= VALIDATION =================
-    //             if (!bookingId) {
-    //                 let msg = "Booking ID is required.";
-    //                 if (languageType === 1) msg = "رقم تعريف الحجز مطلوب.";
-    //                 else if (languageType === 2) msg = "L'ID de réservation est requis.";
-    //                 return helper.failure(res, msg);
-    //             }
-
-    //             const whereCond = {
-    //                 id: bookingId,
-    //                 status: { [Op.in]: ["0", "1", "2"] }
-    //             };
-
-    //             if (loggedInUserRole === "1") whereCond.userId = loggedInUserId;
-    //             else if (loggedInUserRole === "2") whereCond.driverId = loggedInUserId;
-    //             else {
-    //                 let msg = "Only users or drivers can cancel a ride.";
-    //                 return helper.failure(res, msg);
-    //             }
-
-    //             const booking = await db.bookings.findOne({ where: whereCond });
-    //             if (!booking) {
-    //                 let msg = "Ride cannot be cancelled.";
-    //                 return helper.failure(res, msg);
-    //             }
-
-    //             const newStatus = loggedInUserRole === "1" ? "5" : "4";
-
-    //             // ================= UPDATE BOOKING =================
-    //             await booking.update({ status: newStatus });
-
-    //             // ================= CREATE SELF NOTIFICATION =================
-    //             await db.notifications.create({
-    //                 userId: loggedInUserId,
-    //                 bookingId: booking.id,
-    //                 type: 3,
-    //                 message:
-    //                     loggedInUserRole === "1"
-    //                         ? "You have cancelled the ride"
-    //                         : "Ride cancelled by driver",
-    //                 status: 0
-    //             });
-
-    //             // ================= HELPER =================
-    //             const isDriverBusy = async (id) => {
-    //                 return await db.bookings.findOne({
-    //                     where: { driverId: id, status: { [Op.in]: ["0", "1", "2"] } }
-    //                 });
-    //             };
-
-    //             // ================= USER CANCEL =================
-    //             if (loggedInUserRole === "1") {
-    //                 if (booking.status !== "2") {
-
-    //                     // -------- notify accepted driver --------
-    //                     const acceptedDriver = await db.rideRequest.findOne({
-    //                         where: { bookingId, status: 1 }
-    //                     });
-
-    //                     if (acceptedDriver) {
-    //                         const driver = await db.users.findOne({
-    //                             where: { id: acceptedDriver.driverId, approve: "1" },
-    //                             attributes: ["deviceToken", "languagee_type"],
-    //                             raw: true
-    //                         });
-
-    //                         if (driver?.deviceToken) {
-    //                             const pushMsg = getPushMessage(
-    //                                 Number(driver.languagee_type),
-    //                                 "Ride cancelled by user",
-    //                                 "تم إلغاء الرحلة بواسطة المستخدم",
-    //                                 "Course annulée par l'utilisateur"
-    //                             );
-
-    //                             helper.sendNotification_android(driver.deviceToken, {
-    //                                 message: pushMsg,
-    //                                 type: 3,
-    //                                 bookingId: booking.id.toString(),
-    //                                 cancelledBy: "user"
-    //                             });
-    //                         }
-    //                     }
-
-    //                     // -------- CHECK DRIVER REJECT --------
-    //                     const rejectedDriver = await db.rideRequest.findOne({
-    //                         where: { bookingId, status: 2 }
-    //                     });
-
-    //                     // -------- broadcast ONLY if NO REJECT --------
-    //                     if (booking.request === "0" && !rejectedDriver) {
-
-    //                         const pickupLat = parseFloat(booking.pickupLatitude);
-    //                         const pickupLng = parseFloat(booking.pickupLongitude);
-    //                         const MAX_DISTANCE = 30;
-
-    //                         const drivers = await db.users.findAll({
-    //                             where: { role: "2", online: "1", approve: "1" },
-    //                             attributes: ["id", "latitude", "longitude", "deviceToken", "languagee_type"],
-    //                             raw: true
-    //                         });
-
-    //                         const toRad = v => (v * Math.PI) / 180;
-    //                         const distanceInKm = (lat1, lon1, lat2, lon2) => {
-    //                             const R = 6371;
-    //                             const dLat = toRad(lat2 - lat1);
-    //                             const dLon = toRad(lon2 - lon1);
-    //                             const a =
-    //                                 Math.sin(dLat / 2) ** 2 +
-    //                                 Math.cos(toRad(lat1)) *
-    //                                 Math.cos(toRad(lat2)) *
-    //                                 Math.sin(dLon / 2) ** 2;
-    //                             return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
-    //                         };
-
-    //                         for (const driver of drivers) {
-    //                             if (!driver.latitude || !driver.longitude) continue;
-
-    //                             const dist = distanceInKm(
-    //                                 pickupLat,
-    //                                 pickupLng,
-    //                                 parseFloat(driver.latitude),
-    //                                 parseFloat(driver.longitude)
-    //                             );
-
-    //                             const busyRide = await isDriverBusy(driver.id);
-
-    //                             if (dist <= MAX_DISTANCE && !busyRide && driver.deviceToken) {
-    //                                 const pushMsg = getPushMessage(
-    //                                     Number(driver.languagee_type),
-    //                                     "Ride request cancelled by user",
-    //                                     "تم إلغاء طلب الرحلة بواسطة المستخدم",
-    //                                     "Demande de course annulée par l'utilisateur"
-    //                                 );
-
-    //                                 helper.sendNotification_android(driver.deviceToken, {
-    //                                     message: pushMsg,
-    //                                     type: 3,
-    //                                     bookingId: booking.id.toString(),
-    //                                     cancelledBy: "user"
-    //                                 });
-    //                             }
-    //                         }
-    //                     }
-    //                 }
-    //             }
-
-    //             // ================= DRIVER CANCEL =================
-    //             if (loggedInUserRole === "2") {
-
-    //                 const user = await db.users.findOne({
-    //                     where: { id: booking.userId, approve: "1" },
-    //                     attributes: ["deviceToken", "languagee_type"],
-    //                     raw: true
-    //                 });
-
-    //                 if (user?.deviceToken) {
-    //                     const pushMsg = getPushMessage(
-    //                         Number(user.languagee_type),
-    //                         "Ride cancelled by driver",
-    //                         "تم إلغاء الرحلة بواسطة السائق",
-    //                         "Course annulée par le conducteur"
-    //                     );
-
-    //                     helper.sendNotification_android(user.deviceToken, {
-    //                         message: pushMsg,
-    //                         type: 4,
-    //                         bookingId: booking.id.toString(),
-    //                         cancelledBy: "driver"
-    //                     });
-    //                 }
-    //             }
-
-    //             // ================= RESPONSE (UNCHANGED) =================
-    //             let msg = loggedInUserRole === "1"
-    //                 ? "Ride cancelled by user successfully."
-    //                 : "Ride cancelled by driver successfully.";
-
-    //             return helper.success(res, msg, {
-    //                 bookingId: booking.id,
-    //                 cancelledBy: loggedInUserRole === "1" ? "user" : "driver",
-    //                 status: newStatus
-    //             });
-
-    //         } catch (error) {
-    //             console.error(error);
-    //             return helper.failure(res, "Something went wrong.");
-    //         }
-    //     };
-    // },
     cancelRide: (io) => {
         return async (req, res) => {
 
