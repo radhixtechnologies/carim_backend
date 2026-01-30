@@ -1580,7 +1580,6 @@ module.exports = {
         }
     },
 
-
     testLocation: async (req, res) => {
         try {
             const userId = req.user.id;
