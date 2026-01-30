@@ -1023,7 +1023,9 @@ module.exports = function (io) {
               request: booking.request,
               bookingDate: booking.bookingDate,
               bookingPrice: booking.bookingPrice,
-              rideOpen: booking.rideOpen
+              rideOpen: booking.rideOpen,
+              callerPhone: booking.callerPhone || "",
+              callerName: booking.callerName || "",
             }))
           }
         });
