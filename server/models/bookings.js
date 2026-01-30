@@ -123,6 +123,11 @@ module.exports = function(sequelize, DataTypes) {
       allowNull: false,
       defaultValue: ""
     },
+    callerCountryCode: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      defaultValue: ""
+    },
     callerPhone: {
       type: DataTypes.STRING(255),
       allowNull: false,

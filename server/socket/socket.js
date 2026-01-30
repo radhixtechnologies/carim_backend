@@ -1024,6 +1024,7 @@ module.exports = function (io) {
               bookingDate: booking.bookingDate,
               bookingPrice: booking.bookingPrice,
               rideOpen: booking.rideOpen,
+              callerCountryCode: booking.callerCountryCode || "",
               callerPhone: booking.callerPhone || "",
               callerName: booking.callerName || "",
             }))
