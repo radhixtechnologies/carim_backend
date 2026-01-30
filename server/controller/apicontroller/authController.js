@@ -1467,9 +1467,10 @@ module.exports = {
     // },
     userActiveRide: async (req, res) => {
         try {
-            const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
+            const languageType = Number(req.headers.languagetype) || 0;
             const userId = req.user.id;
 
+            // ---------------- USER STATUS ----------------
             const userStatus = await db.users.findOne({
                 where: { id: userId },
                 attributes: ['status', 'block', 'suspend', 'role'],
@@ -1504,6 +1505,7 @@ module.exports = {
                 return helper.error3(res, msg);
             }
 
+            // ---------------- FETCH ACTIVE RIDE ----------------
             const activeRide = await db.bookings.findOne({
                 where: {
                     userId: userId,
@@ -1512,28 +1514,14 @@ module.exports = {
                 include: [
                     {
                         model: db.users,
-                        as: 'driverbook',
-                    },
+                        as: 'driverbook'
+                    }
                 ],
                 order: [['id', 'DESC']]
             });
 
-            // ---------------- ROLE BASED ACTIVE RIDE RESPONSE ----------------
+            // ---------------- NO RIDE FOUND ----------------
             if (!activeRide) {
-
-                // 🔥 ROLE = 3 → hasActiveRide kabhi false nahi hoga
-                if (userStatus.role == '3') {
-                    let msg = "Active ride found";
-                    if (languageType == 1) msg = "تم العثور على رحلة نشطة";
-                    else if (languageType == 2) msg = "Course active trouvée";
-
-                    return helper.success(res, msg, {
-                        hasActiveRide: true,
-                        ride: null
-                    });
-                }
-
-                // ✅ baki roles same behavior
                 let msg = "No active ride";
                 if (languageType == 1) msg = "لا توجد رحلة نشطة";
                 else if (languageType == 2) msg = "Aucune course active";
@@ -1544,6 +1532,7 @@ module.exports = {
                 });
             }
 
+            // ---------------- RIDE FOUND ----------------
             const driver = activeRide.driverbook;
 
             let msg = "Active ride found";
@@ -1551,7 +1540,9 @@ module.exports = {
             else if (languageType == 2) msg = "Course active trouvée";
 
             return helper.success(res, msg, {
-                hasActiveRide: true,
+                // 🔑 KEY LINE
+                hasActiveRide: userStatus.role == '3' ? false : true,
+
                 ride: {
                     id: activeRide.id,
                     orderId: activeRide.orderId,
