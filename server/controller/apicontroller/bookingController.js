@@ -1154,16 +1154,29 @@ module.exports = {
 
                 // ===== CLEAN EXPIRED BOOKINGS =====
                 const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
-                await db.bookings.destroy({
-                    where: {
-                        driverId: null,
-                        status: '0',
-                        request: '0',
-                        rejectCount: '0',
-                        bookingDate: { [Sequelize.Op.lt]: oneMinuteAgo }
-                    },
-                    force: true
-                });
+                // await db.bookings.destroy({
+                //     where: {
+                //         driverId: null,
+                //         status: '0',
+                //         request: '0',
+                //         rejectCount: '0',
+                //         bookingDate: { [Sequelize.Op.lt]: oneMinuteAgo }
+                //     },
+                //     force: true
+                // });
+
+                await db.bookings.update(
+                    { status: '6', request: '2' }, // mark as cancelled due to timeout
+                    {
+                        where: {
+                            driverId: null,
+                            status: '0',
+                            request: '0',
+                            rejectCount: '0',
+                            bookingDate: { [Sequelize.Op.lt]: oneMinuteAgo }
+                        }
+                    }
+                );
 
                 // ===== ACTIVE RIDE CHECK =====
                 const activeRide = await db.bookings.findOne({

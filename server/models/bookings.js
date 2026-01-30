@@ -21,7 +21,7 @@ module.exports = function(sequelize, DataTypes) {
       defaultValue: ""
     },
     status: {
-      type: DataTypes.ENUM('0','1','2','3','4','5'),
+      type: DataTypes.ENUM('0','1','2','3','4','5','6'),
       allowNull: false,
       defaultValue: "0",
       comment: "0=>driver on the way,1=>arrived,2=>ride started,3=> completed,4=>cancel"

@@ -955,9 +955,9 @@ module.exports = function (io) {
           if (['0', '1', '2'].includes(status)) {
             statusCondition = { status: { [Op.in]: ['0', '1', '2'] } };
           } else if (status === '3') {
-            statusCondition = { status: { [Op.in]: ['3', '4', '5'] } };
+            statusCondition = { status: { [Op.in]: ['3', '4', '5','6'] } };
           } else if (status === '4') {
-            statusCondition = { status: { [Op.in]: ['4', '5'] } };
+            statusCondition = { status: { [Op.in]: ['4', '5','6'] } };
           } else {
             statusCondition = { status: status };
           }
