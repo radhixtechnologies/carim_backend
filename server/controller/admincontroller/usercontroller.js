@@ -4,53 +4,7 @@ const { Op, Model } = require("sequelize");
 
 
 module.exports = {
-    // userList: async (req, res) => {
-    //     try {
-    //         let { page, limit, search, dateFilter } = req.query;
-    //         page = parseInt(page) || 1;
-    //         limit = parseInt(limit) || 10;
-    //         const offset = (page - 1) * limit;
-    //         dateFilter = dateFilter || "all";
 
-    //         const Op = db.Sequelize.Op;
-    //         const whereCondition = { role: "1" };
-
-    //         if (search && search.trim() !== "") {
-    //             whereCondition[Op.or] = [
-    //                 { name: { [Op.like]: `%${search}%` } },
-    //                 { email: { [Op.like]: `%${search}%` } },
-    //             ];
-    //         }
-
-    //         if (dateFilter !== 'all') {
-    //             const daysAgo = parseInt(dateFilter, 10);
-    //             if (!isNaN(daysAgo)) {
-    //                 const startDate = new Date();
-    //                 startDate.setDate(startDate.getDate() - daysAgo);
-
-    //                 whereCondition.createdAt = {
-    //                     [Op.gte]: startDate,
-    //                 };
-    //             }
-    //         }
-
-    //         const { count, rows } = await db.users.findAndCountAll({
-    //             where: whereCondition,
-    //             offset,
-    //             limit,
-    //             order: [["id", "DESC"]],
-    //         });
-
-    //         return helper.success(res, "All users Detail", {
-    //             data: rows,
-    //             currentPage: page,
-    //             totalPages: Math.ceil(count / limit),
-    //             totalUsers: count,
-    //         });
-    //     } catch (error) {
-    //         return helper.error(res, error.message);
-    //     }
-    // },
 
     userList: async (req, res) => {
         try {
@@ -126,6 +80,78 @@ module.exports = {
             return helper.error(res, error.message);
         }
     },
+    // userList: async (req, res) => {
+    //     try {
+    //         let { page, limit, search, dateFilter } = req.query;
+
+    //         page = parseInt(page) || 1;
+    //         limit = parseInt(limit) || 10;
+    //         const offset = (page - 1) * limit;
+    //         dateFilter = dateFilter || "all";
+
+    //         const Op = db.Sequelize.Op;
+
+    //         const whereCondition = {
+    //             role: { [Op.in]: ["1", "3"] }, 
+    //             otpVerify: "1"
+    //         };
+
+    //         if (search && search.trim() !== "") {
+    //             const cleanSearch = search.replace(/\s+/g, "");
+
+    //             whereCondition[Op.or] = [
+    //                 {
+    //                     phoneNumber: {
+    //                         [Op.like]: `%${cleanSearch}%`,
+    //                     },
+    //                 },
+    //                 {
+    //                     countryCode: {
+    //                         [Op.like]: `%${cleanSearch}%`,
+    //                     },
+    //                 },
+    //                 db.Sequelize.where(
+    //                     db.Sequelize.fn(
+    //                         "CONCAT",
+    //                         db.Sequelize.col("countryCode"),
+    //                         db.Sequelize.col("phoneNumber")
+    //                     ),
+    //                     {
+    //                         [Op.like]: `%${cleanSearch}%`,
+    //                     }
+    //                 ),
+    //             ];
+    //         }
+
+    //         if (dateFilter !== "all") {
+    //             const daysAgo = parseInt(dateFilter, 10);
+    //             if (!isNaN(daysAgo)) {
+    //                 const startDate = new Date();
+    //                 startDate.setDate(startDate.getDate() - daysAgo);
+
+    //                 whereCondition.createdAt = {
+    //                     [Op.gte]: startDate,
+    //                 };
+    //             }
+    //         }
+
+    //         const { count, rows } = await db.users.findAndCountAll({
+    //             where: whereCondition,
+    //             offset,
+    //             limit,
+    //             order: [["id", "DESC"]],
+    //         });
+
+    //         return helper.success(res, "All users Detail", {
+    //             data: rows,
+    //             currentPage: page,
+    //             totalPages: Math.ceil(count / limit),
+    //             totalUsers: count,
+    //         });
+    //     } catch (error) {
+    //         return helper.error(res, error.message);
+    //     }
+    // },
 
     userStatus: async (req, res) => {
         try {
