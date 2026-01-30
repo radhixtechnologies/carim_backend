@@ -203,7 +203,7 @@ module.exports = {
                     // online: '1',
                     otp,
                     rideOtp,
-                    loginTime, 
+                    loginTime,
                     updatedAt: helper.unixTimestamp(),
                 };
                 if (deviceToken) {
@@ -233,7 +233,7 @@ module.exports = {
                     role,
                     deviceToken: deviceToken || null,
                     deviceType: deviceType || null,
-                    loginTime, 
+                    loginTime,
                     otp,
                     rideOtp,
                     languagee_type,
@@ -1358,6 +1358,113 @@ module.exports = {
 
 
 
+    // userActiveRide: async (req, res) => {
+    //     try {
+    //         const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
+    //         const userId = req.user.id;
+
+    //         const userStatus = await db.users.findOne({
+    //             where: { id: userId },
+    //             attributes: ['status', 'block', 'suspend'],
+    //             raw: true
+    //         });
+
+    //         if (!userStatus) {
+    //             let msg = "User not found.";
+    //             if (languageType == 1) msg = "المستخدم غير موجود.";
+    //             else if (languageType == 2) msg = "Utilisateur non trouvé.";
+    //             return helper.failure(res, msg);
+    //         }
+
+    //         if (userStatus.status === "0") {
+    //             let msg = "Your account has been deactivated by admin.";
+    //             if (languageType == 1) msg = "تم تعطيل حسابك من قبل المسؤول.";
+    //             else if (languageType == 2) msg = "Votre compte a été désactivé par l’administrateur.";
+    //             return helper.error2(res, msg);
+    //         }
+
+    //         if (userStatus.block === "1") {
+    //             let msg = "Your account has been blocked by admin.";
+    //             if (languageType == 1) msg = "تم حظر حسابك من قبل المسؤول.";
+    //             else if (languageType == 2) msg = "Votre compte a été bloqué par l’administrateur.";
+    //             return helper.error1(res, msg);
+    //         }
+
+    //         if (userStatus.suspend === "1") {
+    //             let msg = "Your account has been suspended by admin.";
+    //             if (languageType == 1) msg = "تم تعليق حسابك من قبل المسؤول.";
+    //             else if (languageType == 2) msg = "Votre compte a été suspendu par l’administrateur.";
+    //             return helper.error3(res, msg);
+    //         }
+
+    //         const activeRide = await db.bookings.findOne({
+    //             where: {
+    //                 userId: userId,
+    //                 status: { [Sequelize.Op.in]: ['0', '1', '2'] }
+    //             },
+    //             include: [
+    //                 {
+    //                     model: db.users,
+    //                     as: 'driverbook',
+    //                 },
+    //             ],
+    //             order: [['id', 'DESC']]
+    //         });
+
+    //         if (!activeRide) {
+    //             let msg = "No active ride";
+    //             if (languageType == 1) msg = "لا توجد رحلة نشطة";
+    //             else if (languageType == 2) msg = "Aucune course active";
+    //             return helper.success(res, msg, {
+    //                 hasActiveRide: false,
+    //                 ride: null
+    //             });
+    //         }
+
+    //         const driver = activeRide.driverbook;
+
+    //         let msg = "Active ride found";
+    //         if (languageType == 1) msg = "تم العثور على رحلة نشطة";
+    //         else if (languageType == 2) msg = "Course active trouvée";
+
+    //         return helper.success(res, msg, {
+    //             hasActiveRide: true,
+    //             ride: {
+    //                 id: activeRide.id,
+    //                 orderId: activeRide.orderId,
+    //                 status: activeRide.status,
+    //                 request: activeRide.request,
+    //                 pickupLocation: activeRide.pickupLocation,
+    //                 dropLocation: activeRide.dropLocation,
+    //                 coordinates: {
+    //                     pickup: {
+    //                         latitude: activeRide.pickupLatitude,
+    //                         longitude: activeRide.pickupLongitude
+    //                     },
+    //                     drop: {
+    //                         latitude: activeRide.dropLatitude,
+    //                         longitude: activeRide.dropLongitude
+    //                     }
+    //                 },
+    //                 driver: driver ? {
+    //                     id: driver.id,
+    //                     fullName: `${driver.firstName} ${driver.lastName}`,
+    //                     phone: driver.phoneNumber,
+    //                     image: driver.image,
+    //                     latitude: driver.latitude,
+    //                     longitude: driver.longitude
+    //                 } : null
+    //             }
+    //         });
+
+    //     } catch (error) {
+    //         console.error("Error in userActiveRide:", error);
+    //         let msg = "Something went wrong.";
+    //         if (languageType == 1) msg = "حدث خطأ ما.";
+    //         else if (languageType == 2) msg = "Une erreur est survenue.";
+    //         return helper.failure(res, msg);
+    //     }
+    // },
     userActiveRide: async (req, res) => {
         try {
             const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
@@ -1365,7 +1472,7 @@ module.exports = {
 
             const userStatus = await db.users.findOne({
                 where: { id: userId },
-                attributes: ['status', 'block', 'suspend'],
+                attributes: ['status', 'block', 'suspend', 'role'],
                 raw: true
             });
 
@@ -1411,10 +1518,26 @@ module.exports = {
                 order: [['id', 'DESC']]
             });
 
+            // ---------------- ROLE BASED ACTIVE RIDE RESPONSE ----------------
             if (!activeRide) {
+
+                // 🔥 ROLE = 3 → hasActiveRide kabhi false nahi hoga
+                if (userStatus.role == '3') {
+                    let msg = "Active ride found";
+                    if (languageType == 1) msg = "تم العثور على رحلة نشطة";
+                    else if (languageType == 2) msg = "Course active trouvée";
+
+                    return helper.success(res, msg, {
+                        hasActiveRide: true,
+                        ride: null
+                    });
+                }
+
+                // ✅ baki roles same behavior
                 let msg = "No active ride";
                 if (languageType == 1) msg = "لا توجد رحلة نشطة";
                 else if (languageType == 2) msg = "Aucune course active";
+
                 return helper.success(res, msg, {
                     hasActiveRide: false,
                     ride: null
