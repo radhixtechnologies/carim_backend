@@ -1540,7 +1540,6 @@ module.exports = {
             else if (languageType == 2) msg = "Course active trouvée";
 
             return helper.success(res, msg, {
-                // 🔑 KEY LINE
                 hasActiveRide: userStatus.role == '3' ? false : true,
 
                 ride: {
