@@ -492,6 +492,7 @@ module.exports = {
             }
 
             const otp = '1111';
+        //    const otp =  Math.floor(1000 + Math.random() * 9000).toString();
 
             await db.users.update(
                 {
