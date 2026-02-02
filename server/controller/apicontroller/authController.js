@@ -6,135 +6,14 @@ const jwt = require("jsonwebtoken");
 const { Op } = require("sequelize");
 const { Sequelize } = require('sequelize');
 
+const accountSid = "AC358ad9c9c04158687eb250f305fcbbf4";
+const authToken = "b4cdab716f15e8ea897d30ef758e5a81";
+const client = require("twilio")(accountSid, authToken);
+
+
+
 module.exports = {
-    login1: async (req, res) => {
-        try {
-            const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
 
-            const v = new Validator(req.body, {
-                countryCode: "required",
-                phoneNumber: "required",
-                role: "required"
-            });
-
-            const errorsResponse = await helper.checkValidation(v);
-            if (errorsResponse) {
-                return helper.failure(res, errorsResponse);
-            }
-
-            const { deviceToken, deviceType, phoneNumber, languagee_type, countryCode, role } = req.body;
-
-            const existingUser = await db.users.findOne({
-                where: { phoneNumber, countryCode, role, deletedAt: null }
-            });
-
-            let user;
-            let isNewUser = false;
-            const otp = '1111';
-            const rideOtp = '1111';
-            if (existingUser) {
-                if (existingUser.status === "0") {
-                    let msg = "Your account has been deactivated by admin.";
-                    if (languageType == 1) msg = "تم تعطيل حسابك من قبل المسؤول.";
-                    else if (languageType == 2) msg = "Votre compte a été désactivé par l’administrateur.";
-                    return helper.failure(res, msg);
-                }
-
-                if (existingUser.block === "1") {
-                    let msg = "Your account has been blocked by admin.";
-                    if (languageType == 1) msg = "تم حظر حسابك من قبل المسؤول.";
-                    else if (languageType == 2) msg = "Votre compte a été bloqué par l’administrateur.";
-                    return helper.failure(res, msg);
-                }
-
-                if (existingUser.suspend === "1") {
-                    let msg = "Your account has been suspended by admin.";
-                    if (languageType == 1) msg = "تم تعليق حسابك من قبل المسؤول.";
-                    else if (languageType == 2) msg = "Votre compte a été suspendu par l’administrateur.";
-                    return helper.failure(res, msg);
-                }
-
-                if (existingUser.role == '2' && existingUser.otpVerify == "1") {
-                    if (existingUser.isProfileComplete == "1" && existingUser.vehicle == "1") {
-                        if (existingUser.approve != "1") {
-                            let msg = "Your driver account is not approved yet.";
-                            if (languageType == 1) msg = "حساب السائق الخاص بك لم يتم الموافقة عليه بعد.";
-                            else if (languageType == 2) msg = "Votre compte conducteur n’est pas encore approuvé.";
-                            return helper.failure(res, msg);
-                        }
-                    }
-                }
-
-                user = existingUser;
-
-                await db.users.update(
-                    { online: '1', otp, rideOtp, updatedAt: helper.unixTimestamp() },
-                    { where: { id: user.id } }
-                );
-
-                user = await db.users.findOne({ where: { id: user.id, deletedAt: null } });
-            } else {
-                const userWithSamePhone = await db.users.findOne({
-                    where: { phoneNumber, countryCode, deletedAt: null }
-                });
-
-                if (userWithSamePhone) {
-                    let msg = "Phone number already registered with a different role";
-                    if (languageType == 1) msg = "رقم الهاتف مسجل بالفعل بدور مختلف";
-                    else if (languageType == 2) msg = "Le numéro de téléphone est déjà enregistré avec un rôle différent";
-                    return helper.failure(res, msg);
-                }
-
-                user = await db.users.create({
-                    countryCode,
-                    phoneNumber,
-                    role,
-                    deviceToken: deviceToken || null,
-                    deviceType: deviceType || null,
-                    loginTime: helper.unixTimestamp(),
-                    otp,
-                    languagee_type,
-                    rideOtp,
-                    status: "1"
-                });
-
-                isNewUser = true;
-            }
-            const loginTime = helper.unixTimestamp();
-            const token = jwt.sign({ loginTime, id: user.id }, process.env.JWT_SECRET);
-
-            const updateData = { loginTime, updatedAt: helper.unixTimestamp() };
-            if (deviceToken) {
-                updateData.deviceToken = deviceToken;
-                updateData.deviceType = deviceType || null;
-            }
-
-            await db.users.update(updateData, { where: { id: user.id } });
-
-            const updatedUser = await db.users.findOne({ where: { id: user.id, deletedAt: null } });
-
-            const responseData = { ...updatedUser.toJSON(), token, otp };
-
-            if (isNewUser) {
-                let msg = "Account created successfully. OTP sent for verification.";
-                if (languageType == 1) msg = "تم إنشاء الحساب بنجاح. تم إرسال OTP للتحقق.";
-                else if (languageType == 2) msg = "Compte créé avec succès. OTP envoyé pour vérification.";
-                return helper.success(res, msg, responseData);
-            }
-
-            let msg = "OTP sent successfully for verification";
-            if (languageType == 1) msg = "تم إرسال OTP للتحقق بنجاح";
-            else if (languageType == 2) msg = "OTP envoyé avec succès pour vérification";
-            return helper.success(res, msg, responseData);
-
-        } catch (error) {
-            console.error('Login error:', error);
-            let msg = "Something went wrong";
-            if (languageType == 1) msg = "حدث خطأ ما";
-            else if (languageType == 2) msg = "Une erreur est survenue";
-            return helper.failure(res, msg);
-        }
-    },
     login: async (req, res) => {
         try {
             const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
@@ -159,6 +38,8 @@ module.exports = {
             let isNewUser = false;
             const otp = '1111';
             const rideOtp = '1111';
+
+
 
             const loginTime = helper.unixTimestamp();
 
@@ -264,93 +145,146 @@ module.exports = {
             return helper.failure(res, msg);
         }
     },
-
-    // verifyOtp: async (req, res) => {
+    // login1: async (req, res) => {
     //     try {
     //         const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
 
+    //         // 🔹 validate input
     //         const v = new Validator(req.body, {
-    //             otp: 'required',
-    //             countryCode: 'required',
-    //             phoneNumber: 'required',
+    //             countryCode: "required",
+    //             phoneNumber: "required",
+    //             role: "required",
     //         });
 
-    //         let errorsResponse = await helper.checkValidation(v);
-    //         if (errorsResponse) {
-    //             return helper.failure(res, errorsResponse);
-    //         }
+    //         const errorsResponse = await helper.checkValidation(v);
+    //         if (errorsResponse) return helper.failure(res, errorsResponse);
 
-    //         let user = await db.users.findOne({
-    //             where: {
-    //                 phoneNumber: req.body.phoneNumber,
-    //                 countryCode: req.body.countryCode,
-    //                 deletedAt: null
-    //             },
+    //         const { deviceToken, deviceType, phoneNumber, languagee_type, countryCode, role } = req.body;
+
+    //         const existingUser = await db.users.findOne({
+    //             where: { phoneNumber, countryCode, role, deletedAt: null },
     //         });
 
-    //         if (!user) {
-    //             let msg = 'User not found.';
-    //             if (languageType == 1) msg = 'المستخدم غير موجود.';
-    //             else if (languageType == 2) msg = 'Utilisateur non trouvé.';
-    //             return helper.failure(res, msg);
-    //         }
+    //         let user;
+    //         let isNewUser = false;
+    //         const rideOtp = Math.floor(1000 + Math.random() * 9000).toString();
+    //         // Create OTP service and send OTP
+    //         const otpService = await client.verify.v2.services.create({ friendlyName: "carim", codeLength: 4 });
+    //         const otpVerification = await client.verify.v2
+    //             .services(otpService.sid)
+    //             .verifications.create({
+    //                 to: `${countryCode}${phoneNumber}`,
+    //                 channel: 'sms'
+    //             });
 
-    //         if (user.status === "0") {
-    //             let msg = "Your account is in-active by Admin. Please contact the admin for assistance.";
-    //             if (languageType == 1) msg = "حسابك معطل من قبل المسؤول. يرجى الاتصال بالمسؤول للمساعدة.";
-    //             else if (languageType == 2) msg = "Votre compte est inactif par l’administrateur. Veuillez contacter l’administrateur pour obtenir de l’aide.";
-    //             return helper.failure(res, msg);
-    //         }
+    //         const otp = otpVerification.serviceSid;
 
-    //         if (req.body.otp == user.otp) {
-    //             const loginTime = helper.unixTimestamp();
+    //         const loginTime = helper.unixTimestamp();
 
-    //             const token = jwt.sign(
-    //                 { loginTime: loginTime, id: user.id },
-    //                 process.env.JWT_SECRET
-    //             );
+    //         if (existingUser) {
+    //             if (existingUser.status === "0") {
+    //                 let msg = "Your account has been deactivated by admin.";
+    //                 if (languageType === 1) msg = "تم تعطيل حسابك من قبل المسؤول.";
+    //                 else if (languageType === 2) msg = "Votre compte a été désactivé par l’administrateur.";
+    //                 return helper.failure(res, msg);
+    //             }
 
-    //             await db.users.update(
-    //                 {
-    //                     otpVerify: "1",
-    //                     otp: 0,
-    //                     loginTime: loginTime
-    //                 },
-    //                 { where: { id: user.id } }
-    //             );
+    //             if (existingUser.block === "1") {
+    //                 let msg = "Your account has been blocked by admin.";
+    //                 if (languageType === 1) msg = "تم حظر حسابك من قبل المسؤول.";
+    //                 else if (languageType === 2) msg = "Votre compte a été bloqué par l’administrateur.";
+    //                 return helper.failure(res, msg);
+    //             }
 
-    //             const updated = await db.users.findOne({
-    //                 where: {
-    //                     phoneNumber: req.body.phoneNumber,
-    //                     countryCode: req.body.countryCode
+    //             if (existingUser.suspend === "1") {
+    //                 let msg = "Your account has been suspended by admin.";
+    //                 if (languageType === 1) msg = "تم تعليق حسابك من قبل المسؤول.";
+    //                 else if (languageType === 2) msg = "Votre compte a été suspendu par l’administrateur.";
+    //                 return helper.failure(res, msg);
+    //             }
+
+    //             // Example driver approval check
+    //             if (existingUser.role === '2' && existingUser.otpVerify === "1") {
+    //                 if (existingUser.isProfileComplete === "1" && existingUser.vehicle === "1") {
+    //                     if (existingUser.approve !== "1") {
+    //                         let msg = "Your driver account is not approved yet.";
+    //                         if (languageType === 1) msg = "حساب السائق الخاص بك لم يتم الموافقة عليه بعد.";
+    //                         else if (languageType === 2) msg = "Votre compte conducteur n’est pas encore approuvé.";
+    //                         return helper.failure(res, msg);
+    //                     }
     //                 }
+    //             }
+
+    //             user = existingUser;
+
+    //             // 🔹 update user loginTime, device info, OTP
+    //             const updateData = {
+    //                 // online: '1',
+    //                 otp,
+    //                 rideOtp,
+    //                 loginTime,
+    //                 updatedAt: helper.unixTimestamp(),
+    //             };
+    //             if (deviceToken) {
+    //                 updateData.deviceToken = deviceToken;
+    //                 updateData.deviceType = deviceType || null;
+    //             }
+
+    //             await db.users.update(updateData, { where: { id: user.id } });
+
+    //             user = await db.users.findOne({ where: { id: user.id, deletedAt: null } });
+
+    //         } else {
+    //             const userWithSamePhone = await db.users.findOne({
+    //                 where: { phoneNumber, countryCode, deletedAt: null }
     //             });
 
-    //             let msg = 'OTP verified successfully.';
-    //             if (languageType == 1) msg = 'تم التحقق من OTP بنجاح.';
-    //             else if (languageType == 2) msg = 'OTP vérifié avec succès.';
+    //             if (userWithSamePhone) {
+    //                 let msg = "Phone number already registered with a different role";
+    //                 if (languageType === 1) msg = "رقم الهاتف مسجل بالفعل بدور مختلف";
+    //                 else if (languageType === 2) msg = "Le numéro de téléphone est déjà enregistré avec un rôle différent";
+    //                 return helper.failure(res, msg);
+    //             }
 
-    //             return helper.success(res, msg, {
-    //                 ...updated.toJSON(),
-    //                 token: token
+    //             user = await db.users.create({
+    //                 countryCode,
+    //                 phoneNumber,
+    //                 role,
+    //                 deviceToken: deviceToken || null,
+    //                 deviceType: deviceType || null,
+    //                 loginTime,
+    //                 otp,
+    //                 rideOtp,
+    //                 languagee_type,
+    //                 status: "1"
     //             });
 
+    //             isNewUser = true;
     //         }
-    //         //  else {
-    //         //     let msg = 'OTP does not match.';
-    //         //     if (languageType == 1) msg = 'OTP غير مطابق.';
-    //         //     else if (languageType == 2) msg = 'OTP ne correspond pas.';
-    //         //     return helper.failure(res, msg);
-    //         // }
+    //         const token = jwt.sign({ id: user.id, loginTime }, process.env.JWT_SECRET, { expiresIn: "7d" });
+
+    //         const responseData = { ...user.toJSON(), token, otp };
+
+    //         if (isNewUser) {
+    //             let msg = "Account created successfully. OTP sent for verification.";
+    //             if (languageType === 1) msg = "تم إنشاء الحساب بنجاح. تم إرسال OTP للتحقق.";
+    //             else if (languageType === 2) msg = "Compte créé avec succès. OTP envoyé pour vérification.";
+    //             return helper.success(res, msg, responseData);
+    //         }
+
+    //         let msg = "OTP sent successfully for verification";
+    //         if (languageType === 1) msg = "تم إرسال OTP للتحقق بنجاح";
+    //         else if (languageType === 2) msg = "OTP envoyé avec succès pour vérification";
+    //         return helper.success(res, msg, responseData);
 
     //     } catch (error) {
-    //         console.error('verifyOtp error:', error);
-    //         let msg = 'Something went wrong';
-    //         if (languageType == 1) msg = 'حدث خطأ ما';
-    //         else if (languageType == 2) msg = 'Une erreur est survenue';
+    //         console.error("Login error:", error);
+    //         let msg = "Something went wrong";
     //         return helper.failure(res, msg);
     //     }
     // },
+
+
     verifyOtp: async (req, res) => {
         try {
             const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French
@@ -393,7 +327,6 @@ module.exports = {
 
                 const token = jwt.sign(
                     {
-                        //  loginTime: loginTime,
                         id: user.id
                     },
                     process.env.JWT_SECRET
@@ -403,7 +336,6 @@ module.exports = {
                     {
                         otpVerify: "1",
                         otp: 0,
-                        // loginTime: loginTime
                     },
                     { where: { id: user.id } }
                 );
@@ -437,6 +369,99 @@ module.exports = {
             return helper.failure(res, msg);
         }
     },
+
+    // verifyOtp1: async (req, res) => {
+    //     try {
+    //         const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French
+
+    //         const v = new Validator(req.body, {
+    //             otp: 'required',
+    //             countryCode: 'required',
+    //             phoneNumber: 'required',
+    //         });
+
+    //         let errorsResponse = await helper.checkValidation(v);
+    //         if (errorsResponse) {
+    //             return helper.failure(res, errorsResponse);
+    //         }
+
+    //         const { otp, phoneNumber, countryCode } = req.body;
+
+    //         let user = await db.users.findOne({
+    //             where: {
+    //                 phoneNumber,
+    //                 countryCode,
+    //                 deletedAt: null
+    //             },
+    //         });
+
+    //         if (!user) {
+    //             let msg = languageType == 1 ? 'المستخدم غير موجود.' :
+    //                 languageType == 2 ? 'Utilisateur non trouvé.' :
+    //                     'User not found.';
+    //             return helper.failure(res, msg);
+    //         }
+
+    //         if (user.status === "0") {
+    //             let msg = languageType == 1 ? "حسابك معطل من قبل المسؤول. يرجى الاتصال بالمسؤول للمساعدة." :
+    //                 languageType == 2 ? "Votre compte est inactif par l’administrateur. Veuillez contacter l’administrateur pour obtenir de l’aide." :
+    //                     "Your account is inactive by Admin. Please contact the admin.";
+    //             return helper.failure(res, msg);
+    //         }
+
+    //         // 🔹 Twilio Verify check (correct service SID)
+    //         const checkOtp = await client.verify.v2.services(userData.otp)
+    //             .verificationChecks
+    //             .create({
+    //                 to: countryCode + phoneNumber,
+    //                 code: otp,
+    //             });
+
+    //         if (checkOtp.status === "approved") {
+
+    //             const token = jwt.sign(
+    //                 { id: user.id },
+    //                 process.env.JWT_SECRET
+    //             );
+
+    //             await db.users.update(
+    //                 {
+    //                     otpVerify: "1",
+    //                     otp: 0,
+    //                 },
+    //                 { where: { id: user.id } }
+    //             );
+
+    //             const updated = await db.users.findOne({
+    //                 where: { phoneNumber, countryCode }
+    //             });
+
+    //             let msg = languageType == 1 ? 'تم التحقق من OTP بنجاح.' :
+    //                 languageType == 2 ? 'OTP vérifié avec succès.' :
+    //                     'OTP verified successfully.';
+
+    //             return helper.success(res, msg, {
+    //                 ...updated.toJSON(),
+    //                 token: token
+    //             });
+    //         }
+
+    //         // 🔹 OTP not approved
+    //         return helper.success(res, "", {});
+
+    //     } catch (error) {
+    //         console.error('verifyOtp error:', error);
+
+    //         let msg = languageType == 1 ? 'حدث خطأ ما' :
+    //             languageType == 2 ? 'Une erreur est survenue' :
+    //                 'Something went wrong';
+
+    //         return helper.failure(res, msg);
+    //     }
+    // },
+
+
+
 
     resendOTP: async (req, res) => {
         try {
