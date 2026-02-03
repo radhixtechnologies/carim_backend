@@ -953,7 +953,7 @@ module.exports = function (io) {
         let statusCondition = {};
         if (status !== undefined && status !== null && status !== "") {
           if (['0', '1', '2'].includes(status)) {
-            statusCondition = { status: { [Op.in]: ['0', '1', '2'] } };
+            statusCondition = { status: { [Op.in]: ['0', '1', '2','6'] } };
           } else if (status === '3') {
             statusCondition = { status: { [Op.in]: ['3', '4', '5','6'] } };
           } else if (status === '4') {

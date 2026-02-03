@@ -1174,7 +1174,8 @@ module.exports = {
                             request: '0',
                             rejectCount: '0',
                             bookingDate: { [Sequelize.Op.lt]: oneMinuteAgo }
-                        }
+                        },
+                        force: true
                     }
                 );
 
