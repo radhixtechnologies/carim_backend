@@ -953,21 +953,40 @@ module.exports = function (io) {
         let statusCondition = {};
         if (status !== undefined && status !== null && status !== "") {
           if (['0', '1', '2'].includes(status)) {
-            statusCondition = { status: { [Op.in]: ['0', '1', '2','6'] } };
+            statusCondition = { status: { [Op.in]: ['0', '1', '2'] } };
           } else if (status === '3') {
-            statusCondition = { status: { [Op.in]: ['3', '4', '5','6'] } };
+            statusCondition = { status: { [Op.in]: ['3', '4', '5', '6'] } };
           } else if (status === '4') {
-            statusCondition = { status: { [Op.in]: ['4', '5','6'] } };
+            statusCondition = { status: { [Op.in]: ['4', '5', '6'] } };
           } else {
             statusCondition = { status: status };
           }
         }
 
+        // const whereCondition = {
+        //   [Op.or]: [{ driverId: userId }, { userId: userId }],
+        //   ...statusCondition,
+        //   request: { [Op.in]: ['1', '2'] }
+        // };
         const whereCondition = {
-          [Op.or]: [{ driverId: userId }, { userId: userId }],
-          ...statusCondition,
-          request: { [Op.in]: ['1', '2'] }
+          [Op.or]: [
+            {
+              driverId: userId,
+              request: { [Op.in]: ['1', '2'] }
+            },
+            {
+              userId: userId,
+              request: { [Op.in]: ['1', '2'] }
+            },
+            {
+              userId: userId,
+              status: '0',
+              request: '0'
+            }
+          ],
+          ...statusCondition
         };
+
 
         const totalBookings = await db.bookings.count({ where: whereCondition });
 
@@ -1050,6 +1069,8 @@ module.exports = function (io) {
         });
       }
     });
+
+
 
     socket.on("onlineStatusUpdate", async (data) => {
       try {
