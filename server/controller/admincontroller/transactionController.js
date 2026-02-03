@@ -210,7 +210,8 @@ module.exports = {
                 await db.transferscreenshot.update(
                     {
                         status,
-                        addedAmount: status === "1" ? parseFloat(addAmount) : null
+                        addedAmount: status === "1" ? parseFloat(addAmount) : null,
+                        amount: status === "1" ? parseFloat(addAmount) : 0
                     },
                     { where: { id }, transaction: t }
                 );
