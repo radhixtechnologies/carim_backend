@@ -783,7 +783,7 @@ module.exports = {
                     } catch (err) {
                         console.error("Scheduler failed:", err);
                     }
-                }, 60000); // 3 minutes
+                }, 180000); // 3 minutes
 
                 // ---------------- RESPONSE ----------------
                 return helper.success(res,
