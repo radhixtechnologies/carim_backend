@@ -338,6 +338,7 @@ module.exports = function (io) {
 
 
 
+
     // socket.on("rideStatusUpdate", async (data) => {
     //   try {
     //     const { bookingId, status, otp, driverId } = data;
@@ -413,11 +414,12 @@ module.exports = function (io) {
 
     //     const user = booking.userbook;
 
-    //     if (!user)
+    //     if (!user) {
     //       return socket.emit("rideStatusUpdate", {
     //         success: false,
     //         message: "User not found"
     //       });
+    //     }
 
     //     if (user.status === "0")
     //       return socket.emit("rideStatusUpdate", { success: false, message: "User deactivated" });
@@ -426,16 +428,22 @@ module.exports = function (io) {
     //     if (user.suspend === "1")
     //       return socket.emit("rideStatusUpdate", { success: false, message: "User suspended" });
 
-    //     // LANGUAGE HELPERS
+    //     // ================= LANGUAGE HELPERS =================
     //     const getUserMsg = (en, ar, fr) =>
     //       user.languagee_type === 1 ? ar : user.languagee_type === 2 ? fr : en;
 
     //     const getDriverMsg = (en, ar, fr) =>
     //       driver.languagee_type === 1 ? ar : driver.languagee_type === 2 ? fr : en;
 
-    //     // EMIT FUNCTION
-    //     const emitToBoth = async (userMsg, driverMsg, statusData, otpVerified = false) => {
+    //     // ================= EMIT FUNCTION =================
+    //     const emitToBoth = async (
+    //       userMsg,
+    //       driverMsg,
+    //       statusData,
+    //       otpVerified = false
+    //     ) => {
 
+    //       // ✅ USER DB NOTIFICATION ONLY
     //       await db.notifications.create({
     //         sender_id: driverId,
     //         receiver_id: user.id,
@@ -446,16 +454,7 @@ module.exports = function (io) {
     //         status: 0
     //       });
 
-    //       await db.notifications.create({
-    //         sender_id: user.id,
-    //         receiver_id: driverId,
-    //         bookingId: booking.id,
-    //         type: Number(statusData),
-    //         message: driverMsg,
-    //         is_read: 0,
-    //         status: 0
-    //       });
-
+    //       // SOCKET → USER
     //       if (onlineUsers[user.id]) {
     //         onlineUsers[user.id].forEach(sid => {
     //           io.to(sid).emit("rideStatusUpdate", {
@@ -468,6 +467,7 @@ module.exports = function (io) {
     //         });
     //       }
 
+    //       // SOCKET → DRIVER (NO DB / NO PUSH)
     //       if (onlineUsers[driverId]) {
     //         onlineUsers[driverId].forEach(sid => {
     //           io.to(sid).emit("rideStatusUpdate", {
@@ -481,7 +481,7 @@ module.exports = function (io) {
     //       }
     //     };
 
-    //     // STATUS FLOW
+    //     // ================= STATUS FLOW =================
     //     switch (status) {
 
     //       case "1": // DRIVER ARRIVED
@@ -495,6 +495,7 @@ module.exports = function (io) {
     //           "1"
     //         );
 
+    //         // ✅ PUSH → USER ONLY
     //         if (user.deviceToken) {
     //           helper.sendNotification_android(user.deviceToken, {
     //             message: getUserMsg(
@@ -530,7 +531,6 @@ module.exports = function (io) {
     //           true
     //         );
 
-    //         //  PUSH TO USER - RIDE STARTED
     //         if (user.deviceToken) {
     //           helper.sendNotification_android(user.deviceToken, {
     //             message: getUserMsg(
@@ -556,7 +556,6 @@ module.exports = function (io) {
     //           "3"
     //         );
 
-    //         //  PUSH TO USER - RIDE COMPLETED
     //         if (user.deviceToken) {
     //           helper.sendNotification_android(user.deviceToken, {
     //             message: getUserMsg(
@@ -605,6 +604,7 @@ module.exports = function (io) {
     //     });
     //   }
     // });
+
     socket.on("rideStatusUpdate", async (data) => {
       try {
         const { bookingId, status, otp, driverId } = data;
@@ -812,10 +812,53 @@ module.exports = function (io) {
             break;
 
           case "3": // FINISHED
-            if (currentStatus !== "2") return;
+            const freshDriver = await db.users.findOne({
+              where: { id: driverId },
+              attributes: ['id', 'totalAmount', 'adminCommission'],
+              raw: true
+            });
+
+            if (!freshDriver) {
+              return socket.emit("rideStatusUpdate", {
+                success: false,
+                message: "Driver not found."
+              });
+            }
 
             await booking.update({ status: "3" });
 
+            // Calculate payment distribution
+            const totalAmount = parseFloat(booking.bookingPrice) || 0;
+            const adminCommissionPercent = parseInt(freshDriver.adminCommission) || 5;
+            const adminCommission = (totalAmount * adminCommissionPercent) / 100;
+            const driverEarnings = totalAmount - adminCommission;
+
+            // Update driver balance - add earnings to CURRENT balance
+            const currentDriverBalance = parseFloat(freshDriver.totalAmount) || 0;
+            const newDriverBalance = currentDriverBalance + driverEarnings;
+
+            
+            await db.users.update({
+              totalAmount: newDriverBalance.toFixed(2).toString()
+            }, {
+              where: { id: driverId, role: '2' }
+            });
+            const adminUser = await db.users.findOne({
+              where: { role: '0' },
+              attributes: ['id', 'totalAmount'],
+              raw: true
+            });
+
+            if (adminUser) {
+              const currentAdminBalance = parseFloat(adminUser.totalAmount) || 0;
+              const newAdminBalance = currentAdminBalance + adminCommission;
+
+              await db.users.update({
+                totalAmount: newAdminBalance.toFixed(2).toString()
+              }, {
+                where: { id: adminUser.id, role: '0' }
+              });
+            }
             await emitToBoth(
               getUserMsg("Ride finished successfully", "تم الانتهاء من الرحلة بنجاح", "Trajet terminé avec succès"),
               getDriverMsg("Ride finished successfully", "تم الانتهاء من الرحلة بنجاح", "Trajet terminé avec succès"),
@@ -870,8 +913,6 @@ module.exports = function (io) {
         });
       }
     });
-
-
 
 
 
