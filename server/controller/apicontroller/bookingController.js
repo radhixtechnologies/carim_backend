@@ -178,7 +178,6 @@ module.exports = {
         }
     },
 
-
     // bookRide: (io) => {
     //     return async (req, res) => {
     //         let languageType = Number(req.headers.languagetype) || 0;
@@ -405,6 +404,58 @@ module.exports = {
     //                 }
     //             }
 
+    //             // ---------------- SCHEDULER FOR ROLE 3 (1 MINUTE TIMER) ----------------
+
+    //             setTimeout(async () => {
+    //                 try {
+    //                     const booking = await db.bookings.findOne({
+    //                         where: { id: newBooking.id },
+    //                         raw: true
+    //                     });
+    //                     if (!booking || booking.driverId) return;
+
+    //                     const acceptedRequest = await db.rideRequest.findOne({
+    //                         where: {
+    //                             bookingId: newBooking.id,
+    //                             status: 1
+    //                         }
+    //                     });
+
+    //                     if (!acceptedRequest) {
+    //                         await db.bookings.update(
+    //                             {
+    //                                 status: '6',
+    //                                 request: '2'
+    //                             },
+    //                             {
+    //                                 where: {
+    //                                     id: newBooking.id,
+    //                                     driverId: null,
+    //                                     status: '0'
+    //                                 }
+    //                             }
+    //                         );
+
+    //                         await db.rideRequest.update(
+    //                             { status: 6 },   // expired
+    //                             {
+    //                                 where: {
+    //                                     bookingId: newBooking.id,
+    //                                     status: 0
+    //                                 }
+    //                             }
+    //                         );
+    //                     }
+    //                 } catch (err) {
+    //                     console.error("Scheduler failed:", err);
+    //                 }
+    //             }, 180000); // 3 minutes
+    //             io.emit("rideStatusUpdate", {
+    //                 bookingId: booking.id,
+    //                 status: newStatus,
+    //                 cancelledBy: loggedInUserRole === "1" || loggedInUserRole === "3" ? "user" : "driver"
+    //             });
+
     //             // ---------------- RESPONSE ----------------
     //             return helper.success(res,
     //                 languageType === 1 ? "تم إرسال طلب حجز الرحلة بنجاح" :
@@ -423,6 +474,12 @@ module.exports = {
     //                     callerPhone,
     //                     callerName,
     //                     callerCountryCode,
+    //                     // Add scheduler info for role 3
+    //                     ...(userStatus.role === '3' && {
+    //                         schedulerInfo: languageType === 1 ? "سيتم تحديث حالة الرحلة تلقائياً بعد دقيقة إذا لم يقبل أي سائق" :
+    //                             languageType === 2 ? "Le statut de la course sera automatiquement mis à jour après 1 minute si aucun chauffeur n'accepte" :
+    //                                 "Ride status will be auto-updated after 1 minute if no driver accepts"
+    //                     })
     //                 }
     //             );
 
@@ -617,7 +674,7 @@ module.exports = {
                 }));
                 if (rideRequestData.length > 0) await db.rideRequest.bulkCreate(rideRequestData);
 
-                // ---------------- SOCKET EMIT ----------------
+                // ---------------- SOCKET EMIT TO DRIVERS ----------------
                 freeDrivers.forEach(driver => {
                     if (global.onlineUsers?.[driver.id]) {
                         onlineUsers[driver.id].forEach(sockId => {
@@ -641,7 +698,7 @@ module.exports = {
                     }
                 });
 
-                // ---------------- NOTIFICATION PUSH ----------------
+                // ---------------- NOTIFICATION PUSH TO DRIVERS ----------------
                 for (const driver of freeDrivers) {
                     if (!driver.id) continue;
                     const driverToken = await db.users.findOne({
@@ -658,18 +715,23 @@ module.exports = {
                             "Nouvelle demande de course disponible"
                         );
 
-                        helper.sendNotification_android(driverToken.deviceToken, { message: msg, type: 1, senderId: userId.toString() });
+                        helper.sendNotification_android(driverToken.deviceToken, {
+                            message: msg,
+                            type: 1,
+                            senderId: userId.toString(),
+                            bookingId: newBooking.id
+                        });
                     }
                 }
 
-                // ---------------- SCHEDULER FOR ROLE 3 (1 MINUTE TIMER) ----------------
-
+                // ---------------- SCHEDULER FOR 3 MINUTE TIMER ----------------
                 setTimeout(async () => {
                     try {
                         const booking = await db.bookings.findOne({
                             where: { id: newBooking.id },
                             raw: true
                         });
+
                         if (!booking || booking.driverId) return;
 
                         const acceptedRequest = await db.rideRequest.findOne({
@@ -680,9 +742,10 @@ module.exports = {
                         });
 
                         if (!acceptedRequest) {
+                            // Update booking status
                             await db.bookings.update(
                                 {
-                                    status: '6',
+                                    status: '6', // Expired/No driver found
                                     request: '2'
                                 },
                                 {
@@ -694,8 +757,9 @@ module.exports = {
                                 }
                             );
 
+                            // Update ride requests
                             await db.rideRequest.update(
-                                { status: 6 },   // expired
+                                { status: 6 }, // expired
                                 {
                                     where: {
                                         bookingId: newBooking.id,
@@ -703,11 +767,23 @@ module.exports = {
                                     }
                                 }
                             );
+
+                            // ---------------- SOCKET EMIT TO USER ONLY ----------------
+                            if (global.onlineUsers?.[userId]) {
+                                onlineUsers[userId].forEach(sockId => {
+                                    io.to(sockId).emit("rideStatusUpdate", {
+                                        bookingId: newBooking.id,
+                                        orderId: newBooking.orderId,
+                                        status: '6',
+                                        message: "No driver accepted your request"
+                                    });
+                                });
+                            }
                         }
                     } catch (err) {
                         console.error("Scheduler failed:", err);
                     }
-                }, 90000); // 1.5 minutes
+                }, 60000); // 3 minutes
 
                 // ---------------- RESPONSE ----------------
                 return helper.success(res,
@@ -727,12 +803,6 @@ module.exports = {
                         callerPhone,
                         callerName,
                         callerCountryCode,
-                        // Add scheduler info for role 3
-                        ...(userStatus.role === '3' && {
-                            schedulerInfo: languageType === 1 ? "سيتم تحديث حالة الرحلة تلقائياً بعد دقيقة إذا لم يقبل أي سائق" :
-                                languageType === 2 ? "Le statut de la course sera automatiquement mis à jour après 1 minute si aucun chauffeur n'accepte" :
-                                    "Ride status will be auto-updated after 1 minute if no driver accepts"
-                        })
                     }
                 );
 
@@ -746,7 +816,6 @@ module.exports = {
             }
         };
     },
-
 
     updateDropLocationAndPrice: (io) => {
         return async (req, res) => {
