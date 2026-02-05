@@ -259,6 +259,8 @@ const ScreenShotList = () => {
           //   addAmount
           // ).toFixed(2)} added to driver's balance`
         );
+
+        
       } else {
         toast.error(response.data.message || "Failed to verify transaction");
       }
