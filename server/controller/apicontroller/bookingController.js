@@ -2030,20 +2030,70 @@ module.exports = {
         };
     },
 
+    // driverWaletRecharge: async (req, res) => {
+    //     try {
+    //         const languageType = Number(req.headers.languagetype); // 1 = Arabic, 2 = French, default = English
+
+    //         const data = await db.transferscreenshot.create({
+    //             driverId: req.user.id,
+    //             amount:req.body.amount,
+    //             image: req.body.image
+    //         });
+
+    //         let successMessage = "Driver Wallet Recharge created successfully";
+    //         if (languageType === 1) successMessage = "تم إنشاء إعادة شحن محفظة السائق بنجاح";
+    //         else if (languageType === 2) successMessage = "Recharge du portefeuille du conducteur créée avec succès";
+
+    //         return helper.success(res, successMessage, data);
+
+    //     } catch (error) {
+    //         console.error(error);
+
+    //         let errorMessage = "Something went wrong";
+    //         if (languageType === 1) errorMessage = "حدث خطأ ما";
+    //         else if (languageType === 2) errorMessage = "Une erreur est survenue";
+
+    //         return helper.failure(res, errorMessage);
+    //     }
+    // },
+
     driverWaletRecharge: async (req, res) => {
         try {
-            const languageType = Number(req.headers.languagetype); // 1 = Arabic, 2 = French, default = English
+            const languageType = Number(req.headers.languagetype) || 0;
+            const amount = Number(req.body.amount);
+
+            if (!amount || amount <= 0) {
+                return helper.failure(res, "Invalid amount");
+            }
 
             const data = await db.transferscreenshot.create({
                 driverId: req.user.id,
-                image: req.body.image
+                amount: amount,
             });
+
+            const driver = await db.users.findOne({
+                where: { id: req.user.id }
+            });
+
+            if (!driver) {
+                return helper.failure(res, "Driver not found");
+            }
+
+            const newTotal = Number(driver.totalAmount || 0) + amount;
+
+            await db.users.update(
+                { totalAmount: newTotal },
+                { where: { id: req.user.id } }
+            );
 
             let successMessage = "Driver Wallet Recharge created successfully";
             if (languageType === 1) successMessage = "تم إنشاء إعادة شحن محفظة السائق بنجاح";
             else if (languageType === 2) successMessage = "Recharge du portefeuille du conducteur créée avec succès";
 
-            return helper.success(res, successMessage, data);
+            return helper.success(res, successMessage, {
+                recharge: data,
+                totalAmount: newTotal
+            });
 
         } catch (error) {
             console.error(error);
@@ -2055,6 +2105,7 @@ module.exports = {
             return helper.failure(res, errorMessage);
         }
     },
+
 
     Notificationlist: async (req, res) => {
         try {
