@@ -329,7 +329,7 @@ const ScreenShotList = () => {
           <div className="page-content">
             <div className="container-fluid">
               <div className="title-box mb-3 pb-1">
-                <h4 className="mb-0 page-title">Transaction Proof List</h4>
+                <h4 className="mb-0 page-title">Driver Wallet Recharge List</h4>
                 <nav aria-label="breadcrumb" className="mt-1">
                   <ol className="breadcrumb mb-0">
                     <li className="breadcrumb-item">
@@ -581,7 +581,7 @@ const ScreenShotList = () => {
                                 colSpan="7"
                                 style={{ textAlign: "center", padding: "20px" }}
                               >
-                                No Transaction Proof found
+                                No Wallet Recharge found
                               </td>
                             </tr>
                           )}
@@ -618,7 +618,7 @@ const ScreenShotList = () => {
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">Verify Transaction</h5>
+                <h5 className="modal-title">Verify Wallet Recharge</h5>
                 <button
                   type="button"
                   className="btn-close"
@@ -726,7 +726,7 @@ const ScreenShotList = () => {
                 className="offcanvas-title mb-0 me-3 fw-semibold"
                 id="offcanvasRightLabel"
               >
-                Transaction Proof Details
+                Wallet Recharge Details
               </h5>
             </div>
             <button
