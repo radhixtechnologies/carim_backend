@@ -707,7 +707,7 @@ module.exports = function (io) {
           otpVerified = false
         ) => {
 
-          // ✅ USER DB NOTIFICATION ONLY
+          //  USER DB NOTIFICATION ONLY
           await db.notifications.create({
             sender_id: driverId,
             receiver_id: user.id,
@@ -759,7 +759,7 @@ module.exports = function (io) {
               "1"
             );
 
-            // ✅ PUSH → USER ONLY
+            //  PUSH → USER ONLY
             if (user.deviceToken) {
               helper.sendNotification_android(user.deviceToken, {
                 message: getUserMsg(
