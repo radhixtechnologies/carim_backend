@@ -337,8 +337,6 @@ module.exports = function (io) {
 
 
 
-
-
     // socket.on("rideStatusUpdate", async (data) => {
     //   try {
     //     const { bookingId, status, otp, driverId } = data;
@@ -916,8 +914,6 @@ module.exports = function (io) {
 
 
 
-
-
     socket.on("bookingHistory", async (data) => {
       try {
         const { userId, status, page = 1, limit = 10, languagetype } = data;
@@ -1111,8 +1107,6 @@ module.exports = function (io) {
       }
     });
 
-
-
     socket.on("onlineStatusUpdate", async (data) => {
       try {
         const { userId, status } = data;
@@ -1184,7 +1178,6 @@ module.exports = function (io) {
         console.error("Error updating read status:", error);
       }
     });
-
 
     socket.on("user_constant_list", async (get_data) => {
       try {
@@ -1324,8 +1317,6 @@ module.exports = function (io) {
       }
     });
 
-
-
     socket.on("send_message", async (get_data) => {
       try {
         /* -------------------- BOOKING CHECK -------------------- */
@@ -1461,7 +1452,6 @@ module.exports = function (io) {
         console.error(error);
       }
     });
-
 
     socket.on("get_message_list", async (get_data) => {
       try {

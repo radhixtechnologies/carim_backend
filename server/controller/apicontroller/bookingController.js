@@ -2110,7 +2110,36 @@ module.exports = {
             console.log("languageTypeChange error =>", error);
             return helper.error(res, "Something went wrong");
         }
+    },
+
+    driverWaletBalance: async (req, res) => {
+        try {
+            const userId = req.user.id;
+            const driver = await db.users.findOne({
+                where: {
+                    id: userId,
+                    role: "2"
+                },
+                attributes: ['id', 'firstName', 'lastName', 'totalAmount']
+            });
+            if (!driver) {
+                return helper.failure(res, "Driver not found");
+            }
+            return helper.success(
+                res, "Driver wallet balance",
+                {
+                    driverId: driver.id,
+                    firstName: driver.firstName,
+                    lastName: driver.lastName,
+                    walletBalance: parseFloat(driver.totalAmount)
+                }
+            );
+        } catch (error) {
+            console.log(error, "error");
+            return helper.failure(res, "Something went wrong");
+        }
     }
+
 
 
 

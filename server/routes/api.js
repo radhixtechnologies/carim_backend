@@ -63,6 +63,7 @@ router.post('/testLocation', authController.testLocation);
 router.get('/getLocations', authController.getLocations);
 router.post('/languageTypeChange', bookingController.languageTypeChange);
 
+router.get('/driverWaletBalance', bookingController.driverWaletBalance);
 
 
 return router
