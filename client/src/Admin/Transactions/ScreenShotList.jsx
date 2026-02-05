@@ -86,7 +86,7 @@ const ScreenShotList = () => {
     const formattedData = allData.map((transaction, index) => ({
       "Sr No.": index + 1,
       "Transaction ID": transaction.id || "",
-      "Driver Name": transaction.screenshotdriver?.firstName|| "",
+      "Driver Name": transaction.screenshotdriver?.firstName || "",
       "Driver Email": transaction.screenshotdriver?.email || "",
       "Driver Balance ($)": transaction.screenshotdriver?.totalAmount || "0",
       "Verification Status": getApprovalLabel(transaction.status),
@@ -186,7 +186,7 @@ const ScreenShotList = () => {
         Swal.fire(
           "Error!",
           error.response?.data?.message ||
-            "Error deleting Transaction screen Shot.",
+          "Error deleting Transaction screen Shot.",
           "error"
         );
       }
@@ -229,15 +229,15 @@ const ScreenShotList = () => {
       return;
     }
     setPendingVerification(transaction);
-    setAddAmount(transaction.addedAmount || "");
+    // setAddAmount(transaction.addedAmount || "");
     setShowVerifyPopup(true);
   };
 
   const handleVerifySubmit = async () => {
-    if (!addAmount || isNaN(addAmount) || parseFloat(addAmount) <= 0) {
-      toast.error("Please enter a valid amount to add");
-      return;
-    }
+    // if (!addAmount || isNaN(addAmount) || parseFloat(addAmount) <= 0) {
+    //   toast.error("Please enter a valid amount to add");
+    //   return;
+    // }
 
     setIsProcessing(true);
 
@@ -254,9 +254,10 @@ const ScreenShotList = () => {
         setPendingVerification(null);
         setAddAmount("");
         toast.success(
-          `Transaction verified successfully and $${parseFloat(
-            addAmount
-          ).toFixed(2)} added to driver's balance`
+          `Transaction verified successfully `
+          // and $${parseFloat(
+          //   addAmount
+          // ).toFixed(2)} added to driver's balance`
         );
       } else {
         toast.error(response.data.message || "Failed to verify transaction");
@@ -390,9 +391,8 @@ const ScreenShotList = () => {
                   <div className="d-flex justify-content-end mb-3">
                     <CSVLink
                       data={exportData}
-                      filename={`transaction-screenshots-${
-                        new Date().toISOString().split("T")[0]
-                      }.csv`}
+                      filename={`transaction-screenshots-${new Date().toISOString().split("T")[0]
+                        }.csv`}
                       className="btn btn-success me-2"
                       onClick={handleCSVExport}
                     >
@@ -414,10 +414,10 @@ const ScreenShotList = () => {
                         <thead>
                           <tr>
                             <th>Sr no.</th>
-                            <th>Image</th>
+                            {/* <th>Image</th> */}
                             <th>Driver Name</th>
                             {/* <th>Driver Email</th> */}
-                            <th>Driver Balance($)</th>
+                            <th>Driver Wallet Balance($)</th>
                             <th>Status</th>
                             <th className="text-end">Action</th>
                           </tr>
@@ -430,7 +430,7 @@ const ScreenShotList = () => {
                                   <td>
                                     {(currentPage - 1) * limit + index + 1}
                                   </td>
-                                  <td>
+                                  {/* <td>
                                     {transaction.image ? (
                                       <img
                                         src={`${BASE_URL}/${transaction.image}`}
@@ -445,17 +445,18 @@ const ScreenShotList = () => {
                                     ) : (
                                       "No Image"
                                     )}
-                                  </td>
+                                  </td> */}
                                   <td>
                                     {transaction.screenshotdriver?.firstName || ""}
                                   </td>
-                                   {/* <td>
+                                  {/* <td>
                                     {transaction.screenshotdriver?.email || ""}
                                   </td> */}
                                   <td>
                                     {formatCurrency(
-                                      transaction.screenshotdriver
-                                        ?.totalAmount || 0
+                                      // transaction.screenshotdriver
+                                      //   ?.totalAmount || 0
+                                      transaction?.amount || 0
                                     )}
                                   </td>
 
@@ -630,19 +631,19 @@ const ScreenShotList = () => {
               <div className="modal-body">
                 <div className="mb-3">
                   <label className="form-label fw-semibold">
-                    Current Driver Balance:
+                    Current Driver Wallet  Balance:
                   </label>
                   <input
                     type="text"
                     className="form-control"
                     value={formatCurrency(
-                      pendingVerification.screenshotdriver?.totalAmount || 0
+                      pendingVerification?.amount || 0
                     )}
                     disabled
                   />
                 </div>
 
-                <div className="mb-3">
+                {/* <div className="mb-3">
                   <label className="form-label fw-semibold">
                     Amount to Add:
                   </label>
@@ -660,7 +661,7 @@ const ScreenShotList = () => {
                     This amount will be added to the driver's balance upon
                     verification.
                   </div>
-                </div>
+                </div> */}
 
                 <div className="mb-0">
                   <label className="form-label fw-semibold">
@@ -700,7 +701,7 @@ const ScreenShotList = () => {
                       Processing...
                     </>
                   ) : (
-                    "Verify & Add Amount"
+                    "Verify"
                   )}
                 </button>
               </div>
@@ -737,7 +738,7 @@ const ScreenShotList = () => {
         <div className="offcanvas-body">
           {selectedTransaction ? (
             <>
-              <div className="scroll-room mb-3" id="scrollRoom">
+              {/* <div className="scroll-room mb-3" id="scrollRoom">
                 {selectedTransaction.image ? (
                   <a
                     href={`${BASE_URL}/${selectedTransaction.image}`}
@@ -763,7 +764,7 @@ const ScreenShotList = () => {
                     <span className="text-muted">No Image Available</span>
                   </div>
                 )}
-              </div>
+              </div> */}
               <table
                 className="table table-borderless"
                 style={{ marginLeft: "-8px" }}
@@ -773,7 +774,7 @@ const ScreenShotList = () => {
                     <td>Driver Name:</td>
                     <td className="text-end text-black fw-medium">
                       {selectedTransaction.screenshotdriver?.firstName || ""}
-                       {selectedTransaction.screenshotdriver?.lastName || ""}
+                      {selectedTransaction.screenshotdriver?.lastName || ""}
                     </td>
                   </tr>
                   {/* <tr>
@@ -787,6 +788,15 @@ const ScreenShotList = () => {
                     <td className="text-end text-black fw-medium">
                       {formatCurrency(
                         selectedTransaction.screenshotdriver?.totalAmount || 0
+                      )}
+                    </td>
+                  </tr>
+
+                  <tr>
+                    <td>Driver Wallet Balance:</td>
+                    <td className="text-end text-black fw-medium">
+                      {formatCurrency(
+                        selectedTransaction?.amount || 0
                       )}
                     </td>
                   </tr>
