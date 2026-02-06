@@ -2110,15 +2110,13 @@ module.exports = {
     Notificationlist: async (req, res) => {
         try {
             const notifications = await db.notifications.findAll({
-                where: {
-                    receiver_id: req.user.id,
-                    is_read: 0
-                },
+
+
                 attributes: {
                     include: [
                         [
                             db.sequelize.literal(
-                                `(SELECT name FROM users WHERE users.id = notifications.sender_id)`
+                                `(SELECT firstName FROM users WHERE users.id = notifications.sender_id)`
                             ),
                             'senderName'
                         ],
@@ -2128,23 +2126,22 @@ module.exports = {
                             ),
                             'senderImage'
                         ]
-                    ]
+                    ],
+
+                },
+                where: {
+                    receiver_id: req.user.id,
+                    is_read: 0
                 },
                 order: [['id', 'DESC']]
             });
-
-            return helper.success(
-                res,
-                "Get All Notifications Successfully",
-                notifications
-            );
-
+            return helper.success(res, "Get All Notifications Successfully", notifications);
         } catch (error) {
             console.error("Error fetching notifications:", error);
-            return helper.failed(res, "Something went wrong");
-        }
-    },
 
+        }
+
+    },
 
     notificationClear: async (req, res) => {
         try {
