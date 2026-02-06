@@ -2110,11 +2110,15 @@ module.exports = {
     Notificationlist: async (req, res) => {
         try {
             const notifications = await db.notifications.findAll({
+                where: {
+                    receiver_id: req.user.id,
+                    is_read: 0
+                },
                 attributes: {
                     include: [
                         [
                             db.sequelize.literal(
-                                `(SELECT firstName FROM users WHERE users.id = notifications.sender_id)`
+                                `(SELECT name FROM users WHERE users.id = notifications.sender_id)`
                             ),
                             'senderName'
                         ],
@@ -2124,19 +2128,45 @@ module.exports = {
                             ),
                             'senderImage'
                         ]
-                    ],
-
+                    ]
                 },
-                where: { receiver_id: req.user.id },
                 order: [['id', 'DESC']]
             });
-            return helper.success(res, "Get All Notifications Successfully", notifications);
+
+            return helper.success(
+                res,
+                "Get All Notifications Successfully",
+                notifications
+            );
+
         } catch (error) {
             console.error("Error fetching notifications:", error);
-
+            return helper.failed(res, "Something went wrong");
         }
-
     },
+
+
+    notificationClear: async (req, res) => {
+        try {
+            const userId = req.user.id;
+
+            const deletedCount = await db.notifications.destroy({
+                where: {
+                    receiver_id: userId
+                }
+            });
+            return helper.success(
+                res,
+                "Notifications cleared successfully",
+                { deletedCount }
+            );
+
+        } catch (error) {
+            console.log("notificationClear error:", error);
+            return helper.failed(res, "Something went wrong");
+        }
+    },
+
 
     languageTypeChange: async (req, res) => {
         try {
