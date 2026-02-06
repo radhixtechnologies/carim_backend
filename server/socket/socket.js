@@ -1316,6 +1316,141 @@ module.exports = function (io) {
       }
     });
 
+    // socket.on("send_message", async (get_data) => {
+    //   try {
+    //     /* -------------------- BOOKING CHECK -------------------- */
+    //     if (get_data.bookingId) {
+    //       const bookingExist = await db.bookings.findOne({
+    //         where: { id: get_data.bookingId },
+    //       });
+
+    //       if (!bookingExist) {
+    //         return socket.emit("send_message", {
+    //           success: false,
+    //           message: "Invalid bookingId - Booking not found!",
+    //         });
+    //       }
+    //     }
+
+    //     /* ------------------ FIND / CREATE CHAT CONSTANT ------------------ */
+    //     let findConstant = await db.chat_constant.findOne({
+    //       where: {
+    //         [Op.or]: [
+    //           { sender_id: get_data.sender_id, reciever_id: get_data.reciever_id },
+    //           { sender_id: get_data.reciever_id, reciever_id: get_data.sender_id },
+    //         ],
+    //         ...(get_data.bookingId && { bookingId: get_data.bookingId }),
+    //       },
+    //       raw: true,
+    //     });
+
+    //     let chatConstantId;
+
+    //     if (!findConstant) {
+    //       let createConstant = await db.chat_constant.create({
+    //         sender_id: get_data.sender_id,
+    //         reciever_id: get_data.reciever_id,
+    //         bookingId: get_data.bookingId || null,
+    //       });
+    //       chatConstantId = createConstant.id;
+    //     } else {
+    //       chatConstantId = findConstant.id;
+    //     }
+
+    //     /* ---------------------- CREATE MESSAGE ---------------------- */
+    //     let createMessage = await db.message.create({
+    //       sender_id: get_data.sender_id,
+    //       reciever_id: get_data.reciever_id,
+    //       message: get_data.message,
+    //       msgType: get_data.msgType,
+    //       chatConstant_id: chatConstantId,
+    //       bookingId: get_data.bookingId || null,
+    //     });
+
+    //     await db.chat_constant.update(
+    //       {
+    //         lastMessage_id: createMessage.id,
+    //         deletedId: 0,
+    //       },
+    //       { where: { id: chatConstantId } }
+    //     );
+
+    //     /* -------------------- FETCH FULL MESSAGE DATA -------------------- */
+    //     var getMsgData = await db.message.findOne({
+    //       attributes: {
+    //         include: [
+    //           [
+    //             Sequelize.literal(
+    //               "(SELECT CONCAT(firstName,lastName) FROM users WHERE users.id  = message.sender_id)"
+    //             ),
+    //             "SenderName",
+    //           ],
+    //           [
+    //             Sequelize.literal(
+    //               "(SELECT image FROM users WHERE users.id = message.sender_id)"
+    //             ),
+    //             "Senderimage",
+    //           ],
+    //           [
+    //             Sequelize.literal(
+    //               "(SELECT CONCAT(firstName,lastName) FROM users WHERE users.id = message.reciever_id)"
+    //             ),
+    //             "ReceiverName",
+    //           ],
+    //           [
+    //             Sequelize.literal(
+    //               "(SELECT image FROM users WHERE users.id = message.reciever_id)"
+    //             ),
+    //             "Receiverimage",
+    //           ],
+    //         ],
+    //       },
+    //       where: { id: createMessage.id },
+    //       raw: true,
+    //     });
+
+    //     /* ---------------------- FIND RECEIVER ---------------------- */
+    //     let socketUser = await db.users.findOne({
+    //       where: { id: get_data.reciever_id },
+    //       raw: true,
+    //     });
+
+    //     //  EMIT SOCKET TO RECEIVER 
+
+    //     if (socketUser) {
+    //       io.to(socketUser.socketId).emit("user_constant_list", null);
+    //       io.to(socketUser.socketId).emit("send_message", getMsgData);
+    //     }
+
+    //     // Your same echo back to sender
+    //     socket.emit("send_message", getMsgData);
+
+    //     //  PUSH NOTIFICATION 
+
+    //     if (socketUser && socketUser.deviceToken) {
+    //       const payload = {
+    //         to: socketUser.deviceToken,
+    //         notification: {
+    //           title: getMsgData.SenderName || "New Message",
+    //           body: get_data.message || "You received a new message",
+    //           sound: "default",
+    //         },
+    //         data: {
+    //           type: 3,
+    //           chatConstant_id: chatConstantId.toString(),
+    //           sender_id: get_data.sender_id.toString(),
+    //           receiver_id: get_data.reciever_id.toString(),
+    //           bookingId: (get_data.bookingId || "").toString(),
+    //         },
+    //       };
+
+    //       helper.sendNotification_android(payload); // your FCM function
+    //     }
+
+    //   } catch (error) {
+    //     console.error(error);
+    //   }
+    // });
     socket.on("send_message", async (get_data) => {
       try {
         /* -------------------- BOOKING CHECK -------------------- */
@@ -1415,42 +1550,69 @@ module.exports = function (io) {
           raw: true,
         });
 
-        //  EMIT SOCKET TO RECEIVER 
-
-        if (socketUser) {
-          io.to(socketUser.socket_id).emit("user_constant_list", null);
+        // EMIT SOCKET TO RECEIVER 
+        if (socketUser && socketUser.socketId) {
+          io.to(socketUser.socketId).emit("user_constant_list", null);
           io.to(socketUser.socketId).emit("send_message", getMsgData);
         }
 
-        // Your same echo back to sender
+        // Echo back to sender
         socket.emit("send_message", getMsgData);
 
-        //  PUSH NOTIFICATION 
-
+        // PUSH NOTIFICATION - CORRECTED
         if (socketUser && socketUser.deviceToken) {
-          const payload = {
-            to: socketUser.deviceToken,
-            notification: {
-              title: getMsgData.SenderName || "New Message",
-              body: get_data.message || "You received a new message",
-              sound: "default",
-            },
-            data: {
-              type: 3,
-              chatConstant_id: chatConstantId.toString(),
-              sender_id: get_data.sender_id.toString(),
-              receiver_id: get_data.reciever_id.toString(),
-              bookingId: (get_data.bookingId || "").toString(),
-            },
+          // Get sender user details for notification
+          const senderUser = await db.users.findOne({
+            where: { id: get_data.sender_id },
+            attributes: ['firstName', 'lastName', 'image', 'role'],
+            raw: true
+          });
+
+          // Get receiver user role
+          const receiverUser = await db.users.findOne({
+            where: { id: get_data.reciever_id },
+            attributes: ['role'],
+            raw: true
+          });
+
+          const senderName = senderUser ?
+            `${senderUser.firstName || ''} ${senderUser.lastName || ''}`.trim() :
+            "Someone";
+
+          // Prepare notification data in the format your function expects
+          const notificationData = {
+            title: "New Message", // This will appear as notification title
+            message: get_data.message || "You have a new message", // This will appear as notification body
+            type: "3", // Chat message type
+            senderId: get_data.sender_id.toString(),
+            bookingId: (get_data.bookingId || "0").toString(),
+            targetRole: receiverUser?.role || "1", // Add targetRole which is required by your function
+            senderName: senderName,
+            senderImage: senderUser?.image || "",
+            // Additional data that might be useful
+            chatConstant_id: chatConstantId.toString(),
+            receiver_id: get_data.reciever_id.toString()
           };
 
-          helper.sendNotification_android(payload); // your FCM function
+          console.log("Sending push notification with:");
+          console.log("Token:", socketUser.deviceToken);
+          console.log("Notification data:", notificationData);
+
+          // Call the function with correct parameters: (token, noti_data)
+          helper.sendNotification_android(socketUser.deviceToken, notificationData)
+            .then(result => {
+              console.log("Push notification sent successfully");
+            })
+            .catch(error => {
+              console.error("Failed to send push notification:", error);
+            });
         }
 
       } catch (error) {
-        console.error(error);
+        console.error("Error in send_message socket:", error);
       }
     });
+
 
     socket.on("get_message_list", async (get_data) => {
       try {
