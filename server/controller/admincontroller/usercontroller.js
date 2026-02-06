@@ -344,53 +344,74 @@ module.exports = {
         }
     },
 
+
     // approveDriver: async (req, res) => {
     //     try {
-    //         const { id, approve } = req.body;
+    //         const getPushMessage = (lang, en, ar, fr) => {
+    //             if (lang === 1) return ar;
+    //             if (lang === 2) return fr;
+    //             return en;
+    //         };
 
-    //         const driver = await db.users.findOne({ where: { id, role: '2' } });
+    //         const { id, approve } = req.body;
+    //         const driver = await db.users.findOne({
+    //             where: { id, role: '2' }
+    //         });
     //         if (!driver) {
     //             return helper.error(res, "Driver not found");
     //         }
-
     //         if (!['0', '1', '2'].includes(approve)) {
     //             return helper.error(res, "Invalid approval status");
     //         }
 
     //         await db.users.update({ approve }, { where: { id } });
 
-    //         const updatedDriver = await db.users.findOne({ where: { id } });
+    //         const updatedDriver = await db.users.findOne({
+    //             where: { id },
+    //             attributes: ['id', 'approve', 'deviceToken', 'languagee_type']
+    //         });
 
     //         // ===================== PUSH NOTIFICATION =====================
     //         if (updatedDriver.deviceToken) {
-
     //             let pushMessage = "";
-    //             let pushType = "driver_approval";
+    //             const pushType = "driver_approval";
+    //             const lang = Number(updatedDriver.languagee_type) || 0;
 
     //             if (approve === '1') {
-    //                 pushMessage = "Your account has been approved. You can now accept rides.";
-    //             } else if (approve === '2') {
-    //                 pushMessage = "Your account has been rejected by the admin.";
+    //                 pushMessage = getPushMessage(
+    //                     lang,
+    //                     "Your account has been approved. You can now accept rides.",
+    //                     "تمت الموافقة على حسابك. يمكنك الآن قبول الرحلات.",
+    //                     "Votre compte a été approuvé. Vous pouvez maintenant accepter des courses."
+    //                 );
+    //             }
+    //             else if (approve === '2') {
+    //                 pushMessage = getPushMessage(
+    //                     lang,
+    //                     "Your account has been rejected by the admin.",
+    //                     "تم رفض حسابك من قبل المسؤول.",
+    //                     "Votre compte a été rejeté par l’administrateur."
+    //                 );
     //             }
 
     //             if (pushMessage) {
     //                 helper.sendNotification_android(updatedDriver.deviceToken, {
     //                     message: pushMessage,
-    //                     type: pushType,
+    //                     type: 6,
     //                     senderId: "0",
     //                     sender_name: "Admin",
-    //                     sender_image: "",
+    //                     sender_image: ""
+    //                 });
+
+    //                 await db.notifications.create({
+    //                     sender_id: 1,
+    //                     receiver_id: updatedDriver.id,
+    //                     message: pushMessage,
+    //                     is_read: 0,
     //                     type: 6,
+    //                     status: 1
     //                 });
     //             }
-    //             await db.notifications.create({
-    //                 sender_id: 1,
-    //                 receiver_id: updatedDriver.id,
-    //                 message: pushMessage,
-    //                 is_read: 0,
-    //                 type: pushType === "driver_approval" ? 1 : 0,
-    //                 status: 1
-    //             });
     //         }
 
     //         // ===================== SAME RESPONSE — NO CHANGE =====================
@@ -427,13 +448,12 @@ module.exports = {
 
             const updatedDriver = await db.users.findOne({
                 where: { id },
-                attributes: ['id', 'approve', 'deviceToken', 'languagee_type']
+                attributes: ['id', 'approve', 'deviceToken', 'languagee_type', 'role']
             });
 
             // ===================== PUSH NOTIFICATION =====================
             if (updatedDriver.deviceToken) {
                 let pushMessage = "";
-                const pushType = "driver_approval";
                 const lang = Number(updatedDriver.languagee_type) || 0;
 
                 if (approve === '1') {
@@ -449,17 +469,20 @@ module.exports = {
                         lang,
                         "Your account has been rejected by the admin.",
                         "تم رفض حسابك من قبل المسؤول.",
-                        "Votre compte a été rejeté par l’administrateur."
+                        "Votre compte a été rejeté par l'administrateur."
                     );
                 }
 
                 if (pushMessage) {
+                    // FIXED: Correct property names (camelCase instead of underscores)
                     helper.sendNotification_android(updatedDriver.deviceToken, {
-                        message: pushMessage,
-                        type: 6,
+                        title: "Account Status Update", // This will appear in notification
+                        message: pushMessage, // This will appear in notification body
+                        type: "6",
                         senderId: "0",
-                        sender_name: "Admin",
-                        sender_image: ""
+                        targetRole: "2", // This ensures driver sound is used
+                        senderName: "Admin", // Fixed: camelCase
+                        senderImage: "" // Fixed: camelCase
                     });
 
                     await db.notifications.create({
@@ -484,7 +507,6 @@ module.exports = {
             return helper.error(res, error.message);
         }
     },
-
 
     documentVerified: async (req, res) => {
         try {
