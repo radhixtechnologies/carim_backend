@@ -834,7 +834,7 @@ module.exports = function (io) {
     //         const currentDriverBalance = parseFloat(freshDriver.totalAmount) || 0;
     //         const newDriverBalance = currentDriverBalance + driverEarnings;
 
-            
+
     //         await db.users.update({
     //           totalAmount: newDriverBalance.toFixed(2).toString()
     //         }, {
@@ -1671,6 +1671,75 @@ module.exports = function (io) {
       }
     });
 
+
+    socket.on("notification_count", async (data) => {
+      try {
+        const userId = data.userId;
+
+        // Get unread count
+        const count = await db.notifications.count({
+          where: {
+            receiver_id: userId,
+            is_read: 0
+          }
+        });
+
+        //  Get notification list
+        const list = await db.notifications.findAll({
+          where: {
+            receiver_id: userId,
+            is_read: 0,
+
+          },
+          order: [["id", "DESC"]],
+        });
+
+        //  SEND RESPONSE
+        socket.emit("notification_count", {
+          userId: userId,
+          notification_count: count,
+          notification_list: list
+        });
+
+      } catch (error) {
+        console.log("Notification Error:", error);
+      }
+    });
+
+
+    socket.on("notification_read_all", async (data) => {
+      try {
+        const userId = data.userId;
+
+        // Mark all unread notifications as read
+        await db.notifications.update(
+          { is_read: 1 },   // 1 = read
+          {
+            where: {
+              receiver_id: userId,
+              is_read: 0     // only unread ones
+            }
+          }
+        );
+
+        const count = await db.notifications.count({
+          where: {
+            receiver_id: userId,
+            is_read: 0
+          }
+        });
+
+        // Emit updated count + success message
+        socket.emit("notification_read_all", {
+          message: "All notifications marked as read",
+          userId: userId,
+          unread_count: count
+        });
+
+      } catch (err) {
+        console.log("Read All Notification Error:", err);
+      }
+    });
 
 
 
