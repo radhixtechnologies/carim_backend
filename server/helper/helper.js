@@ -70,8 +70,8 @@ module.exports = {
     // },
 
     sendNotification_android: async function (token, noti_data) {
-        if (!token || token.trim() === "") {
-            console.warn("No device token provided, skipping push notification.");
+        if (!token || typeof token !== "string" || token.trim() === "") {
+            console.warn("Invalid device token, skipping push:", token);
             return false;
         }
 
@@ -169,7 +169,7 @@ module.exports = {
             body: body
         });
     },
-     error8: function (res, message = "", body = {}) {
+    error8: function (res, message = "", body = {}) {
         return res.status(408).json({
             success: false,
             status: 408,
