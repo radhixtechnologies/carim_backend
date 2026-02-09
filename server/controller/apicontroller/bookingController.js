@@ -548,6 +548,7 @@ module.exports = {
             }
         };
     },
+
     // bookRide1: (io) => {
     //     return async (req, res) => {
     //         let languageType = Number(req.headers.languagetype) || 0;
@@ -578,21 +579,21 @@ module.exports = {
     //             if (userStatus.status === "0") {
     //                 return helper.error2(res,
     //                     languageType === 1 ? "تم تعطيل حسابك من قبل المسؤول." :
-    //                         languageType === 2 ? "Votre compte a été désactivé par l’administrateur." :
+    //                         languageType === 2 ? "Votre compte a été désactivé par l'administrateur." :
     //                             "Your account has been deactivated by admin."
     //                 );
     //             }
     //             if (userStatus.block === "1") {
     //                 return helper.error1(res,
     //                     languageType === 1 ? "تم حظر حسابك من قبل المسؤول." :
-    //                         languageType === 2 ? "Votre compte a été bloqué par l’administrateur." :
+    //                         languageType === 2 ? "Votre compte a été bloqué par l'administrateur." :
     //                             "Your account has been blocked by admin."
     //                 );
     //             }
     //             if (userStatus.suspend === "1") {
     //                 return helper.error3(res,
     //                     languageType === 1 ? "تم تعليق حسابك من قبل المسؤول." :
-    //                         languageType === 2 ? "Votre compte a été suspendu par l’administrateur." :
+    //                         languageType === 2 ? "Votre compte a été suspendu par l'administrateur." :
     //                             "Your account has been suspended by admin."
     //                 );
     //             }
@@ -629,9 +630,10 @@ module.exports = {
     //             const pickupLat = parseFloat(pickupLatitude);
     //             const pickupLng = parseFloat(pickupLongitude);
 
+    //             // Distance calculation function (Haversine formula)
     //             const toRad = v => v * Math.PI / 180;
     //             const calculateDistance = (a, b, c, d) => {
-    //                 const R = 6371;
+    //                 const R = 6371; // Earth's radius in kilometers
     //                 const dLat = toRad(c - a);
     //                 const dLon = toRad(d - b);
     //                 const x = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a)) * Math.cos(toRad(c)) * Math.sin(dLon / 2) ** 2;
@@ -675,21 +677,14 @@ module.exports = {
     //                 }
     //             }
 
-    //             // ---------------- GET FREE DRIVERS (WITH WALLET AMOUNT CHECK) ----------------
+    //             // ---------------- GET FREE DRIVERS ----------------
     //             const drivers = await db.users.findAll({
     //                 where: {
     //                     role: '2',
     //                     online: '1',
-    //                     approve: '1',
-    //                     // Only drivers with totalAmount > 5
-    //                     totalAmount: {
-    //                         [Sequelize.Op.or]: [
-    //                             { [Sequelize.Op.gt]: 5 },
-    //                             { [Sequelize.Op.is]: null }
-    //                         ]
-    //                     }
+    //                     approve: '1'
     //                 },
-    //                 attributes: ['id', 'latitude', 'longitude', 'totalAmount'],
+    //                 attributes: ['id', 'latitude', 'longitude'],
     //                 include: [{
     //                     model: db.bookings,
     //                     as: "driverbook",
@@ -701,16 +696,8 @@ module.exports = {
     //                 }]
     //             });
 
-    //             // Filter drivers who are free (no active bookings)
-    //             const freeDrivers = drivers.filter(d => {
-    //                 // Check if driver has active bookings
-    //                 const hasActiveBooking = d.driverbook && d.driverbook.length > 0;
-
-    //                 // Check if totalAmount is <= 5 (should already be filtered by query, but double-check)
-    //                 const hasLowBalance = d.totalAmount !== null && parseFloat(d.totalAmount) <= 5;
-
-    //                 return !hasActiveBooking && !hasLowBalance;
-    //             });
+    //             // Filter drivers who have no active bookings
+    //             const freeDrivers = drivers.filter(d => !d.driverbook || d.driverbook.length === 0);
 
     //             if (!freeDrivers.length) {
     //                 return helper.failure(res,
@@ -719,6 +706,39 @@ module.exports = {
     //                             "No drivers available"
     //                 );
     //             }
+
+    //             // ---------------- FILTER DRIVERS WITHIN 50KM RADIUS ----------------
+    //             const MAX_DISTANCE_KM = 50;
+    //             const nearbyDrivers = [];
+
+    //             for (const driver of freeDrivers) {
+    //                 if (!driver.latitude || !driver.longitude) continue;
+
+    //                 const driverLat = parseFloat(driver.latitude);
+    //                 const driverLng = parseFloat(driver.longitude);
+
+    //                 const distance = calculateDistance(pickupLat, pickupLng, driverLat, driverLng);
+
+    //                 if (distance <= MAX_DISTANCE_KM) {
+    //                     nearbyDrivers.push({
+    //                         id: driver.id,
+    //                         distance: distance,
+    //                         latitude: driver.latitude,
+    //                         longitude: driver.longitude
+    //                     });
+    //                 }
+    //             }
+
+    //             if (!nearbyDrivers.length) {
+    //                 return helper.failure(res,
+    //                     languageType === 1 ? "لا يوجد سائقون متاحون ضمن نطاق ٥٠ كم" :
+    //                         languageType === 2 ? "Aucun chauffeur disponible dans un rayon de 50 km" :
+    //                             "No drivers available within 50km radius"
+    //                 );
+    //             }
+
+    //             // Sort drivers by distance (closest first)
+    //             nearbyDrivers.sort((a, b) => a.distance - b.distance);
 
     //             // ---------------- CREATE BOOKING ----------------
     //             const orderId = Math.floor(100000 + Math.random() * 900000).toString();
@@ -741,16 +761,20 @@ module.exports = {
     //             });
 
     //             // ---------------- CREATE RIDE REQUEST (bulkCreate) ----------------
-    //             const rideRequestData = freeDrivers.map(driver => ({
+    //             const rideRequestData = nearbyDrivers.map(driver => ({
     //                 bookingId: newBooking.id,
     //                 userId,
     //                 driverId: driver.id,
-    //                 status: 0
+    //                 status: 0,
+    //                 driverDistance: driver.distance.toFixed(2) // Store driver's distance from pickup
     //             }));
-    //             if (rideRequestData.length > 0) await db.rideRequest.bulkCreate(rideRequestData);
 
-    //             // ---------------- SOCKET EMIT TO DRIVERS ----------------
-    //             freeDrivers.forEach(driver => {
+    //             if (rideRequestData.length > 0) {
+    //                 await db.rideRequest.bulkCreate(rideRequestData);
+    //             }
+
+    //             // ---------------- SOCKET EMIT TO NEARBY DRIVERS ONLY ----------------
+    //             nearbyDrivers.forEach(driver => {
     //                 if (global.onlineUsers?.[driver.id]) {
     //                     onlineUsers[driver.id].forEach(sockId => {
     //                         io.to(sockId).emit("newRideRequest", {
@@ -768,13 +792,15 @@ module.exports = {
     //                             callerCountryCode,
     //                             callerPhone,
     //                             callerName,
+    //                             driverDistance: driver.distance.toFixed(2), // Send distance info to driver
+    //                             message: `Distance from pickup: ${driver.distance.toFixed(2)} km`
     //                         });
     //                     });
     //                 }
     //             });
 
-    //             // ---------------- NOTIFICATION PUSH TO DRIVERS ----------------
-    //             for (const driver of freeDrivers) {
+    //             // ---------------- NOTIFICATION PUSH TO NEARBY DRIVERS ----------------
+    //             for (const driver of nearbyDrivers) {
     //                 if (!driver.id) continue;
     //                 const driverToken = await db.users.findOne({
     //                     where: { id: driver.id },
@@ -785,17 +811,39 @@ module.exports = {
     //                 if (driverToken?.deviceToken && driverToken.deviceToken.length > 10) {
     //                     const msg = getPushMessage(
     //                         Number(driverToken.languagee_type),
-    //                         "New ride request available",
-    //                         "طلب رحلة جديد متاح",
-    //                         "Nouvelle demande de course disponible"
+    //                         `New ride request available (${driver.distance.toFixed(1)} km away)`,
+    //                         `طلب رحلة جديد متاح (على بعد ${driver.distance.toFixed(1)} كم)`,
+    //                         `Nouvelle demande de course disponible (à ${driver.distance.toFixed(1)} km)`
     //                     );
 
     //                     helper.sendNotification_android(driverToken.deviceToken, {
     //                         message: msg,
     //                         type: 1,
     //                         senderId: userId.toString(),
-    //                         bookingId: newBooking.id
+    //                         bookingId: newBooking.id,
+    //                         distance: driver.distance.toFixed(2)
     //                     });
+
+    //                     await db.notifications.create({
+    //                         sender_id: userId,
+    //                         receiver_id: driver.id,
+    //                         message: msg,
+    //                         type: 1, 
+    //                         status: 0,
+    //                         bookingId: newBooking.id,
+    //                         is_read: 0
+    //                     });
+
+    //                     if (global.onlineUsers?.[driver.id]) {
+    //                         global.onlineUsers[driver.id].forEach(sockId => {
+    //                             io.to(sockId).emit("notification_count", {
+    //                                 type: "ride_request",
+    //                                 message: "New ride request received",
+    //                                 bookingId: newBooking.id,
+    //                                 timestamp: new Date()
+    //                             });
+    //                         });
+    //                     }
     //                 }
     //             }
 
@@ -878,8 +926,8 @@ module.exports = {
     //                     callerPhone,
     //                     callerName,
     //                     callerCountryCode,
-    //                     // Additional info about driver eligibility
-    //                     eligibleDriversCount: freeDrivers.length,
+    //                     nearbyDriversCount: nearbyDrivers.length,
+    //                     maxDistance: MAX_DISTANCE_KM
     //                 }
     //             );
 
@@ -893,8 +941,6 @@ module.exports = {
     //         }
     //     };
     // },
-
-
     updateDropLocationAndPrice: (io) => {
         return async (req, res) => {
             try {
