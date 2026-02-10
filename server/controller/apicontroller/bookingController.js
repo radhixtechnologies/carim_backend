@@ -549,6 +549,7 @@ module.exports = {
     //     };
     // },
 
+
     bookRide: (io) => {
         return async (req, res) => {
             let languageType = Number(req.headers.languagetype) || 0;
@@ -684,7 +685,7 @@ module.exports = {
                         online: '1',
                         approve: '1'
                     },
-                    attributes: ['id', 'latitude', 'longitude'],
+                    attributes: ['id', 'latitude', 'longitude', 'totalAmount'],
                     include: [{
                         model: db.bookings,
                         as: "driverbook",
@@ -696,8 +697,17 @@ module.exports = {
                     }]
                 });
 
-                // Filter drivers who have no active bookings
-                const freeDrivers = drivers.filter(d => !d.driverbook || d.driverbook.length === 0);
+                // Filter drivers who are free (no active bookings) AND totalAmount > 5
+                const freeDrivers = drivers.filter(d => {
+                    // Check if driver has active bookings
+                    const hasActiveBooking = d.driverbook && d.driverbook.length > 0;
+
+                    // Check balance condition: totalAmount must be > 5
+                    // If totalAmount is null or <= 5, reject the driver
+                    const hasValidBalance = d.totalAmount !== null && parseFloat(d.totalAmount) > 5;
+
+                    return !hasActiveBooking && hasValidBalance;
+                });
 
                 if (!freeDrivers.length) {
                     return helper.failure(res,
