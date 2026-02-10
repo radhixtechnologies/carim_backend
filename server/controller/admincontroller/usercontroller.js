@@ -476,13 +476,13 @@ module.exports = {
                 if (pushMessage) {
                     // FIXED: Correct property names (camelCase instead of underscores)
                     helper.sendNotification_android(updatedDriver.deviceToken, {
-                        title: "Account Status Update", // This will appear in notification
-                        message: pushMessage, // This will appear in notification body
+                        title: "Account Status Update",
+                        message: pushMessage,
                         type: "6",
                         senderId: "0",
-                        targetRole: "2", // This ensures driver sound is used
-                        senderName: "Admin", // Fixed: camelCase
-                        senderImage: "" // Fixed: camelCase
+                        targetRole: "2",
+                        senderName: "Admin",
+                        senderImage: ""
                     });
 
                     await db.notifications.create({
@@ -493,6 +493,24 @@ module.exports = {
                         type: 6,
                         status: 1
                     });
+                    const unreadCount = await db.notifications.count({
+                        where: {
+                            receiver_id: updatedDriver.id,
+                            is_read: 0
+                        }
+                    });
+
+                    // 4. Socket emit if driver is online
+                    if (global.onlineUsers && global.onlineUsers[updatedDriver.id]) {
+                        global.onlineUsers[updatedDriver.id].forEach(sockId => {
+                            global.io.to(sockId).emit("notification_count", {
+                                type: "account_status_update",
+                                message: pushMessage,
+                                unreadCount: unreadCount,
+                                userId: updatedDriver.id,
+                            });
+                        });
+                    }
                 }
             }
 
