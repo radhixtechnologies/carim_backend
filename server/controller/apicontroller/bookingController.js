@@ -1131,6 +1131,237 @@ module.exports = {
     },
 
 
+    // driverAccptReject1: (io) => {
+    //     return async (req, res) => {
+    //         let languageType = Number(req.headers.languagetype);
+    //         const getPushMessage = (lang, en, ar, fr) => {
+    //             if (lang === 1) return ar;
+    //             if (lang === 2) return fr;
+    //             return en;
+    //         };
+
+    //         try {
+    //             const driverId = req.user.id;
+    //             const { bookingId, request } = req.body;
+
+    //             if (!bookingId || !request) {
+    //                 let msg = "Booking ID and request value are required.";
+    //                 if (languageType == 1) msg = "مطلوب معرف الحجز وقيمة الطلب.";
+    //                 else if (languageType == 2) msg = "ID de réservation et valeur de la demande requis.";
+    //                 return helper.failure(res, msg);
+    //             }
+
+    //             if (!['1', '2'].includes(request)) {
+    //                 let msg = 'Invalid request value. Must be "1" (accept) or "2" (reject).';
+    //                 if (languageType == 1) msg = 'قيمة الطلب غير صالحة.';
+    //                 else if (languageType == 2) msg = 'Valeur de la demande invalide.';
+    //                 return helper.failure(res, msg);
+    //             }
+
+    //             // ===== DRIVER CHECK =====
+    //             const driver = await db.users.findOne({
+    //                 where: { id: driverId },
+    //                 attributes: [
+    //                     'approve', 'status', 'block', 'suspend',
+    //                     'firstName', 'lastName', 'image',
+    //                     'deviceToken', 'languagee_type'
+    //                 ],
+    //                 raw: true
+    //             });
+
+    //             if (driver.status === "0") {
+    //                 let msg = "Your account has been deactivated by admin.";
+    //                 if (languageType == 1) msg = "تم تعطيل حسابك من قبل المسؤول.";
+    //                 else if (languageType == 2) msg = "Votre compte a été désactivé.";
+    //                 return helper.failure(res, msg);
+    //             }
+
+    //             if (driver.block === "1") {
+    //                 let msg = "Your account has been blocked by admin.";
+    //                 if (languageType == 1) msg = "تم حظر حسابك.";
+    //                 else if (languageType == 2) msg = "Votre compte a été bloqué.";
+    //                 return helper.failure(res, msg);
+    //             }
+
+    //             if (driver.suspend === "1") {
+    //                 let msg = "Your account has been suspended by admin.";
+    //                 if (languageType == 1) msg = "تم تعليق حسابك.";
+    //                 else if (languageType == 2) msg = "Votre compte a été suspendu.";
+    //                 return helper.failure(res, msg);
+    //             }
+
+    //             if (driver.approve !== "1") {
+    //                 let msg = "Your account is not approved by admin yet.";
+    //                 if (languageType == 1) msg = "حسابك غير معتمد.";
+    //                 else if (languageType == 2) msg = "Votre compte n’est pas encore approuvé.";
+    //                 return helper.failure(res, msg);
+    //             }
+
+    //             // ===== ACTIVE RIDE CHECK =====
+    //             const activeRide = await db.bookings.findOne({
+    //                 where: { driverId, status: { [Sequelize.Op.in]: ['0', '1', '2'] } }
+    //             });
+
+    //             if (activeRide) {
+    //                 let msg = "You already have an active ride.";
+    //                 if (languageType == 1) msg = "لديك رحلة نشطة.";
+    //                 else if (languageType == 2) msg = "Vous avez déjà une course active.";
+    //                 return helper.failure(res, msg);
+    //             }
+
+    //             // ================= ACCEPT =================
+    //             if (request === '1') {
+    //                 const [updated] = await db.bookings.update(
+    //                     {
+    //                         driverId,
+    //                         request: '1',
+    //                         status: '0',
+
+    //                     },
+    //                     {
+    //                         where: {
+    //                             id: bookingId,
+    //                             driverId: null,
+    //                             status: '0',
+    //                             request: '0'
+    //                         }
+    //                     }
+    //                 );
+
+    //                 if (!updated) {
+    //                     let msg = "Booking already processed";
+    //                     if (languageType == 1) msg = "تمت معالجة الحجز بالفعل";
+    //                     else if (languageType == 2) msg = "Réservation déjà traitée";
+    //                     return helper.failure(res, msg);
+    //                 }
+
+    //                 // Accept for current driver
+    //                 await db.rideRequest.update(
+    //                     { status: 1 },
+    //                     { where: { bookingId, driverId } }
+    //                 );
+
+    //                 // Reject for all other drivers
+    //                 await db.rideRequest.update(
+    //                     { status: 2 },
+    //                     {
+    //                         where: {
+    //                             bookingId,
+    //                             driverId: { [Sequelize.Op.ne]: driverId }
+    //                         }
+    //                     }
+    //                 );
+
+    //                 // ===== SOCKET: Remove booking for other drivers =====
+    //                 const otherDrivers = await db.rideRequest.findAll({
+    //                     where: {
+    //                         bookingId,
+    //                         driverId: { [Sequelize.Op.ne]: driverId }
+    //                     },
+    //                     include: [{ model: db.users, as: 'user', attributes: ['socketId'] }] // as 'user' must match association
+    //                 });
+
+    //                 otherDrivers.forEach(item => {
+    //                     if (item.user?.socketId) {
+    //                         io.to(item.user.socketId).emit("rideStatusUpdate", {
+    //                             success: true,
+    //                             bookingId,
+    //                             message: "Ride accepted by another driver",
+    //                             status: '6'
+    //                         });
+    //                     }
+    //                 });
+    //             }
+
+    //             // ================= REJECT =================
+    //             if (request === '2') {
+    //                 await db.rideRequest.update(
+    //                     { status: 2 },
+    //                     { where: { bookingId, driverId } }
+    //                 );
+    //             }
+
+    //             // ================= FETCH BOOKING =================
+    //             const booking = await db.bookings.findOne({
+    //                 where: { id: bookingId },
+    //                 include: [{
+    //                     model: db.users,
+    //                     as: 'userbook',
+    //                     attributes: ['id', 'socketId', 'deviceToken', 'languagee_type']
+    //                 }]
+    //             });
+
+    //             const userLang = Number(booking.userbook.languagee_type) || 0;
+
+    //             // ================= USER PUSH =================
+    //             if (booking.userbook?.deviceToken) {
+    //                 let pushMessage =
+    //                     request === "1"
+    //                         ? getPushMessage(
+    //                             userLang,
+    //                             "Driver has accepted your ride request",
+    //                             "قبل السائق طلب رحلتك",
+    //                             "Le chauffeur a accepté votre demande de course"
+    //                         )
+    //                         : getPushMessage(
+    //                             userLang,
+    //                             "Driver has rejected your ride request",
+    //                             "رفض السائق طلبك",
+    //                             "Le chauffeur a rejeté votre demande de course"
+    //                         );
+
+    //                 helper.sendNotification_android(
+    //                     booking.userbook.deviceToken,
+    //                     {
+    //                         message: pushMessage,
+    //                         type: 2,
+    //                         senderId: driverId,
+    //                         bookingId: booking.id,
+    //                         sender_name: driver.firstName + " " + driver.lastName,
+    //                         sender_image: driver.image
+    //                     }
+    //                 );
+    //             }
+
+    //             // ================= SOCKET TO USER =================
+    //             if (booking.userbook?.socketId) {
+    //                 io.to(booking.userbook.socketId).emit("rideStatusUpdate", {
+    //                     success: true,
+    //                     message: 'Driver has accepted your ride request',
+    //                     bookingId: booking.id,
+    //                     driverId,
+    //                     request,
+    //                     status: '0'
+    //                 });
+    //             }
+
+    //             // ===== RESPONSES (UNCHANGED) =====
+    //             let resMsgAccept = "Booking accepted successfully. Driver on the way.";
+    //             let resMsgReject = "Booking rejected successfully";
+
+    //             if (languageType == 1) {
+    //                 resMsgAccept = "تم قبول الحجز بنجاح. السائق في الطريق.";
+    //                 resMsgReject = "تم رفض الحجز بنجاح";
+    //             } else if (languageType == 2) {
+    //                 resMsgAccept = "Réservation acceptée avec succès. Le chauffeur est en route.";
+    //                 resMsgReject = "Réservation rejetée avec succès";
+    //             }
+
+    //             return helper.success(
+    //                 res,
+    //                 request === '1' ? resMsgAccept : resMsgReject,
+    //                 { bookingId, request }
+    //             );
+
+    //         } catch (error) {
+    //             console.error(error);
+    //             let msg = "Something went wrong while processing the booking.";
+    //             if (languageType == 1) msg = "حدث خطأ أثناء معالجة الحجز.";
+    //             else if (languageType == 2) msg = "Une erreur est survenue.";
+    //             return helper.failure(res, msg);
+    //         }
+    //     };
+    // },
     driverAccptReject: (io) => {
         return async (req, res) => {
             let languageType = Number(req.headers.languagetype);
@@ -1209,6 +1440,17 @@ module.exports = {
                     return helper.failure(res, msg);
                 }
 
+                // ===== CHECK IF DRIVER ALREADY ACCEPTED THIS BOOKING =====
+                const checkExistingBooking = await db.bookings.findOne({
+                    where: {
+                        id: bookingId,
+                        driverId: driverId,
+                        request: '1'
+                    }
+                });
+
+                const isDriverAlreadyAccepted = checkExistingBooking ? true : false;
+
                 // ================= ACCEPT =================
                 if (request === '1') {
                     const [updated] = await db.bookings.update(
@@ -1279,6 +1521,22 @@ module.exports = {
                         { status: 2 },
                         { where: { bookingId, driverId } }
                     );
+
+                    // Agar driver ne pehle accept kiya tha, toh booking se driver hatao
+                    if (isDriverAlreadyAccepted) {
+                        await db.bookings.update(
+                            {
+                                driverId: null,
+                                request: '0'
+                            },
+                            {
+                                where: {
+                                    id: bookingId,
+                                    driverId: driverId
+                                }
+                            }
+                        );
+                    }
                 }
 
                 // ================= FETCH BOOKING =================
@@ -1294,22 +1552,32 @@ module.exports = {
                 const userLang = Number(booking.userbook.languagee_type) || 0;
 
                 // ================= USER PUSH =================
-                if (booking.userbook?.deviceToken) {
-                    let pushMessage =
-                        request === "1"
-                            ? getPushMessage(
-                                userLang,
-                                "Driver has accepted your ride request",
-                                "قبل السائق طلب رحلتك",
-                                "Le chauffeur a accepté votre demande de course"
-                            )
-                            : getPushMessage(
-                                userLang,
-                                "Driver has rejected your ride request",
-                                "رفض السائق طلبك",
-                                "Le chauffeur a rejeté votre demande de course"
-                            );
+                let shouldSendPush = false;
+                let pushMessage = "";
 
+                if (request === "1") {
+                    // Accept case
+                    shouldSendPush = true;
+                    pushMessage = getPushMessage(
+                        userLang,
+                        "Driver has accepted your ride request",
+                        "قبل السائق طلب رحلتك",
+                        "Le chauffeur a accepté votre demande de course"
+                    );
+                }
+                else if (request === "2" && isDriverAlreadyAccepted) {
+                    // Reject after accept case
+                    shouldSendPush = true;
+                    pushMessage = getPushMessage(
+                        userLang,
+                        "Driver has cancelled your ride request",
+                        "ألغى السائق طلب رحلتك",
+                        "Le chauffeur a annulé votre demande de course"
+                    );
+                }
+
+                // Send push notification if needed
+                if (shouldSendPush && booking.userbook?.deviceToken) {
                     helper.sendNotification_android(
                         booking.userbook.deviceToken,
                         {
@@ -1321,18 +1589,18 @@ module.exports = {
                             sender_image: driver.image
                         }
                     );
-                }
 
-                // ================= SOCKET TO USER =================
-                if (booking.userbook?.socketId) {
-                    io.to(booking.userbook.socketId).emit("rideStatusUpdate", {
-                        success: true,
-                        message: 'Driver has accepted your ride request',
-                        bookingId: booking.id,
-                        driverId,
-                        request,
-                        status: '0'
-                    });
+                    // ================= SOCKET TO USER =================
+                    if (booking.userbook?.socketId) {
+                        io.to(booking.userbook.socketId).emit("rideStatusUpdate", {
+                            success: true,
+                            message: pushMessage,
+                            bookingId: booking.id,
+                            driverId,
+                            request,
+                            status: '0'
+                        });
+                    }
                 }
 
                 // ===== RESPONSES (UNCHANGED) =====
