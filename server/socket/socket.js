@@ -602,6 +602,8 @@ module.exports = function (io) {
         });
       }
     });
+
+
     // socket.on("rideStatusUpdate", async (data) => {
     //   try {
     //     const { bookingId, status, otp, driverId } = data;

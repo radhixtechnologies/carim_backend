@@ -56,7 +56,7 @@ module.exports = db;
 
 //for booking
 db.bookings.belongsTo(db.users, { foreignKey: 'userId', as: 'userbook' });
-db.users.hasMany(db.bookings, {foreignKey: "driverId", as: "driverbook"});
+db.users.hasMany(db.bookings, { foreignKey: "driverId", as: "driverbook" });
 
 db.bookings.belongsTo(db.users, { foreignKey: 'driverId', as: 'driverbook' });
 
@@ -91,3 +91,6 @@ db.transferscreenshot.belongsTo(db.users, { foreignKey: 'driverId', as: 'screens
 
 
 db.rideRequest.belongsTo(db.users, { foreignKey: 'driverId', as: 'user' });
+db.bookings.hasMany(db.rideRequest, { foreignKey: "bookingId", as: "rideRequests" });
+
+db.rideRequest.belongsTo(db.bookings, { foreignKey: "bookingId", as: "booking" });
