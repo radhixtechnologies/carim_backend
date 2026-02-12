@@ -38,6 +38,7 @@ module.exports = {
             let isNewUser = false;
             const otp = '1111';
             const rideOtp = '1111';
+            const totalAmount = "200";
 
 
 
@@ -85,6 +86,7 @@ module.exports = {
                     otp,
                     rideOtp,
                     loginTime,
+                    totalAmount,
                     updatedAt: helper.unixTimestamp(),
                 };
                 if (deviceToken) {
@@ -118,7 +120,8 @@ module.exports = {
                     otp,
                     rideOtp,
                     languagee_type,
-                    status: "1"
+                    status: "1",
+                    totalAmount: "200",
                 });
 
                 isNewUser = true;
@@ -492,7 +495,7 @@ module.exports = {
             }
 
             const otp = '1111';
-        //    const otp =  Math.floor(1000 + Math.random() * 9000).toString();
+            //    const otp =  Math.floor(1000 + Math.random() * 9000).toString();
 
             await db.users.update(
                 {
