@@ -1851,11 +1851,44 @@ module.exports = function (io) {
     });
 
 
+    // socket.on("notification_count", async (data) => {
+    //   try {
+    //     const userId = data.userId;
+
+    //     // Get unread count
+    //     const count = await db.notifications.count({
+    //       where: {
+    //         receiver_id: userId,
+    //         is_read: 0
+    //       }
+    //     });
+
+    //     //  Get notification list
+    //     const list = await db.notifications.findAll({
+    //       where: {
+    //         receiver_id: userId,
+    //         is_read: 0,
+
+    //       },
+    //       order: [["id", "DESC"]],
+    //     });
+
+    //     //  SEND RESPONSE
+    //     socket.emit("notification_count", {
+    //       userId: userId,
+    //       notification_count: count,
+    //       notification_list: list
+    //     });
+
+    //   } catch (error) {
+    //     console.log("Notification Error:", error);
+    //   }
+    // });
     socket.on("notification_count", async (data) => {
       try {
         const userId = data.userId;
 
-        // Get unread count
+        // Count unread
         const count = await db.notifications.count({
           where: {
             receiver_id: userId,
@@ -1863,27 +1896,28 @@ module.exports = function (io) {
           }
         });
 
-        //  Get notification list
-        const list = await db.notifications.findAll({
+        // Get latest unread notification
+        const latestNotification = await db.notifications.findOne({
           where: {
             receiver_id: userId,
-            is_read: 0,
-
+            is_read: 0
           },
           order: [["id", "DESC"]],
+          raw: true
         });
 
-        //  SEND RESPONSE
         socket.emit("notification_count", {
           userId: userId,
-          notification_count: count,
-          notification_list: list
+          unreadCount: count,
+          type: "ride_request",
+          bookingId: latestNotification ? latestNotification.bookingId : null
         });
 
       } catch (error) {
         console.log("Notification Error:", error);
       }
     });
+
 
 
     socket.on("notification_read_all", async (data) => {
