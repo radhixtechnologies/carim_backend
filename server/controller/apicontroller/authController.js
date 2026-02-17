@@ -38,7 +38,6 @@ module.exports = {
             let isNewUser = false;
             const otp = '1111';
             const rideOtp = '1111';
-            const totalAmount = "200";
 
 
 
@@ -86,7 +85,6 @@ module.exports = {
                     otp,
                     rideOtp,
                     loginTime,
-                    totalAmount,
                     updatedAt: helper.unixTimestamp(),
                 };
                 if (deviceToken) {
@@ -121,7 +119,6 @@ module.exports = {
                     rideOtp,
                     languagee_type,
                     status: "1",
-                    totalAmount: "200",
                 });
 
                 isNewUser = true;
