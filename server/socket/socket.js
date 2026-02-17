@@ -827,21 +827,36 @@ module.exports = function (io) {
             await booking.update({ status: "3" });
 
             // Calculate payment distribution
-            const totalAmount = parseFloat(booking.bookingPrice) || 0;
-            const adminCommissionPercent = parseInt(freshDriver.adminCommission) || 5;
-            const adminCommission = (totalAmount * adminCommissionPercent) / 100;
-            const driverEarnings = totalAmount - adminCommission;
+            // const totalAmount = parseFloat(booking.bookingPrice) || 0;
+            // const adminCommissionPercent = parseInt(freshDriver.adminCommission) || 5;
+            // const adminCommission = (totalAmount * adminCommissionPercent) / 100;
+            // const driverEarnings = totalAmount - adminCommission;
 
-            // Update driver balance - add earnings to CURRENT balance
-            const currentDriverBalance = parseFloat(freshDriver.totalAmount) || 0;
-            const newDriverBalance = currentDriverBalance + driverEarnings;
+            // const currentDriverBalance = parseFloat(freshDriver.totalAmount) || 0;
+            // const newDriverBalance = currentDriverBalance + driverEarnings;
+            // await db.users.update({
+            //   totalAmount: newDriverBalance.toFixed(2).toString()
+            // }, {
+            //   where: { id: driverId, role: '2' }
+            // });
+            const driverCurrentBalance = parseFloat(freshDriver.totalAmount) || 0;
+            const adminCommissionPercent = parseFloat(freshDriver.adminCommission) || 5;
 
+            const adminCommission = (driverCurrentBalance * adminCommissionPercent) / 100;
 
-            await db.users.update({
-              totalAmount: newDriverBalance.toFixed(2).toString()
-            }, {
-              where: { id: driverId, role: '2' }
-            });
+            if (driverCurrentBalance < adminCommission) {
+              return socket.emit("rideStatusUpdate", {
+                success: false,
+                message: "Insufficient driver balance to deduct commission."
+              });
+            }
+
+            const newDriverBalance = driverCurrentBalance - adminCommission;
+            await db.users.update(
+              { totalAmount: newDriverBalance.toFixed(2) },
+              { where: { id: driverId, role: "2" } }
+            );
+
             const adminUser = await db.users.findOne({
               where: { role: '0' },
               attributes: ['id', 'totalAmount'],
