@@ -1452,9 +1452,87 @@ module.exports = {
             return helper.failed(res, "Something went wrong");
         }
     },
+    // transactionSsHistory1: async (req, res) => {
+    //     try {
+    //         const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
+    //         const driverId = req.user.id;
+
+    //         const driverStatus = await db.users.findOne({
+    //             where: { id: driverId },
+    //             attributes: ['status', 'block', 'suspend', 'totalAmount'],
+    //             raw: true
+    //         });
+
+    //         if (!driverStatus) {
+    //             let msg = "User not found";
+    //             if (languageType == 1) msg = "المستخدم غير موجود";
+    //             else if (languageType == 2) msg = "Utilisateur non trouvé";
+    //             return helper.failure(res, msg);
+    //         }
+
+    //         if (driverStatus.status === "0") {
+    //             let msg = "Your account has been deactivated by admin.";
+    //             if (languageType == 1) msg = "تم تعطيل حسابك من قبل المسؤول.";
+    //             else if (languageType == 2) msg = "Votre compte a été désactivé par l’administrateur.";
+    //             return helper.error2(res, msg);
+    //         }
+
+    //         if (driverStatus.block === "1") {
+    //             let msg = "Your account has been blocked by admin.";
+    //             if (languageType == 1) msg = "تم حظر حسابك من قبل المسؤول.";
+    //             else if (languageType == 2) msg = "Votre compte a été bloqué par l’administrateur.";
+    //             return helper.error1(res, msg);
+    //         }
+
+    //         if (driverStatus.suspend === "1") {
+    //             let msg = "Your account has been suspended by admin.";
+    //             if (languageType == 1) msg = "تم تعليق حسابك من قبل المسؤول.";
+    //             else if (languageType == 2) msg = "Votre compte a été suspendu par l’administrateur.";
+    //             return helper.error3(res, msg);
+    //         }
+
+    //         const { status } = req.body;
+    //         const currentBalance = driverStatus?.totalAmount || "0.00";
+    //         let whereCondition = { driverId };
+
+    //         if (status !== undefined && status !== "") {
+    //             whereCondition.status = status;
+    //         }
+
+    //         const history = await db.transferscreenshot.findAll({
+    //             where: whereCondition,
+    //             order: [["createdAt", "DESC"]],
+    //         });
+
+    //         let msg = "Transaction history fetched successfully";
+    //         if (languageType == 1) msg = "تم جلب سجل المعاملات بنجاح";
+    //         else if (languageType == 2) msg = "Historique des transactions récupéré avec succès";
+
+    //         return res.json({
+    //             status: true,
+    //             message: msg,
+    //             body: {
+    //                 currentBalance: currentBalance,
+    //                 history: history
+    //             }
+    //         });
+
+    //     } catch (error) {
+    //         console.error('transactionSsHistory error:', error);
+    //         let msg = "Something went wrong";
+    //         if (languageType == 1) msg = "حدث خطأ ما";
+    //         else if (languageType == 2) msg = "Une erreur est survenue";
+
+    //         return res.status(500).json({
+    //             status: false,
+    //             message: msg,
+    //             error: error.message
+    //         });
+    //     }
+    // },
     transactionSsHistory: async (req, res) => {
         try {
-            const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
+            const languageType = Number(req.headers.languagetype) || 0;
             const driverId = req.user.id;
 
             const driverStatus = await db.users.findOne({
@@ -1471,61 +1549,51 @@ module.exports = {
             }
 
             if (driverStatus.status === "0") {
-                let msg = "Your account has been deactivated by admin.";
-                if (languageType == 1) msg = "تم تعطيل حسابك من قبل المسؤول.";
-                else if (languageType == 2) msg = "Votre compte a été désactivé par l’administrateur.";
-                return helper.error2(res, msg);
+                return helper.error2(res, "Your account has been deactivated by admin.");
             }
 
             if (driverStatus.block === "1") {
-                let msg = "Your account has been blocked by admin.";
-                if (languageType == 1) msg = "تم حظر حسابك من قبل المسؤول.";
-                else if (languageType == 2) msg = "Votre compte a été bloqué par l’administrateur.";
-                return helper.error1(res, msg);
+                return helper.error1(res, "Your account has been blocked by admin.");
             }
 
             if (driverStatus.suspend === "1") {
-                let msg = "Your account has been suspended by admin.";
-                if (languageType == 1) msg = "تم تعليق حسابك من قبل المسؤول.";
-                else if (languageType == 2) msg = "Votre compte a été suspendu par l’administrateur.";
-                return helper.error3(res, msg);
+                return helper.error3(res, "Your account has been suspended by admin.");
             }
 
             const { status } = req.body;
-            const currentBalance = driverStatus?.totalAmount || "0.00";
-            let whereCondition = { driverId };
 
-            if (status !== undefined && status !== "") {
-                whereCondition.status = status;
+            let whereCondition = {
+                user_id: driverId   
+            };
+
+            if (status) {
+                whereCondition.status = status;  // pending / completed / failed
             }
 
-            const history = await db.transferscreenshot.findAll({
+            const history = await db.payments.findAll({
                 where: whereCondition,
                 order: [["createdAt", "DESC"]],
             });
 
-            let msg = "Transaction history fetched successfully";
-            if (languageType == 1) msg = "تم جلب سجل المعاملات بنجاح";
-            else if (languageType == 2) msg = "Historique des transactions récupéré avec succès";
+            let msg = "Payment history fetched successfully";
+            if (languageType == 1) msg = "تم جلب سجل المدفوعات بنجاح";
+            else if (languageType == 2) msg = "Historique des paiements récupéré avec succès";
 
             return res.json({
                 status: true,
                 message: msg,
                 body: {
-                    currentBalance: currentBalance,
+                    currentBalance: driverStatus.totalAmount || "0.00",
                     history: history
                 }
             });
 
         } catch (error) {
             console.error('transactionSsHistory error:', error);
-            let msg = "Something went wrong";
-            if (languageType == 1) msg = "حدث خطأ ما";
-            else if (languageType == 2) msg = "Une erreur est survenue";
 
             return res.status(500).json({
                 status: false,
-                message: msg,
+                message: "Something went wrong",
                 error: error.message
             });
         }
