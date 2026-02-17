@@ -2771,7 +2771,6 @@ module.exports = {
                 },
                 where: {
                     receiver_id: req.user.id,
-                    is_read: 0
                 },
                 order: [['id', 'DESC']]
             });
