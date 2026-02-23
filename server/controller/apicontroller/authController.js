@@ -624,7 +624,6 @@ module.exports = {
     },
 
 
-
     deleteAccount: async (req, res) => {
         try {
             const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
@@ -679,59 +678,6 @@ module.exports = {
         }
     },
 
-    // getCmsContent: async (req, res) => {
-    //     try {
-    //         const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
-    //         const { type } = req.query;
-
-    //         if (![1, 2, 3].includes(Number(type))) {
-    //             let msg = "Invalid type. Use 1 for Privacy Policy, 3 for Terms and Conditions, 2 for About us.";
-    //             if (languageType == 1) msg = "نوع غير صالح. استخدم 1 لسياسة الخصوصية، 3 للشروط والأحكام، 2 من نحن.";
-    //             else if (languageType == 2) msg = "Type invalide. Utilisez 1 pour la politique de confidentialité, 3 pour les termes et conditions, 2 pour À propos de nous.";
-    //             return helper.failure(res, msg);
-    //         }
-
-    //         const cmsContent = await db.cms.findOne({
-    //             where: { type: Number(type) },
-    //         });
-
-    //         if (!cmsContent) {
-    //             let msg = "Content not found.";
-    //             if (languageType == 1) msg = "المحتوى غير موجود.";
-    //             else if (languageType == 2) msg = "Contenu non trouvé.";
-    //             return helper.failure(res, msg);
-    //         }
-
-    //         let message = "";
-    //         switch (Number(type)) {
-    //             case 1:
-    //                 message = "Privacy policy guidelines retrieved successfully.";
-    //                 if (languageType == 1) message = "تم جلب إرشادات سياسة الخصوصية بنجاح.";
-    //                 else if (languageType == 2) message = "Directives de la politique de confidentialité récupérées avec succès.";
-    //                 break;
-    //             case 2:
-    //                 message = "About us content retrieved successfully.";
-    //                 if (languageType == 1) message = "تم جلب محتوى من نحن بنجاح.";
-    //                 else if (languageType == 2) message = "Contenu À propos de nous récupéré avec succès.";
-    //                 break;
-    //             case 3:
-    //                 message = "Terms and conditions retrieved successfully.";
-    //                 if (languageType == 1) message = "تم جلب الشروط والأحكام بنجاح.";
-    //                 else if (languageType == 2) message = "Termes et conditions récupérés avec succès.";
-    //                 break;
-    //         }
-
-    //         return helper.success(res, message, cmsContent);
-
-    //     } catch (error) {
-    //         console.error('getCmsContent error:', error);
-
-    //         let msg = "Something went wrong.";
-    //         if (languageType == 1) msg = "حدث خطأ ما.";
-    //         else if (languageType == 2) msg = "Une erreur est survenue.";
-    //         return helper.failure(res, msg);
-    //     }
-    // },
     getCmsContent: async (req, res) => {
         try {
             const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
@@ -810,7 +756,6 @@ module.exports = {
             return helper.failure(res, msg);
         }
     },
-
 
     notificationOnOff: async (req, res) => {
         try {
@@ -1563,7 +1508,7 @@ module.exports = {
             const { status } = req.body;
 
             let whereCondition = {
-                user_id: driverId   
+                user_id: driverId
             };
 
             if (status) {
