@@ -6,6 +6,7 @@ const jwt = require("jsonwebtoken");
 const { Op } = require("sequelize");
 const { Sequelize } = require('sequelize');
 const io = require("../../socket/socket")
+const axios = require("axios")
 function calculateDistance(lat1, lon1, lat2, lon2) {
     const R = 6371; // Radius of Earth in km
     const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -1169,25 +1170,44 @@ module.exports = {
                 const pickupLat = parseFloat(pickupLatitude);
                 const pickupLng = parseFloat(pickupLongitude);
 
-                // ---------------- GOOGLE MAPS DISTANCE CALCULATION FUNCTION ----------------
+                // ---------------- GOOGLE ROUTES API (NEW) ----------------
                 const calculateGoogleDistance = async (originLat, originLng, destLat, destLng) => {
                     try {
-                        // Google Maps API Key - Direct in code
                         const googleMapsKey = "AIzaSyDT712NfS8CFhtKud9s9lfxa5MLdQID91A";
+
+                        console.log("🔍 TESTING API CONNECTION...");
+                        console.log(`📍 From: ${originLat}, ${originLng} → To: ${destLat}, ${destLng}`);
 
                         const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${originLat},${originLng}&destinations=${destLat},${destLng}&key=${googleMapsKey}`;
 
+                        console.log("📡 Calling URL:", url);
+
                         const response = await axios.get(url);
 
-                        if (response.data.status === 'OK' && response.data.rows[0].elements[0].status === 'OK') {
-                            const distanceInMeters = response.data.rows[0].elements[0].distance.value;
-                            const distanceInKm = distanceInMeters / 1000;
-                            return distanceInKm;
+                        console.log("📊 Full Response:", JSON.stringify(response.data, null, 2));
+
+                        if (response.data.status === 'OK') {
+                            if (response.data.rows[0].elements[0].status === 'OK') {
+                                const distanceInMeters = response.data.rows[0].elements[0].distance.value;
+                                const distanceInKm = distanceInMeters / 1000;
+                                console.log(`✅ SUCCESS! Road distance: ${distanceInKm} km`);
+                                return distanceInKm;
+                            } else {
+                                console.log("❌ Element status:", response.data.rows[0].elements[0].status);
+                                return null;
+                            }
                         } else {
+                            console.log("❌ API Status:", response.data.status);
+                            if (response.data.error_message) {
+                                console.log("Error message:", response.data.error_message);
+                            }
                             return null;
                         }
                     } catch (error) {
-                        console.error("Google Maps API error:", error.message);
+                        console.error("❌ API Call Failed:", error.message);
+                        if (error.response) {
+                            console.log("Error response:", error.response.data);
+                        }
                         return null;
                     }
                 };
@@ -1219,22 +1239,24 @@ module.exports = {
                     const dropLat = parseFloat(dropLatitude);
                     const dropLng = parseFloat(dropLongitude);
 
-                    // Try Google Maps API first for road distance
+                    // Try Google Routes API first for road distance
                     let distance = await calculateGoogleDistance(pickupLat, pickupLng, dropLat, dropLng);
 
-                    // Fallback to Haversine if Google Maps fails (straight line distance in KM)
+                    // Fallback to Haversine if Google API fails
                     if (distance === null || distance === undefined) {
+                        console.log("Using Haversine fallback");
                         distance = calculateHaversineDistance(pickupLat, pickupLng, dropLat, dropLng);
                     }
 
                     rideDistanceKm = distance;
 
-                    // New pricing: Base price (100) + (distance × pricePerKm)
+                    // Base price (100) + (distance × pricePerKm)
                     const distanceCharge = rideDistanceKm * pricePerKm;
                     bookingPrice = Math.round(BASE_PRICE + distanceCharge).toString();
+
+                    console.log(`Final distance: ${rideDistanceKm} km, Price: ${bookingPrice} MRU`);
+
                 } else if (rideOpen == 1) {
-                    // Open ride - only pickup location known
-                    // For display purposes, show base price
                     bookingPrice = BASE_PRICE.toString();
                 }
 
@@ -1529,7 +1551,7 @@ module.exports = {
                     { where: { id: newBooking.id } }
                 );
 
-                // ---------------- RESPONSE (EXACT SAME STRUCTURE) ----------------
+                // ---------------- RESPONSE ----------------
                 return helper.success(res,
                     languageType === 1 ? "تم إرسال طلب حجز الرحلة بنجاح" :
                         languageType === 2 ? "Demande de réservation envoyée avec succès" :
