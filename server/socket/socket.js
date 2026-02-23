@@ -437,7 +437,6 @@ module.exports = function (io) {
                 const totalDistanceKm =
                   parseFloat(booking.travelledDistance || 0) + segmentDistanceKm;
 
-                // ✅ FIXED: Add base price to calculation
                 // New price = Base price 100 + (total distance × price per km)
                 const newBookingPrice = Math.round(
                   BASE_PRICE + (totalDistanceKm * pricePerKm)
