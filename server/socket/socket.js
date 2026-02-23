@@ -518,6 +518,9 @@ module.exports = function (io) {
     });
 
 
+
+
+
     // socket.on("rideStatusUpdate", async (data) => {
     //   try {
     //     const { bookingId, status, otp, driverId } = data;
@@ -622,7 +625,7 @@ module.exports = function (io) {
     //       otpVerified = false
     //     ) => {
 
-    //       // ✅ USER DB NOTIFICATION ONLY
+    //       //  USER DB NOTIFICATION ONLY
     //       await db.notifications.create({
     //         sender_id: driverId,
     //         receiver_id: user.id,
@@ -674,7 +677,7 @@ module.exports = function (io) {
     //           "1"
     //         );
 
-    //         // ✅ PUSH → USER ONLY
+    //         //  PUSH → USER ONLY
     //         if (user.deviceToken) {
     //           helper.sendNotification_android(user.deviceToken, {
     //             message: getUserMsg(
@@ -725,10 +728,55 @@ module.exports = function (io) {
     //         break;
 
     //       case "3": // FINISHED
-    //         if (currentStatus !== "2") return;
+    //         const freshDriver = await db.users.findOne({
+    //           where: { id: driverId },
+    //           attributes: ['id', 'totalAmount', 'adminCommission'],
+    //           raw: true
+    //         });
+
+    //         if (!freshDriver) {
+    //           return socket.emit("rideStatusUpdate", {
+    //             success: false,
+    //             message: "Driver not found."
+    //           });
+    //         }
 
     //         await booking.update({ status: "3" });
 
+    //         const driverCurrentBalance = parseFloat(freshDriver.totalAmount) || 0;
+    //         const adminCommissionPercent = parseFloat(freshDriver.adminCommission) || 5;
+
+    //         const adminCommission = (driverCurrentBalance * adminCommissionPercent) / 100;
+
+    //         if (driverCurrentBalance < adminCommission) {
+    //           return socket.emit("rideStatusUpdate", {
+    //             success: false,
+    //             message: "Insufficient driver balance to deduct commission."
+    //           });
+    //         }
+
+    //         const newDriverBalance = driverCurrentBalance - adminCommission;
+    //         await db.users.update(
+    //           { totalAmount: newDriverBalance.toFixed(2) },
+    //           { where: { id: driverId, role: "2" } }
+    //         );
+
+    //         const adminUser = await db.users.findOne({
+    //           where: { role: '0' },
+    //           attributes: ['id', 'totalAmount'],
+    //           raw: true
+    //         });
+
+    //         if (adminUser) {
+    //           const currentAdminBalance = parseFloat(adminUser.totalAmount) || 0;
+    //           const newAdminBalance = currentAdminBalance + adminCommission;
+
+    //           await db.users.update({
+    //             totalAmount: newAdminBalance.toFixed(2).toString()
+    //           }, {
+    //             where: { id: adminUser.id, role: '0' }
+    //           });
+    //         }
     //         await emitToBoth(
     //           getUserMsg("Ride finished successfully", "تم الانتهاء من الرحلة بنجاح", "Trajet terminé avec succès"),
     //           getDriverMsg("Ride finished successfully", "تم الانتهاء من الرحلة بنجاح", "Trajet terminé avec succès"),
@@ -783,11 +831,9 @@ module.exports = function (io) {
     //     });
     //   }
     // });
-
-
     socket.on("rideStatusUpdate", async (data) => {
       try {
-        const { bookingId, status, otp, driverId } = data;
+        const { bookingId, status, driverId } = data; // Removed otp from destructuring
 
         if (!bookingId || !status || !driverId) {
           return socket.emit("rideStatusUpdate", {
@@ -886,10 +932,10 @@ module.exports = function (io) {
           userMsg,
           driverMsg,
           statusData,
-          otpVerified = false
+          otpVerified = false // Keeping this parameter for backward compatibility
         ) => {
 
-          //  USER DB NOTIFICATION ONLY
+          // USER DB NOTIFICATION ONLY
           await db.notifications.create({
             sender_id: driverId,
             receiver_id: user.id,
@@ -908,7 +954,7 @@ module.exports = function (io) {
                 message: userMsg,
                 bookingId: booking.id,
                 status: statusData,
-                otpVerified
+                otpVerified: true // Always true now since OTP is removed
               });
             });
           }
@@ -921,7 +967,7 @@ module.exports = function (io) {
                 message: driverMsg,
                 bookingId: booking.id,
                 status: statusData,
-                otpVerified
+                otpVerified: true // Always true now since OTP is removed
               });
             });
           }
@@ -941,7 +987,7 @@ module.exports = function (io) {
               "1"
             );
 
-            //  PUSH → USER ONLY
+            // PUSH → USER ONLY
             if (user.deviceToken) {
               helper.sendNotification_android(user.deviceToken, {
                 message: getUserMsg(
@@ -957,18 +1003,8 @@ module.exports = function (io) {
             break;
 
           case "2": // START RIDE
-            if (!otp || booking.userbook.rideOtp !== otp) {
-              return socket.emit("rideStatusUpdate", {
-                success: false,
-                message: getDriverMsg(
-                  "OTP does not match.",
-                  "OTP غير متطابق.",
-                  "L'OTP ne correspond pas."
-                )
-              });
-            }
-
-            await booking.update({ status: "2", otpbooking: otp });
+            // Removed OTP verification
+            await booking.update({ status: "2" }); // Removed otpbooking update
 
             await emitToBoth(
               getUserMsg("Ride has started", "تم بدء الرحلة", "Le trajet a commencé"),
@@ -1007,19 +1043,6 @@ module.exports = function (io) {
 
             await booking.update({ status: "3" });
 
-            // Calculate payment distribution
-            // const totalAmount = parseFloat(booking.bookingPrice) || 0;
-            // const adminCommissionPercent = parseInt(freshDriver.adminCommission) || 5;
-            // const adminCommission = (totalAmount * adminCommissionPercent) / 100;
-            // const driverEarnings = totalAmount - adminCommission;
-
-            // const currentDriverBalance = parseFloat(freshDriver.totalAmount) || 0;
-            // const newDriverBalance = currentDriverBalance + driverEarnings;
-            // await db.users.update({
-            //   totalAmount: newDriverBalance.toFixed(2).toString()
-            // }, {
-            //   where: { id: driverId, role: '2' }
-            // });
             const driverCurrentBalance = parseFloat(freshDriver.totalAmount) || 0;
             const adminCommissionPercent = parseFloat(freshDriver.adminCommission) || 5;
 
@@ -1108,7 +1131,6 @@ module.exports = function (io) {
         });
       }
     });
-
 
 
     socket.on("bookingHistory", async (data) => {
