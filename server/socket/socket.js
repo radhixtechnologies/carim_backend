@@ -170,6 +170,170 @@ module.exports = function (io) {
       }
     });
 
+    // socket.on("updateLocation", async (data) => {
+    //   try {
+    //     const { userId, latitude, longitude, location } = data;
+
+    //     if (!userId || latitude === undefined || longitude === undefined) {
+    //       return socket.emit("updateLocation", {
+    //         success: false,
+    //         message: "User ID, latitude, and longitude are required"
+    //       });
+    //     }
+
+    //     // ---------------- DRIVER CHECK ----------------
+    //     const driver = await db.users.findOne({
+    //       where: { id: userId, role: '2' }
+    //     });
+
+    //     if (!driver) {
+    //       return socket.emit("updateLocation", {
+    //         success: false,
+    //         message: "Driver not found"
+    //       });
+    //     }
+
+    //     // ---------------- UPDATE DRIVER LOCATION ----------------
+    //     await db.users.update({
+    //       latitude: latitude.toString(),
+    //       longitude: longitude.toString(),
+    //       location: location || null
+    //     }, {
+    //       where: { id: userId }
+    //     });
+
+    //     // OPEN RIDE LOGIC (rideOpen = 1 ONLY)
+    //     const booking = await db.bookings.findOne({
+    //       where: {
+    //         driverId: userId,
+    //         rideOpen: 1,
+    //         status: '2', // ride started
+    //         request: "1"
+    //       }
+    //     });
+
+    //     if (booking) {
+    //       const startLat = booking.lastLatitude
+    //         ? parseFloat(booking.lastLatitude)
+    //         : parseFloat(booking.pickupLatitude);
+
+    //       const startLng = booking.lastLongitude
+    //         ? parseFloat(booking.lastLongitude)
+    //         : parseFloat(booking.pickupLongitude);
+
+    //       const currLat = parseFloat(latitude);
+    //       const currLng = parseFloat(longitude);
+
+    //       if (
+    //         !isNaN(startLat) &&
+    //         !isNaN(startLng) &&
+    //         !isNaN(currLat) &&
+    //         !isNaN(currLng)
+    //       ) {
+
+    //         // ---------------- DISTANCE UTILS ----------------
+    //         const toRad = v => v * Math.PI / 180;
+    //         const calculateDistance = (a, b, c, d) => {
+    //           const R = 6371;
+    //           const dLat = toRad(c - a);
+    //           const dLon = toRad(d - b);
+    //           const x =
+    //             Math.sin(dLat / 2) ** 2 +
+    //             Math.cos(toRad(a)) * Math.cos(toRad(c)) *
+    //             Math.sin(dLon / 2) ** 2;
+    //           return R * (2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x)));
+    //         };
+
+    //         const segmentDistanceKm = calculateDistance(
+    //           startLat,
+    //           startLng,
+    //           currLat,
+    //           currLng
+    //         );
+
+    //         // GPS noise ignore
+    //         if (segmentDistanceKm > 0 && segmentDistanceKm <= 30) {
+
+    //           // ---------------- ADMIN PRICE PER KM ----------------
+    //           const adminData = await db.users.findOne({
+    //             where: { role: '0' },
+    //             attributes: ['rideAmount'],
+    //             raw: true
+    //           });
+
+    //           const pricePerKm = adminData?.rideAmount
+    //             ? parseFloat(adminData.rideAmount)
+    //             : 10;
+
+    //           if (!isNaN(pricePerKm) && pricePerKm > 0) {
+
+    //             const totalDistanceKm =
+    //               parseFloat(booking.travelledDistance || 0) + segmentDistanceKm;
+
+    //             const newBookingPrice = Math.round(
+    //               totalDistanceKm * pricePerKm
+    //             ).toString();
+
+    //             // ---------------- UPDATE BOOKING ----------------
+    //             await booking.update({
+    //               dropLatitude: currLat.toString(),
+    //               dropLongitude: currLng.toString(),
+    //               dropLocation: location || booking.dropLocation,
+    //               travelledDistance: totalDistanceKm.toString(),
+    //               bookingPrice: newBookingPrice,
+    //               lastLatitude: currLat.toString(),
+    //               lastLongitude: currLng.toString()
+    //             });
+
+    //             // ---------------- SOCKET UPDATE TO USER ----------------
+    //             if (global.onlineUsers && onlineUsers[booking.userId]) {
+    //               onlineUsers[booking.userId].forEach(sockId => {
+    //                 io.to(sockId).emit("rideStatusUpdate", {
+    //                   bookingId: booking.id,
+    //                   dropLatitude: currLat.toString(),
+    //                   dropLongitude: currLng.toString(),
+    //                   bookingPrice: newBookingPrice,
+    //                   rideDistanceKm: totalDistanceKm.toFixed(2)
+    //                 });
+    //               });
+    //             }
+    //           }
+    //         }
+    //       }
+    //     }
+
+    //     // ---------------- DRIVER RESPONSE----------------
+    //     const updatedDriver = await db.users.findOne({
+    //       where: { id: userId }
+    //     });
+
+    //     socket.emit("updateLocation", {
+    //       success: true,
+    //       message: "Location updated successfully",
+    //       data: {
+    //         driverId: updatedDriver.id,
+    //         latitude: updatedDriver.latitude,
+    //         longitude: updatedDriver.longitude,
+    //         location: updatedDriver.location
+    //       }
+    //     });
+
+    //     socket.broadcast.emit("updateLocation", {
+    //       driverId: updatedDriver.id,
+    //       latitude: updatedDriver.latitude,
+    //       longitude: updatedDriver.longitude,
+    //       location: updatedDriver.location
+    //     });
+
+    //   } catch (error) {
+    //     console.error("Error updating location:", error);
+    //     socket.emit("updateLocation", {
+    //       success: false,
+    //       message: "Something went wrong while updating location",
+    //       error: error.message
+    //     });
+    //   }
+    // });
     socket.on("updateLocation", async (data) => {
       try {
         const { userId, latitude, longitude, location } = data;
@@ -251,7 +415,7 @@ module.exports = function (io) {
               currLng
             );
 
-            // GPS noise ignore
+            // GPS noise ignore (only update if distance is between 0 and 30km)
             if (segmentDistanceKm > 0 && segmentDistanceKm <= 30) {
 
               // ---------------- ADMIN PRICE PER KM ----------------
@@ -265,14 +429,22 @@ module.exports = function (io) {
                 ? parseFloat(adminData.rideAmount)
                 : 10;
 
+              const BASE_PRICE = 100; // Fixed base price in MRU
+
               if (!isNaN(pricePerKm) && pricePerKm > 0) {
 
+                // Calculate total distance travelled so far
                 const totalDistanceKm =
                   parseFloat(booking.travelledDistance || 0) + segmentDistanceKm;
 
+                // ✅ FIXED: Add base price to calculation
+                // New price = Base price 100 + (total distance × price per km)
                 const newBookingPrice = Math.round(
-                  totalDistanceKm * pricePerKm
+                  BASE_PRICE + (totalDistanceKm * pricePerKm)
                 ).toString();
+
+                // Calculate distance charge separately for display if needed
+                const distanceCharge = Math.round(totalDistanceKm * pricePerKm);
 
                 // ---------------- UPDATE BOOKING ----------------
                 await booking.update({
@@ -285,6 +457,8 @@ module.exports = function (io) {
                   lastLongitude: currLng.toString()
                 });
 
+                console.log(`Open ride updated: Distance=${totalDistanceKm.toFixed(2)}km, Base=100, Distance Charge=${distanceCharge}, Total=${newBookingPrice}`);
+
                 // ---------------- SOCKET UPDATE TO USER ----------------
                 if (global.onlineUsers && onlineUsers[booking.userId]) {
                   onlineUsers[booking.userId].forEach(sockId => {
@@ -293,7 +467,15 @@ module.exports = function (io) {
                       dropLatitude: currLat.toString(),
                       dropLongitude: currLng.toString(),
                       bookingPrice: newBookingPrice,
-                      rideDistanceKm: totalDistanceKm.toFixed(2)
+                      rideDistanceKm: totalDistanceKm.toFixed(2),
+                      // Optional: Send breakdown for better UX
+                      priceBreakdown: {
+                        basePrice: BASE_PRICE,
+                        distanceKm: totalDistanceKm.toFixed(2),
+                        pricePerKm: pricePerKm,
+                        distanceCharge: distanceCharge,
+                        total: newBookingPrice
+                      }
                     });
                   });
                 }
@@ -302,7 +484,7 @@ module.exports = function (io) {
           }
         }
 
-        // ---------------- DRIVER RESPONSE----------------
+        // ---------------- DRIVER RESPONSE ----------------
         const updatedDriver = await db.users.findOne({
           where: { id: userId }
         });
@@ -318,6 +500,7 @@ module.exports = function (io) {
           }
         });
 
+        // Broadcast to all other connected clients
         socket.broadcast.emit("updateLocation", {
           driverId: updatedDriver.id,
           latitude: updatedDriver.latitude,
@@ -334,7 +517,6 @@ module.exports = function (io) {
         });
       }
     });
-
 
 
     // socket.on("rideStatusUpdate", async (data) => {
