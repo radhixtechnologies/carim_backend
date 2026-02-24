@@ -1557,13 +1557,10 @@ module.exports = {
                             where: { id: newBooking.id },
                             raw: true
                         });
-
-                        // ✅ IMPORTANT FIX
-                        // Sirf tab chale jab booking still pending ho (status = 0)
                         if (
                             !booking ||
                             booking.driverId ||
-                            booking.status !== '0'   // ← THIS LINE FIXES YOUR ISSUE
+                            booking.status !== '0'   
                         ) {
                             return;
                         }
@@ -1626,8 +1623,6 @@ module.exports = {
                     }
                 }, 180000);
 
-
-                // ---------------- SAVE TIMEOUT REF (UNCHANGED) ----------------
                 await db.bookings.update(
                     {
                         timeoutRef:
