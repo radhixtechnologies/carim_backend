@@ -1481,6 +1481,76 @@ module.exports = {
                 await Promise.all(notificationPromises);
 
                 // ---------------- SCHEDULER FOR 3 MINUTE TIMER ----------------
+                // const bookingTimeout = setTimeout(async () => {
+                //     try {
+                //         const booking = await db.bookings.findOne({
+                //             where: { id: newBooking.id },
+                //             raw: true
+                //         });
+
+                //         if (!booking || booking.driverId) return;
+
+                //         const acceptedRequest = await db.rideRequest.findOne({
+                //             where: {
+                //                 bookingId: newBooking.id,
+                //                 status: 1
+                //             }
+                //         });
+
+                //         if (!acceptedRequest) {
+                //             await db.bookings.update(
+                //                 {
+                //                     status: '6',
+                //                     request: '2'
+                //                 },
+                //                 {
+                //                     where: {
+                //                         id: newBooking.id,
+                //                         driverId: null,
+                //                         status: '0'
+                //                     }
+                //                 }
+                //             );
+
+                //             await db.rideRequest.update(
+                //                 { status: 6 },
+                //                 {
+                //                     where: {
+                //                         bookingId: newBooking.id,
+                //                         status: 0
+                //                     }
+                //                 }
+                //             );
+
+                //             const userMsg = getPushMessage(
+                //                 languageType,
+                //                 "No driver accepted your ride request",
+                //                 "لم يقبل أي سائق طلب الرحلة الخاص بك",
+                //                 "Aucun chauffeur n'a accepté votre demande de course"
+                //             );
+
+                //             if (global.onlineUsers[userId]) {
+                //                 global.onlineUsers[userId].forEach(sockId => {
+                //                     io.to(sockId).emit("rideStatusUpdate", {
+                //                         bookingId: newBooking.id,
+                //                         orderId: newBooking.orderId,
+                //                         status: '6',
+                //                         message: userMsg,
+                //                         timestamp: new Date().toISOString()
+                //                     });
+                //                 });
+                //             }
+                //         }
+                //     } catch (err) {
+                //         console.error("Scheduler failed:", err);
+                //     }
+                // }, 180000);
+
+                // await db.bookings.update(
+                //     { timeoutRef: bookingTimeout[Symbol.toPrimitive]?.() || bookingTimeout.toString() },
+                //     { where: { id: newBooking.id } }
+                // );
+                // ---------------- SCHEDULER FOR 3 MINUTE TIMER ----------------
                 const bookingTimeout = setTimeout(async () => {
                     try {
                         const booking = await db.bookings.findOne({
@@ -1488,7 +1558,15 @@ module.exports = {
                             raw: true
                         });
 
-                        if (!booking || booking.driverId) return;
+                        // ✅ IMPORTANT FIX
+                        // Sirf tab chale jab booking still pending ho (status = 0)
+                        if (
+                            !booking ||
+                            booking.driverId ||
+                            booking.status !== '0'   // ← THIS LINE FIXES YOUR ISSUE
+                        ) {
+                            return;
+                        }
 
                         const acceptedRequest = await db.rideRequest.findOne({
                             where: {
@@ -1498,6 +1576,7 @@ module.exports = {
                         });
 
                         if (!acceptedRequest) {
+
                             await db.bookings.update(
                                 {
                                     status: '6',
@@ -1541,14 +1620,23 @@ module.exports = {
                                 });
                             }
                         }
+
                     } catch (err) {
                         console.error("Scheduler failed:", err);
                     }
                 }, 180000);
 
+
+                // ---------------- SAVE TIMEOUT REF (UNCHANGED) ----------------
                 await db.bookings.update(
-                    { timeoutRef: bookingTimeout[Symbol.toPrimitive]?.() || bookingTimeout.toString() },
-                    { where: { id: newBooking.id } }
+                    {
+                        timeoutRef:
+                            bookingTimeout[Symbol.toPrimitive]?.() ||
+                            bookingTimeout.toString()
+                    },
+                    {
+                        where: { id: newBooking.id }
+                    }
                 );
 
                 // ---------------- RESPONSE ----------------
