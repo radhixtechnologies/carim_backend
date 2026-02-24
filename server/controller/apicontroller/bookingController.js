@@ -1424,9 +1424,9 @@ module.exports = {
 
                         const msg = getPushMessage(
                             Number(driverToken.languagee_type),
-                            `New ride request available (${driver.distance.toFixed(1)} km away)`,
-                            `طلب رحلة جديد متاح (على بعد ${driver.distance.toFixed(1)} كم)`,
-                            `Nouvelle demande de course disponible (à ${driver.distance.toFixed(1)} km)`
+                            `New ride request available `,
+                            `طلب رحلة جديد متاح (على بعد `,
+                            `Nouvelle demande de course disponible `
                         );
 
                         if (driverToken.deviceToken && driverToken.deviceToken.length > 10) {
