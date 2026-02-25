@@ -833,7 +833,7 @@ module.exports = function (io) {
     // });
     socket.on("rideStatusUpdate", async (data) => {
       try {
-        const { bookingId, status, driverId } = data; // Removed otp from destructuring
+        const { bookingId, status, driverId } = data;
 
         if (!bookingId || !status || !driverId) {
           return socket.emit("rideStatusUpdate", {
@@ -954,7 +954,7 @@ module.exports = function (io) {
                 message: userMsg,
                 bookingId: booking.id,
                 status: statusData,
-                otpVerified: true // Always true now since OTP is removed
+                otpVerified: true 
               });
             });
           }
