@@ -1668,7 +1668,7 @@ module.exports = {
             }
         };
     },
-    bookRide: (io) => {
+bookRide: (io) => {
         return async (req, res) => {
             let languageType = Number(req.headers.languagetype) || 0;
 
@@ -1803,24 +1803,28 @@ module.exports = {
 
                 let rideDistanceKm = "";
                 let bookingPrice = "";
+                let basePrice = "";
+                let totalMinutes = 0;
+                let totalDistance = 0;
 
                 // ---------------- ADMIN PRICE ----------------
                 const adminData = await db.users.findOne({
                     where: { role: '0' },
-                    attributes: ['rideAmount'], // Removed perMinPrice
+                    attributes: ['rideAmount'],
                     raw: true
                 });
 
-                const pricePerKm = adminData?.rideAmount ? parseFloat(adminData.rideAmount) : 10;
-                const pricePerMin = 1; // Default per minute price
+                const pricePerKm = 10; // 10 MRU per km
+                const pricePerMin = 5; // 5 MRU per minute
                 const BASE_PRICE = 100; // Standard base price in MRU
 
-                // Helper function to round to nearest 5 - ONLY FOR OPEN RIDE
+                // Helper function to round to nearest 5
                 const roundToNearest5 = (num) => {
                     return Math.round(num / 5) * 5;
                 };
 
-                if (rideOpen == 0 || (rideOpen == 1 && dropLatitude && dropLongitude)) {
+                if (rideOpen == 0) {
+                    // Regular ride with destination
                     const dropLat = parseFloat(dropLatitude);
                     const dropLng = parseFloat(dropLongitude);
 
@@ -1834,24 +1838,27 @@ module.exports = {
                     }
 
                     rideDistanceKm = distance;
+                    totalDistance = distance;
 
-                    // Base price (100) + (distance × pricePerKm)
-                    const distanceCharge = rideDistanceKm * pricePerKm;
-                    let calculatedPrice = BASE_PRICE + distanceCharge;
+                    // Calculate price: Base price (100) + (distance × 10)
+                    let calculatedPrice = BASE_PRICE + (rideDistanceKm * pricePerKm);
+                    
+                    // APPLY ROUNDING TO NEAREST 5 FOR ALL RIDES
+                    bookingPrice = roundToNearest5(calculatedPrice).toString();
+                    basePrice = bookingPrice;
 
-                    // NO ROUNDING FOR NORMAL RIDES
-                    bookingPrice = Math.round(calculatedPrice).toString();
-
-                    console.log(`Final distance: ${rideDistanceKm} km, Price: ${bookingPrice} MRU`);
+                    console.log(`Regular ride - Distance: ${rideDistanceKm} km, Price: ${bookingPrice} MRU`);
 
                 } else if (rideOpen == 1) {
-                    // For open ride with no destination, use base price only and ROUND TO NEAREST 5
+                    // Open ride - Base price only for now
+                    // Distance and time will be added in real-time
                     let calculatedPrice = BASE_PRICE;
-
-                    // APPLY ROUNDING ONLY FOR OPEN RIDE BASE PRICE
+                    
+                    // APPLY ROUNDING FOR OPEN RIDE BASE PRICE
                     bookingPrice = roundToNearest5(calculatedPrice).toString();
+                    basePrice = bookingPrice;
 
-                    console.log(`Open ride base price: ${BASE_PRICE}, Rounded base price: ${bookingPrice} MRU, Per min price: ${pricePerMin} MRU/min (will be added every minute)`);
+                    console.log(`Open ride - Base price: ${bookingPrice} MRU, Per km: ${pricePerKm} MRU, Per min: ${pricePerMin} MRU (will be added in real-time)`);
                 }
 
                 // ---------------- ACTIVE RIDE CHECK (ROLE BASED) ----------------
@@ -1952,11 +1959,20 @@ module.exports = {
                     dropLatitude: dropLatitude || "",
                     dropLongitude: dropLongitude || "",
                     bookingPrice,
+                    basePrice: basePrice,
                     request: '0',
                     rideOpen,
                     callerPhone,
                     callerCountryCode,
                     callerName,
+                    // Store additional info for real-time calculation
+                    rideDistance: rideDistanceKm ? rideDistanceKm.toString() : "",
+                    pricePerKm: pricePerKm.toString(),
+                    pricePerMin: pricePerMin.toString(),
+                    totalMinutes: totalMinutes.toString(),
+                    totalDistance: totalDistance.toString(),
+                    lastPriceUpdate: new Date().toISOString(),
+                    rideStartTime: rideOpen == 1 ? new Date().toISOString() : null
                 });
 
                 // ---------------- CREATE RIDE REQUEST (bulkCreate) ----------------
@@ -1995,7 +2011,10 @@ module.exports = {
                                 callerPhone,
                                 callerName,
                                 bookingPrice,
+                                basePrice: basePrice,
                                 perMinPrice: pricePerMin,
+                                perKmPrice: pricePerKm,
+                                rideDistance: rideDistanceKm ? rideDistanceKm.toFixed(2) : "",
                                 driverDistance: driver.distance.toFixed(2),
                                 message: `Distance from pickup: ${driver.distance.toFixed(2)} km`,
                                 timestamp: new Date().toISOString()
@@ -2171,6 +2190,7 @@ module.exports = {
                         status: newBooking.status,
                         request: newBooking.request,
                         bookingPrice,
+                        basePrice: basePrice,
                         rideDistanceKm: rideDistanceKm ? rideDistanceKm.toFixed(2) : "",
                         message: languageType === 1 ? "في انتظار قبول السائق لطلبك" :
                             languageType === 2 ? "En attente que le chauffeur accepte votre demande" :
@@ -2181,10 +2201,22 @@ module.exports = {
                         nearbyDriversCount: nearbyDrivers.length,
                         maxDistance: MAX_DISTANCE_KM,
                         notificationsSent: notificationPromises.length,
-                        // For open rides, return per minute price for real-time calculation
+                        // Price details
+                        priceDetails: {
+                            basePrice: BASE_PRICE,
+                            perKmPrice: pricePerKm,
+                            perMinPrice: pricePerMin,
+                            totalDistance: rideDistanceKm ? rideDistanceKm.toFixed(2) : "0",
+                            isOpenRide: rideOpen == 1,
+                            initialPrice: bookingPrice
+                        },
+                        // For open rides, return pricing info for real-time calculation
                         perMinPrice: rideOpen == 1 ? pricePerMin : 0,
-                        // Indicate that price will increase every minute for open rides
-                        priceUpdateMessage: rideOpen == 1 ? `Price increases by ${pricePerMin} MRU every minute` : ""
+                        perKmPrice: rideOpen == 1 ? pricePerKm : 0,
+                        // Indicate real-time price updates
+                        priceUpdateMessage: rideOpen == 1 ? 
+                            `Real-time pricing: Base ${BASE_PRICE} MRU + ${pricePerKm} MRU/km + ${pricePerMin} MRU/min` : 
+                            `Fixed price: ${bookingPrice} MRU`
                     }
                 );
 
@@ -2198,7 +2230,6 @@ module.exports = {
             }
         };
     },
-
     updateDropLocationAndPrice: (io) => {
         return async (req, res) => {
             try {
