@@ -1668,7 +1668,7 @@ module.exports = {
             }
         };
     },
-bookRide: (io) => {
+    bookRide: (io) => {
         return async (req, res) => {
             let languageType = Number(req.headers.languagetype) || 0;
 
@@ -1842,7 +1842,7 @@ bookRide: (io) => {
 
                     // Calculate price: Base price (100) + (distance × 10)
                     let calculatedPrice = BASE_PRICE + (rideDistanceKm * pricePerKm);
-                    
+
                     // APPLY ROUNDING TO NEAREST 5 FOR ALL RIDES
                     bookingPrice = roundToNearest5(calculatedPrice).toString();
                     basePrice = bookingPrice;
@@ -1853,7 +1853,7 @@ bookRide: (io) => {
                     // Open ride - Base price only for now
                     // Distance and time will be added in real-time
                     let calculatedPrice = BASE_PRICE;
-                    
+
                     // APPLY ROUNDING FOR OPEN RIDE BASE PRICE
                     bookingPrice = roundToNearest5(calculatedPrice).toString();
                     basePrice = bookingPrice;
@@ -2214,8 +2214,8 @@ bookRide: (io) => {
                         perMinPrice: rideOpen == 1 ? pricePerMin : 0,
                         perKmPrice: rideOpen == 1 ? pricePerKm : 0,
                         // Indicate real-time price updates
-                        priceUpdateMessage: rideOpen == 1 ? 
-                            `Real-time pricing: Base ${BASE_PRICE} MRU + ${pricePerKm} MRU/km + ${pricePerMin} MRU/min` : 
+                        priceUpdateMessage: rideOpen == 1 ?
+                            `Real-time pricing: Base ${BASE_PRICE} MRU + ${pricePerKm} MRU/km + ${pricePerMin} MRU/min` :
                             `Fixed price: ${bookingPrice} MRU`
                     }
                 );
@@ -2233,7 +2233,7 @@ bookRide: (io) => {
 
 
 
-    
+
     updateDropLocationAndPrice: (io) => {
         return async (req, res) => {
             try {

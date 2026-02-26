@@ -2574,8 +2574,6 @@ module.exports = function (io) {
     socket.on("notification_read_all", async (data) => {
       try {
         const userId = data.userId;
-
-        // Mark all unread notifications as read
         await db.notifications.update(
           { is_read: 1 },   // 1 = read
           {
@@ -2593,7 +2591,6 @@ module.exports = function (io) {
           }
         });
 
-        // Emit updated count + success message
         socket.emit("notification_read_all", {
           message: "All notifications marked as read",
           userId: userId,
