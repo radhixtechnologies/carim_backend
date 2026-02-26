@@ -1318,7 +1318,7 @@ module.exports = function (io) {
                   // Calculate new price
                   const basePrice = parseFloat(currentBooking.basePrice || 100);
                   const currentPrice = parseFloat(currentBooking.bookingPrice || basePrice);
-                  const pricePerMin = 5; // 5 MRU per minute
+                  const pricePerMin = 1; // 1 MRU per minute
 
                   let newPrice = currentPrice + pricePerMin;
 
@@ -1346,8 +1346,8 @@ module.exports = function (io) {
                         bookingId: bookingId,
                         newPrice: newPrice.toString(),
                         totalMinutes: totalMinutes,
-                        addedAmount: 5,
-                        message: `Price increased by 5 MRU`,
+                        addedAmount: 1,
+                        message: `Price increased by 1 MRU`,
                         timestamp: new Date().toISOString()
                       });
                     });
@@ -1360,8 +1360,8 @@ module.exports = function (io) {
                         bookingId: bookingId,
                         newPrice: newPrice.toString(),
                         totalMinutes: totalMinutes,
-                        addedAmount: 5,
-                        message: `Price increased by 5 MRU`,
+                        addedAmount: 1,
+                        message: `Price increased by 1 MRU`,
                         timestamp: new Date().toISOString()
                       });
                     });
@@ -1580,6 +1580,10 @@ module.exports = function (io) {
         });
       }
     });
+
+
+
+
 
     socket.on("bookingHistory", async (data) => {
       try {

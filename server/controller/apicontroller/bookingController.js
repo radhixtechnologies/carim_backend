@@ -1814,8 +1814,8 @@ module.exports = {
                     raw: true
                 });
 
-                const pricePerKm = 10; // 10 MRU per km
-                const pricePerMin = 5; // 5 MRU per minute
+                const pricePerKm = 22; // 10 MRU per km
+                const pricePerMin = 1; // 1 MRU per minute
                 const BASE_PRICE = 100; // Standard base price in MRU
 
                 // Helper function to round to nearest 5
