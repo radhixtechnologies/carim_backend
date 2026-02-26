@@ -954,7 +954,7 @@ module.exports = function (io) {
                 message: userMsg,
                 bookingId: booking.id,
                 status: statusData,
-                otpVerified: true 
+                otpVerified: true
               });
             });
           }
@@ -1131,7 +1131,7 @@ module.exports = function (io) {
         });
       }
     });
-socket.on("rideStatusUpdate", async (data) => {
+    socket.on("rideStatusUpdate", async (data) => {
       try {
         const { bookingId, status, driverId } = data;
 
@@ -1259,7 +1259,7 @@ socket.on("rideStatusUpdate", async (data) => {
                 message: userMsg,
                 bookingId: booking.id,
                 status: statusData,
-                otpVerified: true 
+                otpVerified: true
               });
             });
           }
@@ -1290,7 +1290,7 @@ socket.on("rideStatusUpdate", async (data) => {
             // Only for open rides
             if (rideBooking && rideBooking.rideOpen == 1) {
               console.log(`Starting real-time pricing for open ride: ${bookingId}`);
-              
+
               // Store interval in global object
               if (!global.priceIntervals) {
                 global.priceIntervals = {};
@@ -1306,7 +1306,7 @@ socket.on("rideStatusUpdate", async (data) => {
                 try {
                   // Get current booking
                   const currentBooking = await db.bookings.findOne({
-                    where: { 
+                    where: {
                       id: bookingId,
                       status: ['2'] // Only update when status is 2 (Ride Started)
                     },
@@ -1325,10 +1325,10 @@ socket.on("rideStatusUpdate", async (data) => {
                   const basePrice = parseFloat(currentBooking.basePrice || 100);
                   const currentPrice = parseFloat(currentBooking.bookingPrice || basePrice);
                   const pricePerMin = 5; // 5 MRU per minute
-                  
+
                   // Add per minute charge
                   let newPrice = currentPrice + pricePerMin;
-                  
+
                   // ROUND TO NEAREST 5
                   newPrice = roundToNearest5(newPrice);
 
@@ -1464,9 +1464,102 @@ socket.on("rideStatusUpdate", async (data) => {
             }
             break;
 
+          // case "3": // FINISHED
+          //   // STOP REAL-TIME PRICING - Jab ride finish hogi tab hi stop hoga
+          //   await stopRealTimePricing(bookingId);
+
+          //   const freshDriver = await db.users.findOne({
+          //     where: { id: driverId },
+          //     attributes: ['id', 'totalAmount', 'adminCommission'],
+          //     raw: true
+          //   });
+
+          //   if (!freshDriver) {
+          //     return socket.emit("rideStatusUpdate", {
+          //       success: false,
+          //       message: "Driver not found."
+          //     });
+          //   }
+
+          //   await booking.update({ status: "3" });
+
+          //   const driverCurrentBalance = parseFloat(freshDriver.totalAmount) || 0;
+          //   const adminCommissionPercent = parseFloat(freshDriver.adminCommission) || 5;
+
+          //   const adminCommission = (driverCurrentBalance * adminCommissionPercent) / 100;
+
+          //   if (driverCurrentBalance < adminCommission) {
+          //     return socket.emit("rideStatusUpdate", {
+          //       success: false,
+          //       message: "Insufficient driver balance to deduct commission."
+          //     });
+          //   }
+
+          //   const newDriverBalance = driverCurrentBalance - adminCommission;
+          //   await db.users.update(
+          //     { totalAmount: newDriverBalance.toFixed(2) },
+          //     { where: { id: driverId, role: "2" } }
+          //   );
+
+          //   const adminUser = await db.users.findOne({
+          //     where: { role: '0' },
+          //     attributes: ['id', 'totalAmount'],
+          //     raw: true
+          //   });
+
+          //   if (adminUser) {
+          //     const currentAdminBalance = parseFloat(adminUser.totalAmount) || 0;
+          //     const newAdminBalance = currentAdminBalance + adminCommission;
+
+          //     await db.users.update({
+          //       totalAmount: newAdminBalance.toFixed(2).toString()
+          //     }, {
+          //       where: { id: adminUser.id, role: '0' }
+          //     });
+          //   }
+          //   await emitToBoth(
+          //     getUserMsg("Ride finished successfully", "تم الانتهاء من الرحلة بنجاح", "Trajet terminé avec succès"),
+          //     getDriverMsg("Ride finished successfully", "تم الانتهاء من الرحلة بنجاح", "Trajet terminé avec succès"),
+          //     "3"
+          //   );
+
+          //   if (user.deviceToken) {
+          //     helper.sendNotification_android(user.deviceToken, {
+          //       message: getUserMsg(
+          //         "Your ride has been completed.",
+          //         "تم إكمال رحلتك.",
+          //         "Votre trajet est terminé."
+          //       ),
+          //       type: 9,
+          //       senderId: driverId,
+          //       bookingId: booking.id
+          //     });
+          //   }
+          //   break;
           case "3": // FINISHED
             // STOP REAL-TIME PRICING - Jab ride finish hogi tab hi stop hoga
             await stopRealTimePricing(bookingId);
+
+            // ===== FINAL PRICE ROUNDING =====
+            // Get current booking with latest price
+            const finalBooking = await db.bookings.findOne({
+              where: { id: bookingId },
+              raw: true
+            });
+
+            let roundedFinalPrice = booking.bookingPrice;
+            if (finalBooking) {
+              const finalPrice = parseFloat(finalBooking.bookingPrice);
+              roundedFinalPrice = roundToNearest5(finalPrice);
+
+              // Update with rounded final price
+              await db.bookings.update(
+                { bookingPrice: roundedFinalPrice.toString() },
+                { where: { id: bookingId } }
+              );
+
+              console.log(`Final price for booking ${bookingId}: ${finalPrice} → Rounded: ${roundedFinalPrice}`);
+            }
 
             const freshDriver = await db.users.findOne({
               where: { id: driverId },
@@ -1517,18 +1610,24 @@ socket.on("rideStatusUpdate", async (data) => {
                 where: { id: adminUser.id, role: '0' }
               });
             }
+
+            // Use rounded price in emit
             await emitToBoth(
-              getUserMsg("Ride finished successfully", "تم الانتهاء من الرحلة بنجاح", "Trajet terminé avec succès"),
-              getDriverMsg("Ride finished successfully", "تم الانتهاء من الرحلة بنجاح", "Trajet terminé avec succès"),
+              getUserMsg(`Ride finished successfully. Final price: ${roundedFinalPrice} MRU`,
+                `تم الانتهاء من الرحلة بنجاح. السعر النهائي: ${roundedFinalPrice} MRU`,
+                `Trajet terminé avec succès. Prix final: ${roundedFinalPrice} MRU`),
+              getDriverMsg(`Ride finished successfully. Final price: ${roundedFinalPrice} MRU`,
+                `تم الانتهاء من الرحلة بنجاح. السعر النهائي: ${roundedFinalPrice} MRU`,
+                `Trajet terminé avec succès. Prix final: ${roundedFinalPrice} MRU`),
               "3"
             );
 
             if (user.deviceToken) {
               helper.sendNotification_android(user.deviceToken, {
                 message: getUserMsg(
-                  "Your ride has been completed.",
-                  "تم إكمال رحلتك.",
-                  "Votre trajet est terminé."
+                  `Your ride has been completed. Final price: ${roundedFinalPrice} MRU`,
+                  `تم إكمال رحلتك. السعر النهائي: ${roundedFinalPrice} MRU`,
+                  `Votre trajet est terminé. Prix final: ${roundedFinalPrice} MRU`
                 ),
                 type: 9,
                 senderId: driverId,
@@ -1540,7 +1639,7 @@ socket.on("rideStatusUpdate", async (data) => {
           case "4": // CANCELLED
             // STOP REAL-TIME PRICING IF ACTIVE
             await stopRealTimePricing(bookingId);
-            
+
             if (currentStatus !== "2") return;
 
             await booking.update({ status: "4" });
