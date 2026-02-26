@@ -1131,7 +1131,7 @@ module.exports = function (io) {
         });
       }
     });
-socket.on("rideStatusUpdate", async (data) => {
+    socket.on("rideStatusUpdate", async (data) => {
       try {
         const { bookingId, status, driverId } = data;
 
@@ -1322,9 +1322,8 @@ socket.on("rideStatusUpdate", async (data) => {
 
                   let newPrice = currentPrice + pricePerMin;
 
-                  // NO ROUNDING DURING RIDE - Sirf add karo, round mat karo
-                  // newPrice = roundToNearest5(newPrice); // ← REMOVED
-                  
+                  // ROUND TO NEAREST 5
+                  newPrice = roundToNearest5(newPrice);
                   const totalMinutes = (parseInt(currentBooking.totalMinutes) || 0) + 1;
 
                   // Update booking in database
@@ -1339,8 +1338,7 @@ socket.on("rideStatusUpdate", async (data) => {
                     }
                   );
 
-                  console.log(`Price updated for booking ${bookingId}: +1 MRU, New price: ${newPrice} MRU, Total minutes: ${totalMinutes} (not rounded yet)`);
-                  
+                  console.log(`Price updated for booking ${bookingId}: +1 MRU, New price: ${newPrice} MRU, Total minutes: ${totalMinutes}`);
                   // Emit to driver
                   if (currentBooking.driverId && onlineUsers[currentBooking.driverId]) {
                     onlineUsers[currentBooking.driverId].forEach(sockId => {
@@ -1350,8 +1348,7 @@ socket.on("rideStatusUpdate", async (data) => {
                         totalMinutes: totalMinutes,
                         addedAmount: 1,
                         message: `Price increased by 1 MRU`,
-                        timestamp: new Date().toISOString(),
-                        isRounded: false // Indicating this is not rounded yet
+                        timestamp: new Date().toISOString()
                       });
                     });
                   }
@@ -1365,8 +1362,7 @@ socket.on("rideStatusUpdate", async (data) => {
                         totalMinutes: totalMinutes,
                         addedAmount: 1,
                         message: `Price increased by 1 MRU`,
-                        timestamp: new Date().toISOString(),
-                        isRounded: false // Indicating this is not rounded yet
+                        timestamp: new Date().toISOString()
                       });
                     });
                   }
@@ -1465,7 +1461,6 @@ socket.on("rideStatusUpdate", async (data) => {
             let roundedFinalPrice = booking.bookingPrice;
             if (finalBooking) {
               const finalPrice = parseFloat(finalBooking.bookingPrice);
-              // ===== FINAL PRICE ROUNDING - SIRF YAHAN PAR =====
               roundedFinalPrice = roundToNearest5(finalPrice);
 
               await db.bookings.update(
