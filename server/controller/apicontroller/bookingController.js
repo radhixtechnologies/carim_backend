@@ -2230,6 +2230,10 @@ bookRide: (io) => {
             }
         };
     },
+
+
+
+    
     updateDropLocationAndPrice: (io) => {
         return async (req, res) => {
             try {
