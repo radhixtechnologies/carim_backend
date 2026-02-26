@@ -1227,6 +1227,11 @@ socket.on("rideStatusUpdate", async (data) => {
         const getDriverMsg = (en, ar, fr) =>
           driver.languagee_type === 1 ? ar : driver.languagee_type === 2 ? fr : en;
 
+        // ================= ROUND TO NEAREST 5 HELPER =================
+        const roundToNearest5 = (num) => {
+          return Math.round(parseFloat(num) / 5) * 5;
+        };
+
         // ================= EMIT FUNCTION =================
         const emitToBoth = async (
           userMsg,
@@ -1324,10 +1329,7 @@ socket.on("rideStatusUpdate", async (data) => {
                   // Add per minute charge
                   let newPrice = currentPrice + pricePerMin;
                   
-                  // Round to nearest 5
-                  const roundToNearest5 = (num) => {
-                    return Math.round(num / 5) * 5;
-                  };
+                  // ROUND TO NEAREST 5
                   newPrice = roundToNearest5(newPrice);
 
                   // Update total minutes
