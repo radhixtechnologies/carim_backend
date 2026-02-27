@@ -1422,7 +1422,7 @@ module.exports = function (io) {
             break;
 
           case "2": // START RIDE
-            await booking.update({ status: "2" }); 
+            await booking.update({ status: "2" });
 
             if (booking.rideOpen == 1) {
               await startRealTimePricing(bookingId);
@@ -1449,7 +1449,7 @@ module.exports = function (io) {
             }
             break;
 
-        
+
           case "3": // FINISHED
             await stopRealTimePricing(bookingId);
 
@@ -1581,7 +1581,7 @@ module.exports = function (io) {
       }
     });
 
-socket.on("rideStatusUpdate", async (data) => {
+    socket.on("rideStatusUpdate", async (data) => {
       try {
         const { bookingId, status, driverId } = data;
 
@@ -1751,9 +1751,8 @@ socket.on("rideStatusUpdate", async (data) => {
               const intervalId = setInterval(async () => {
                 try {
                   const currentBooking = await db.bookings.findOne({
-                    where: { 
+                    where: {
                       id: bookingId
-                      // REMOVED THE STATUS CHECK - price increases as long as rideOpen=1
                     },
                     raw: true
                   });
@@ -1771,13 +1770,11 @@ socket.on("rideStatusUpdate", async (data) => {
                   const currentPrice = parseFloat(currentBooking.bookingPrice || basePrice);
                   const pricePerMin = 1; // 1 MRU per minute
 
+                  // ✅ Don't round during live ride - keep exact price
                   let newPrice = currentPrice + pricePerMin;
-
-                  // ROUND TO NEAREST 5
-                  newPrice = roundToNearest5(newPrice);
                   const totalMinutes = (parseInt(currentBooking.totalMinutes) || 0) + 1;
 
-                  // Update booking in database
+                  // Update booking in database with exact price (no rounding during ride)
                   await db.bookings.update(
                     {
                       bookingPrice: newPrice.toString(),
@@ -1789,32 +1786,34 @@ socket.on("rideStatusUpdate", async (data) => {
                     }
                   );
 
-                  console.log(`Price updated for booking ${bookingId}: +1 MRU, New price: ${newPrice} MRU, Total minutes: ${totalMinutes}`);
-                  
-                  // Emit to driver
+                  console.log(`Price updated for booking ${bookingId}: +1 MRU, New price: ${newPrice} MRU (exact), Total minutes: ${totalMinutes}`);
+
+                  // Emit to driver with exact price
                   if (currentBooking.driverId && onlineUsers[currentBooking.driverId]) {
                     onlineUsers[currentBooking.driverId].forEach(sockId => {
                       io.to(sockId).emit("priceUpdate", {
                         bookingId: bookingId,
-                        newPrice: newPrice.toString(),
+                        newPrice: newPrice.toString(), // Send exact price
                         totalMinutes: totalMinutes,
                         addedAmount: 1,
                         message: `Price increased by 1 MRU`,
-                        timestamp: new Date().toISOString()
+                        timestamp: new Date().toISOString(),
+                        isExactPrice: true // Flag to indicate this is exact price during ride
                       });
                     });
                   }
 
-                  // Emit to user
+                  // Emit to user with exact price
                   if (onlineUsers[currentBooking.userId]) {
                     onlineUsers[currentBooking.userId].forEach(sockId => {
                       io.to(sockId).emit("priceUpdate", {
                         bookingId: bookingId,
-                        newPrice: newPrice.toString(),
+                        newPrice: newPrice.toString(), // Send exact price
                         totalMinutes: totalMinutes,
                         addedAmount: 1,
                         message: `Price increased by 1 MRU`,
-                        timestamp: new Date().toISOString()
+                        timestamp: new Date().toISOString(),
+                        isExactPrice: true // Flag to indicate this is exact price during ride
                       });
                     });
                   }
@@ -1874,7 +1873,7 @@ socket.on("rideStatusUpdate", async (data) => {
             break;
 
           case "2": // START RIDE
-            await booking.update({ status: "2" }); 
+            await booking.update({ status: "2" });
 
             if (booking.rideOpen == 1) {
               await startRealTimePricing(bookingId);
@@ -1901,7 +1900,7 @@ socket.on("rideStatusUpdate", async (data) => {
             }
             break;
 
-        
+
           case "3": // FINISHED
             await stopRealTimePricing(bookingId);
 
@@ -1910,18 +1909,20 @@ socket.on("rideStatusUpdate", async (data) => {
               raw: true
             });
 
-            let roundedFinalPrice = booking.bookingPrice;
-            if (finalBooking) {
-              const finalPrice = parseFloat(finalBooking.bookingPrice);
-              roundedFinalPrice = roundToNearest5(finalPrice);
+            // ✅ Round to nearest 5 ONLY when ride finishes
+            let finalPrice = parseFloat(finalBooking.bookingPrice);
+            let roundedFinalPrice = roundToNearest5(finalPrice);
 
-              await db.bookings.update(
-                { bookingPrice: roundedFinalPrice.toString() },
-                { where: { id: bookingId } }
-              );
+            // Update with rounded price only at completion
+            await db.bookings.update(
+              {
+                bookingPrice: roundedFinalPrice.toString(),
+                status: "3"
+              },
+              { where: { id: bookingId } }
+            );
 
-              console.log(`Final price for booking ${bookingId}: ${finalPrice} → Rounded: ${roundedFinalPrice}`);
-            }
+            console.log(`Final price for booking ${bookingId}: ${finalPrice} (exact) → ${roundedFinalPrice} (rounded to nearest 5)`);
 
             const freshDriver = await db.users.findOne({
               where: { id: driverId },
@@ -1935,8 +1936,6 @@ socket.on("rideStatusUpdate", async (data) => {
                 message: "Driver not found."
               });
             }
-
-            await booking.update({ status: "3" });
 
             const driverCurrentBalance = parseFloat(freshDriver.totalAmount) || 0;
             const adminCommissionPercent = parseFloat(freshDriver.adminCommission) || 5;
