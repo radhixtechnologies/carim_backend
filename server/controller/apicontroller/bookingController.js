@@ -2375,17 +2375,14 @@ bookRide: (io) => {
                     attributes: ['rideAmount'],
                     raw: true
                 });
-
-                // Different pricing for rideOpen 0 and rideOpen 1
-                const BASE_PRICE = 100; // Standard base price in MRU for first 2km
-                const FREE_KM = 2; // First 2km included in base price
+                const BASE_PRICE = 100;
+                const FREE_KM = 2; 
                 
-                // rideOpen 0 pricing (regular rides)
-                const pricePerKmRegular = 10; // 10 MRU per km after 2km for regular rides
+                const pricePerKmRegular = 10; 
                 
                 // rideOpen 1 pricing (open rides)
-                const pricePerKmOpen = 22; // 22 MRU per km after 2km for open rides
-                const pricePerMinOpen = 1; // 1 MRU per minute for open rides (added in real-time)
+                const pricePerKmOpen = 22; 
+                const pricePerMinOpen = 1; 
 
                 // Helper function to round to nearest 5
                 const roundToNearest5 = (num) => {
@@ -2426,16 +2423,11 @@ bookRide: (io) => {
                     console.log(`Regular ride (rideOpen=0) - Distance: ${rideDistanceKm} km, Price: ${bookingPrice} MRU (First ${FREE_KM}km = ${BASE_PRICE} MRU, then ${pricePerKmRegular} MRU/km)`);
 
                 } else if (rideOpen == 1) {
-                    // OPEN RIDE - No destination yet, only pickup location
-                    // For open rides, we don't calculate distance at booking time
-                    // Only base price for first 2km, distance and time will be added in real-time
-                    
-                    rideDistanceKm = ""; // Open ride ke liye distance calculate nahi karte
-                    
-                    // Sirf base price (first 2km ke liye)
-                    let calculatedPrice = BASE_PRICE; // 100 MRU
 
-                    // APPLY ROUNDING FOR OPEN RIDE BASE PRICE
+                    
+                    rideDistanceKm = ""; 
+                                        let calculatedPrice = BASE_PRICE; // 100 MRU
+
                     bookingPrice = roundToNearest5(calculatedPrice).toString(); // 100 rounded = 100
                     basePrice = bookingPrice;
 
