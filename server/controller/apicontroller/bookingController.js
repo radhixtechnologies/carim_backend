@@ -1821,7 +1821,6 @@ module.exports = {
                                 status: 1
                             }
                         });
-
                         if (!acceptedRequest) {
 
                             await db.bookings.update(
