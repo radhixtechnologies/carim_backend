@@ -606,7 +606,6 @@ module.exports = {
         }
     },
 
-
     pricePushStatus: async (req, res) => {
         try {
             const { id, priceStatus } = req.body;

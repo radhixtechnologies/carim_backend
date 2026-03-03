@@ -15,10 +15,12 @@ const Profile = () => {
     adminCommission: "",
     rideAmount: "",
     priceRushHour: "",
+    status: 0, // Add status field
   });
   const [imagePreview, setImagePreview] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false); // For toggle loading state
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -37,10 +39,14 @@ const Profile = () => {
             setData({
               ...profileData,
               firstName,
-              lastName
+              lastName,
+              status: profileData.status || 0 // Set status from API
             });
           } else {
-            setData(profileData);
+            setData({
+              ...profileData,
+              status: profileData.status || 0
+            });
           }
 
           const imageUrl = profileData.image && profileData.image.startsWith("http")
@@ -111,6 +117,32 @@ const Profile = () => {
     return "";
   };
 
+  const toggleStatus = async () => {
+    setLoading(true);
+    const newStatus = data.status === "0" ? "1" : "0";
+    const userId = data.id || localStorage.getItem("userId");
+    if (!userId) {
+      toast.error("User ID not found");
+      setLoading(false);
+      return;
+    }
+    try {
+      const response = await axiosInstance.post(`/userStatus`, {
+        id: userId,
+        status: newStatus,
+      });
+
+      if (response.data.success) {
+        setData(prev => ({ ...prev, status: newStatus }));
+        toast.success(`Status ${newStatus === "1" ? 'Active' : 'Inactive'}`);
+      } else {
+        toast.error(response.data.message || "Status change failed");
+      }
+    } catch (error) {
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleFirstNameChange = (e) => {
     const { value } = e.target;
@@ -146,20 +178,12 @@ const Profile = () => {
     }
   };
 
-
   const handleRideAmount = (e) => {
     const { value } = e.target;
     const cleanedValue = value.replace(/\s/g, "");
 
     if (cleanedValue === "" || /^\d*\.?\d*$/.test(cleanedValue)) {
       setData((prevData) => ({ ...prevData, rideAmount: cleanedValue }));
-
-      // Optional: Validate and set error immediately
-      // const rideAmountError = validateAdminCommission(cleanedValue);
-      // setErrors((prevErrors) => ({
-      //   ...prevErrors,
-      //   rideAmount: rideAmountError,
-      // }));
     }
   };
 
@@ -174,7 +198,6 @@ const Profile = () => {
       }));
     }
   };
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -215,7 +238,7 @@ const Profile = () => {
     formData.append("adminCommission", data.adminCommission);
     formData.append("rideAmount", data.rideAmount);
     formData.append("priceRushHour", data.priceRushHour);
-
+    formData.append("status", data.status);
 
     if (selectedImage) {
       formData.append("image", selectedImage);
@@ -240,13 +263,15 @@ const Profile = () => {
           ...prev,
           ...updatedData,
           firstName,
-          lastName
+          lastName,
+          status: updatedData.status || prev.status
         }));
       } else {
         setData(prev => ({
           ...prev,
           ...updatedData,
-          lastName: updatedData.lastName || ""
+          lastName: updatedData.lastName || "",
+          status: updatedData.status || prev.status
         }));
       }
 
@@ -258,7 +283,6 @@ const Profile = () => {
       }
 
       toast.success("Profile updated successfully");
-      navigate("/profile", { state: { updated: true } });
     } catch (error) {
       console.error("Update error:", error);
 
@@ -291,10 +315,39 @@ const Profile = () => {
                 <div className="col-lg-12">
                   <div className="card">
                     <div className="card-body">
+                      <div className="d-flex justify-content-between align-items-center mb-4 p-3 bg-light rounded">
+                        <div>
+                          <h5 className="mb-1"> Status</h5>
+
+                        </div>
+                        <div className="form-check form-switch">
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            id="statusToggle"
+                            checked={data.status === "1"}
+                            onChange={toggleStatus}
+                            disabled={loading}
+                            style={{
+                              width: '3rem',
+                              height: '1.5rem',
+                              cursor: loading ? 'wait' : 'pointer',
+                              backgroundColor: data.status === "1" ? "#28a745" : "#dc3545",
+                              borderColor: data.status === "1" ? "#28a745" : "#dc3545",
+                            }}
+                          />
+                          {loading && (
+                            <span className="ms-2">
+                              <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
                       <div className="text-center mb-4">
                         <div className="position-relative d-inline-block">
                           <img
-                            src={imagePreview || ""}
+                            src={imagePreview || "/default-avatar.png"}
                             style={{
                               width: 200,
                               height: 200,
@@ -319,6 +372,7 @@ const Profile = () => {
                           </label>
                         </div>
                       </div>
+
                       <form onSubmit={handleSubmit}>
                         <div className="row">
                           <div className="mb-3 col-6">
@@ -445,7 +499,6 @@ const Profile = () => {
                               {errors.rideAmount}
                             </div>
                           )}
-
                         </div>
 
                         <div style={{ marginBottom: "16px" }}>
@@ -475,7 +528,7 @@ const Profile = () => {
                             type="submit"
                             className="btn btn-primary px-4"
                           >
-                            Update
+                            Update Profile
                           </button>
                         </div>
                       </form>
