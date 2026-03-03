@@ -40,6 +40,7 @@ router.get('/driverlist',usercontroller.driverList);
 router.get('/document',usercontroller.doucmentList);
 router.post('/documentVerified',usercontroller.documentVerified);
 
+router.post('/pricePushStatus',usercontroller.pricePushStatus);
 
 // router for contact us
 router.get('/contactList',contactUsController.contactGet);

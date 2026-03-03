@@ -605,4 +605,23 @@ module.exports = {
             return helper.error(res, error.message);
         }
     },
+
+
+    pricePushStatus: async (req, res) => {
+        try {
+            const { id, priceStatus } = req.body;
+            const user = await db.users.findOne({ where: { id } });
+            if (!user) {
+                return helper.error(res, "User not found");
+            } 
+            await db.users.update({ priceStatus }, { where: { id } });
+            return helper.success(res, " priceStatus updated successfully", {
+                id,
+                priceStatus
+            });
+
+        } catch (error) {
+            return helper.error(res, error.message);
+        }
+    },
 }
