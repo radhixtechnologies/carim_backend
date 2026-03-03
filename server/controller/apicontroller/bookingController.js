@@ -1496,29 +1496,25 @@ module.exports = {
                     attributes: ['rideAmount'],
                     raw: true
                 });
-                const BASE_PRICE = 100;
-                const FREE_KM = 2;
 
-                const pricePerKmRegular = 10;
+                // Use admin rideAmount for all pricing (instead of hardcoded 10 and 22)
+                const ADMIN_PRICE_PER_KM = parseFloat(adminData?.rideAmount) || 10; // Default to 10 if not set
+                const BASE_PRICE = 100; // First 1km = 100 MRU (changed from 2km to 1km)
+                const FREE_KM = 1; // Changed from 2 to 1
 
-                // rideOpen 1 pricing (open rides)
-                const pricePerKmOpen = 22;
+                const pricePerKmOpen = ADMIN_PRICE_PER_KM; // Use admin amount instead of hardcoded 22
                 const pricePerMinOpen = 1;
 
-                // Helper function to round to nearest 5
                 const roundToNearest5 = (num) => {
                     return Math.round(parseFloat(num) / 5) * 5;
                 };
 
                 if (rideOpen == 0) {
-                    // REGULAR RIDE - with destination
                     const dropLat = parseFloat(dropLatitude);
                     const dropLng = parseFloat(dropLongitude);
 
-                    // Try Google Routes API first for road distance
                     let distance = await calculateGoogleDistance(pickupLat, pickupLng, dropLat, dropLng);
 
-                    // Fallback to Haversine if Google API fails
                     if (distance === null || distance === undefined) {
                         console.log("Using Haversine fallback");
                         distance = calculateHaversineDistance(pickupLat, pickupLng, dropLat, dropLng);
@@ -1527,7 +1523,7 @@ module.exports = {
                     rideDistanceKm = distance;
                     totalDistance = distance;
 
-                    // ---------------- CHECK IF DISTANCE EXCEEDS 30KM ----------------
+                    // ---------------- CHECK IF RIDE DISTANCE EXCEEDS 30KM ----------------
                     const MAX_RIDE_DISTANCE_KM = 30;
                     if (rideDistanceKm > MAX_RIDE_DISTANCE_KM) {
                         return helper.failure(res,
@@ -1537,13 +1533,13 @@ module.exports = {
                         );
                     }
 
-                    // Calculate price: First 2km = 100 MRU, then 10 MRU per additional km
+                    // Calculate price: First 1km = 100 MRU, then ADMIN_PRICE_PER_KM MRU per additional km
                     let calculatedPrice;
                     if (rideDistanceKm <= FREE_KM) {
                         calculatedPrice = BASE_PRICE;
                     } else {
                         const extraKm = rideDistanceKm - FREE_KM;
-                        const extraCharge = extraKm * pricePerKmRegular;
+                        const extraCharge = extraKm * ADMIN_PRICE_PER_KM; // Use admin amount
                         calculatedPrice = BASE_PRICE + extraCharge;
                     }
 
@@ -1551,18 +1547,16 @@ module.exports = {
                     bookingPrice = roundToNearest5(calculatedPrice).toString();
                     basePrice = bookingPrice;
 
-                    console.log(`Regular ride (rideOpen=0) - Distance: ${rideDistanceKm} km, Price: ${bookingPrice} MRU (First ${FREE_KM}km = ${BASE_PRICE} MRU, then ${pricePerKmRegular} MRU/km)`);
+                    console.log(`Regular ride (rideOpen=0) - Distance: ${rideDistanceKm} km, Price: ${bookingPrice} MRU (First ${FREE_KM}km = ${BASE_PRICE} MRU, then ${ADMIN_PRICE_PER_KM} MRU/km)`);
 
                 } else if (rideOpen == 1) {
-
-
                     rideDistanceKm = "";
-                    let calculatedPrice = BASE_PRICE; // 100 MRU
+                    let calculatedPrice = BASE_PRICE; // 100 MRU for first km
 
                     bookingPrice = roundToNearest5(calculatedPrice).toString(); // 100 rounded = 100
                     basePrice = bookingPrice;
 
-                    console.log(`Open ride (rideOpen=1) - Base price: ${bookingPrice} MRU (First ${FREE_KM}km included), Per km after ${FREE_KM}km: ${pricePerKmOpen} MRU, Per min: ${pricePerMinOpen} MRU (will be added in real-time)`);
+                    console.log(`Open ride (rideOpen=1) - Base price: ${bookingPrice} MRU (First ${FREE_KM}km included), Per km after ${FREE_KM}km: ${ADMIN_PRICE_PER_KM} MRU, Per min: ${pricePerMinOpen} MRU (will be added in real-time)`);
                 }
 
                 // ---------------- ACTIVE RIDE CHECK (ROLE BASED) ----------------
@@ -1617,8 +1611,8 @@ module.exports = {
                     );
                 }
 
-                // ---------------- FILTER DRIVERS WITHIN 50KM RADIUS ----------------
-                const MAX_DISTANCE_KM = 50;
+                // ---------------- FILTER DRIVERS WITHIN 40KM RADIUS ----------------
+                const MAX_DRIVER_DISTANCE_KM = 40; // Changed from 50km to 40km
                 const nearbyDrivers = [];
 
                 for (const driver of freeDrivers) {
@@ -1629,7 +1623,7 @@ module.exports = {
 
                     const distance = calculateHaversineDistance(pickupLat, pickupLng, driverLat, driverLng);
 
-                    if (distance <= MAX_DISTANCE_KM) {
+                    if (distance <= MAX_DRIVER_DISTANCE_KM) {
                         nearbyDrivers.push({
                             id: driver.id,
                             distance: distance,
@@ -1641,9 +1635,9 @@ module.exports = {
 
                 if (!nearbyDrivers.length) {
                     return helper.failure(res,
-                        languageType === 1 ? "لا يوجد سائقون متاحون ضمن نطاق ٥٠ كم" :
-                            languageType === 2 ? "Aucun chauffeur disponible dans un rayon de 50 km" :
-                                "No drivers available within 50km radius"
+                        languageType === 1 ? "لا يوجد سائقون متاحون ضمن نطاق ٤٠ كم" :
+                            languageType === 2 ? "Aucun chauffeur disponible dans un rayon de 40 km" :
+                                "No drivers available within 40km radius"
                     );
                 }
 
@@ -1653,8 +1647,8 @@ module.exports = {
                 // ---------------- CREATE BOOKING ----------------
                 const orderId = Math.floor(100000 + Math.random() * 900000).toString();
 
-                // Determine which price per km to store based on ride type
-                const pricePerKmToStore = rideOpen == 0 ? pricePerKmRegular : pricePerKmOpen;
+                // Use admin amount for price per km for both ride types
+                const pricePerKmToStore = ADMIN_PRICE_PER_KM; // Use admin amount for both
                 const pricePerMinToStore = rideOpen == 1 ? pricePerMinOpen : 0; // Only open rides have per minute charge
 
                 const newBooking = await db.bookings.create({
@@ -1723,7 +1717,7 @@ module.exports = {
                                 bookingPrice,
                                 basePrice: basePrice,
                                 perMinPrice: pricePerMinToStore,
-                                perKmPrice: pricePerKmToStore,
+                                perKmPrice: ADMIN_PRICE_PER_KM, // Use admin amount
                                 freeKm: FREE_KM,
                                 rideDistance: rideDistanceKm ? rideDistanceKm.toFixed(2) : "",
                                 driverDistance: driver.distance.toFixed(2),
@@ -1910,29 +1904,32 @@ module.exports = {
                         callerName,
                         callerCountryCode,
                         nearbyDriversCount: nearbyDrivers.length,
-                        maxDistance: MAX_DISTANCE_KM,
+                        maxDriverDistance: MAX_DRIVER_DISTANCE_KM,
+                        maxRideDistance: 30,
                         notificationsSent: notificationPromises.length,
                         // Price details
                         priceDetails: {
                             basePrice: BASE_PRICE,
                             freeKm: FREE_KM,
-                            perKmPrice: rideOpen == 0 ? pricePerKmRegular : pricePerKmOpen,
+                            perKmPrice: ADMIN_PRICE_PER_KM, // Use admin amount
                             perMinPrice: rideOpen == 1 ? pricePerMinOpen : 0,
                             totalDistance: rideDistanceKm ? rideDistanceKm.toFixed(2) : "0",
                             isOpenRide: rideOpen == 1,
                             initialPrice: bookingPrice,
                             pricingModel: rideOpen == 0 ?
-                                `First ${FREE_KM}km = ${BASE_PRICE} MRU, then ${pricePerKmRegular} MRU/km` :
-                                `First ${FREE_KM}km = ${BASE_PRICE} MRU, then ${pricePerKmOpen} MRU/km + ${pricePerMinOpen} MRU/min (real-time)`
+                                `First ${FREE_KM}km = ${BASE_PRICE} MRU, then ${ADMIN_PRICE_PER_KM} MRU/km` :
+                                `First ${FREE_KM}km = ${BASE_PRICE} MRU, then ${ADMIN_PRICE_PER_KM} MRU/km + ${pricePerMinOpen} MRU/min (real-time)`,
+                            adminRate: ADMIN_PRICE_PER_KM // Show admin rate being used
                         },
                         // For open rides, return pricing info for real-time calculation
                         perMinPrice: rideOpen == 1 ? pricePerMinOpen : 0,
-                        perKmPrice: rideOpen == 0 ? pricePerKmRegular : pricePerKmOpen,
+                        perKmPrice: ADMIN_PRICE_PER_KM, // Use admin amount
                         freeKm: FREE_KM,
                         // Indicate real-time price updates only for open rides
                         priceUpdateMessage: rideOpen == 1 ?
-                            `Real-time pricing: First ${FREE_KM}km = ${BASE_PRICE} MRU,` :
-                            `Fixed price: First ${FREE_KM}km = ${BASE_PRICE} MRU, `
+                            `Real-time pricing: First ${FREE_KM}km = ${BASE_PRICE} MRU, then +${ADMIN_PRICE_PER_KM} MRU/km + ${pricePerMinOpen} MRU/min` :
+                            `Fixed price: First ${FREE_KM}km = ${BASE_PRICE} MRU, then ${ADMIN_PRICE_PER_KM} MRU/km - Total: ${bookingPrice} MRU`,
+                        adminRate: ADMIN_PRICE_PER_KM // Show the admin rate being used
                     }
                 );
 
