@@ -1915,19 +1915,19 @@ module.exports = {
                             totalDistance: rideDistanceKm ? rideDistanceKm.toFixed(2) : "0",
                             isOpenRide: rideOpen == 1,
                             initialPrice: bookingPrice,
-                            pricingModel: rideOpen == 0 ?
-                                `First ${FREE_KM}km = ${BASE_PRICE} MRU, then ${ADMIN_PRICE_PER_KM} MRU/km` :
-                                `First ${FREE_KM}km = ${BASE_PRICE} MRU, then ${ADMIN_PRICE_PER_KM} MRU/km + ${pricePerMinOpen} MRU/min (real-time)`,
-                            adminRate: ADMIN_PRICE_PER_KM // Show admin rate being used
+                            // pricingModel: rideOpen == 0 ?
+                            //     `First ${FREE_KM}km = ${BASE_PRICE} MRU, then ${ADMIN_PRICE_PER_KM} MRU/km` :
+                            //     `First ${FREE_KM}km = ${BASE_PRICE} MRU, then ${ADMIN_PRICE_PER_KM} MRU/km + ${pricePerMinOpen} MRU/min (real-time)`,
+                            // adminRate: ADMIN_PRICE_PER_KM 
                         },
                         // For open rides, return pricing info for real-time calculation
                         perMinPrice: rideOpen == 1 ? pricePerMinOpen : 0,
                         perKmPrice: ADMIN_PRICE_PER_KM, // Use admin amount
                         freeKm: FREE_KM,
-                        priceUpdateMessage: rideOpen == 1 ?
-                            `Real-time pricing: First ${FREE_KM}km = ${BASE_PRICE} MRU, then +${ADMIN_PRICE_PER_KM} MRU/km + ${pricePerMinOpen} MRU/min` :
-                            `Fixed price: First ${FREE_KM}km = ${BASE_PRICE} MRU, then ${ADMIN_PRICE_PER_KM} MRU/km - Total: ${bookingPrice} MRU`,
-                        adminRate: ADMIN_PRICE_PER_KM
+                        // priceUpdateMessage: rideOpen == 1 ?
+                        //     `Real-time pricing: First ${FREE_KM}km = ${BASE_PRICE} MRU, then +${ADMIN_PRICE_PER_KM} MRU/km + ${pricePerMinOpen} MRU/min` :
+                        //     `Fixed price: First ${FREE_KM}km = ${BASE_PRICE} MRU, then ${ADMIN_PRICE_PER_KM} MRU/km - Total: ${bookingPrice} MRU`,
+                        // adminRate: ADMIN_PRICE_PER_KM
                     }
                 );
 
