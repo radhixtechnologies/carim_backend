@@ -94,41 +94,22 @@ const Profile = () => {
     return "";
   };
 
-  // const validateAdminCommission = (commission) => {
-  //   if (!commission && commission !== 0) return "Admin Commission is required";
-
-  //   const numberRegex = /^[0-9]+$/;
-  //   if (!numberRegex.test(commission))
-  //     return "Admin Commission must contain only numbers";
-
-  //   const commissionNum = parseInt(commission, 10);
-  //   if (isNaN(commissionNum)) return "Admin Commission must be a valid number";
-  //   if (commissionNum < 0) return "Admin Commission cannot be negative";
-  //   if (commissionNum < 0 || commissionNum > 99)
-  //     return "Admin Commission must be between 0 and 99";
-
-  //   return "";
-  // };
   const validateAdminCommission = (commission) => {
-    if (!commission && commission !== 0 && commission !== '0')
-      return "Admin Commission is required";
+    if (!commission && commission !== 0) return "Admin Commission is required";
 
-    const decimalRegex = /^\d*\.?\d+$/;  
-    if (!decimalRegex.test(commission))
-      return "Admin Commission must be a valid number";
+    const numberRegex = /^[0-9]+$/;
+    if (!numberRegex.test(commission))
+      return "Admin Commission must contain only numbers";
 
-    const commissionNum = parseFloat(commission);
+    const commissionNum = parseInt(commission, 10);
     if (isNaN(commissionNum)) return "Admin Commission must be a valid number";
     if (commissionNum < 0) return "Admin Commission cannot be negative";
-    if (commissionNum > 99) return "Admin Commission must be between 0 and 99";
-
-    const decimalPart = commission.toString().split('.')[1];
-    if (decimalPart && decimalPart.length > 1) {
-      return "Admin Commission can have at most 1 decimal place";
-    }
+    if (commissionNum < 0 || commissionNum > 99)
+      return "Admin Commission must be between 0 and 99";
 
     return "";
   };
+
 
   const handleFirstNameChange = (e) => {
     const { value } = e.target;
@@ -151,46 +132,40 @@ const Profile = () => {
     setErrors((prevErrors) => ({ ...prevErrors, phoneNumber: phoneError }));
   };
 
-  // const handleAdminCommissionChange = (e) => {
-  //   const { value } = e.target;
-  //   const cleanedValue = value.replace(/\s/g, "");
-  //   if (cleanedValue === "" || /^[0-9]+$/.test(cleanedValue)) {
-  //     setData((prevData) => ({ ...prevData, adminCommission: cleanedValue }));
-  //     const commissionError = validateAdminCommission(cleanedValue);
-  //     setErrors((prevErrors) => ({
-  //       ...prevErrors,
-  //       adminCommission: commissionError,
-  //     }));
-  //   }
-  // };
   const handleAdminCommissionChange = (e) => {
-    const { value } = e.target;
-
-    const cleanedValue = value.replace(/\s/g, "");
-    if (cleanedValue === "" || /^\d*\.?\d*$/.test(cleanedValue)) {
-      const decimalCount = (cleanedValue.match(/\./g) || []).length;
-      if (decimalCount <= 1) {
-        setData((prevData) => ({ ...prevData, adminCommission: cleanedValue }));
-        if (cleanedValue === "" || cleanedValue === ".") {
-          setErrors((prevErrors) => ({
-            ...prevErrors,
-            adminCommission: "",
-          }));
-        } else {
-          const commissionError = validateAdminCommission(cleanedValue);
-          setErrors((prevErrors) => ({
-            ...prevErrors,
-            adminCommission: commissionError,
-          }));
-        }
-      }
-    }
-  };
-  const handleRideAmount = (e) => {
     const { value } = e.target;
     const cleanedValue = value.replace(/\s/g, "");
     if (cleanedValue === "" || /^[0-9]+$/.test(cleanedValue)) {
+      setData((prevData) => ({ ...prevData, adminCommission: cleanedValue }));
+      const commissionError = validateAdminCommission(cleanedValue);
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        adminCommission: commissionError,
+      }));
+    }
+  };
+
+  // const handleRideAmount = (e) => {
+  //   const { value } = e.target;
+  //   const cleanedValue = value.replace(/\s/g, "");
+  //   if (cleanedValue === "" || /^[0-9]+$/.test(cleanedValue)) {
+  //     setData((prevData) => ({ ...prevData, rideAmount: cleanedValue }));
+  //     // const rideAmountError = validateAdminCommission(cleanedValue);
+  //     // setErrors((prevErrors) => ({
+  //     //   ...prevErrors,
+  //     //   rideAmount: rideAmountError,
+  //     // }));
+  //   }
+  // };
+  const handleRideAmount = (e) => {
+    const { value } = e.target;
+    const cleanedValue = value.replace(/\s/g, "");
+
+    // Allow empty or valid decimal number
+    if (cleanedValue === "" || /^\d*\.?\d*$/.test(cleanedValue)) {
       setData((prevData) => ({ ...prevData, rideAmount: cleanedValue }));
+
+      // Optional: Validate and set error immediately
       // const rideAmountError = validateAdminCommission(cleanedValue);
       // setErrors((prevErrors) => ({
       //   ...prevErrors,
@@ -198,7 +173,6 @@ const Profile = () => {
       // }));
     }
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -431,7 +405,7 @@ const Profile = () => {
                               value={data.adminCommission}
                               onChange={handleAdminCommissionChange}
                               placeholder="Enter commission between 0-99"
-                              maxLength={4}
+                              maxLength={2}
                             />
                             <span className="input-group-text">%</span>
                           </div>
@@ -441,7 +415,8 @@ const Profile = () => {
                             </div>
                           )}
                           <div className="form-text">
-                            Commission must be a number between 0 and 99
+                            Commission must be a number between 0 and 99 (no
+                            spaces or special characters allowed)
                           </div>
                         </div>
 

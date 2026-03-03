@@ -1499,8 +1499,8 @@ module.exports = {
 
                 // Use admin rideAmount for all pricing 
                 const ADMIN_PRICE_PER_KM = parseFloat(adminData?.rideAmount) || 10;
-                const BASE_PRICE = 100; 
-                const FREE_KM = 1; 
+                const BASE_PRICE = 100;
+                const FREE_KM = 1;
 
                 const pricePerKmOpen = ADMIN_PRICE_PER_KM;
                 const pricePerMinOpen = 1;
@@ -1551,9 +1551,9 @@ module.exports = {
 
                 } else if (rideOpen == 1) {
                     rideDistanceKm = "";
-                    let calculatedPrice = BASE_PRICE; 
+                    let calculatedPrice = BASE_PRICE;
 
-                    bookingPrice = roundToNearest5(calculatedPrice).toString(); 
+                    bookingPrice = roundToNearest5(calculatedPrice).toString();
                     basePrice = bookingPrice;
 
                     console.log(`Open ride (rideOpen=1) - Base price: ${bookingPrice} MRU (First ${FREE_KM}km included), Per km after ${FREE_KM}km: ${ADMIN_PRICE_PER_KM} MRU, Per min: ${pricePerMinOpen} MRU (will be added in real-time)`);
