@@ -88,7 +88,10 @@ module.exports = {
                     countryCode: req.body.countryCode || find_user.countryCode,
                     image: imagePath,
                     adminCommission: req.body.adminCommission || find_user.adminCommission,
-                    rideAmount: req.body.rideAmount || find_user.rideAmount
+                    rideAmount: req.body.rideAmount || find_user.rideAmount,
+                    priceRushHour: req.body.priceRushHour || find_user.priceRushHour,
+                    priceStatus: req.body.priceStatus || find_user.priceStatus,
+
                 },
                 { where: { id: userId } }
             );

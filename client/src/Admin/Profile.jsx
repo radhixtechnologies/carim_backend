@@ -14,6 +14,7 @@ const Profile = () => {
     countryCode: "",
     adminCommission: "",
     rideAmount: "",
+    priceRushHour: "",
   });
   const [imagePreview, setImagePreview] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
@@ -145,23 +146,11 @@ const Profile = () => {
     }
   };
 
-  // const handleRideAmount = (e) => {
-  //   const { value } = e.target;
-  //   const cleanedValue = value.replace(/\s/g, "");
-  //   if (cleanedValue === "" || /^[0-9]+$/.test(cleanedValue)) {
-  //     setData((prevData) => ({ ...prevData, rideAmount: cleanedValue }));
-  //     // const rideAmountError = validateAdminCommission(cleanedValue);
-  //     // setErrors((prevErrors) => ({
-  //     //   ...prevErrors,
-  //     //   rideAmount: rideAmountError,
-  //     // }));
-  //   }
-  // };
+
   const handleRideAmount = (e) => {
     const { value } = e.target;
     const cleanedValue = value.replace(/\s/g, "");
 
-    // Allow empty or valid decimal number
     if (cleanedValue === "" || /^\d*\.?\d*$/.test(cleanedValue)) {
       setData((prevData) => ({ ...prevData, rideAmount: cleanedValue }));
 
@@ -173,6 +162,20 @@ const Profile = () => {
       // }));
     }
   };
+
+  const handlePriceRushHour = (e) => {
+    const { value } = e.target;
+    const cleanedValue = value.replace(/\s/g, "");
+
+    if (cleanedValue === "" || /^[0-9]*\.?[0-9]*$/.test(cleanedValue)) {
+      setData((prevData) => ({
+        ...prevData,
+        priceRushHour: cleanedValue
+      }));
+    }
+  };
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -211,6 +214,8 @@ const Profile = () => {
     formData.append("phoneNumber", data.phoneNumber);
     formData.append("adminCommission", data.adminCommission);
     formData.append("rideAmount", data.rideAmount);
+    formData.append("priceRushHour", data.priceRushHour);
+
 
     if (selectedImage) {
       formData.append("image", selectedImage);
@@ -441,6 +446,28 @@ const Profile = () => {
                             </div>
                           )}
 
+                        </div>
+
+                        <div style={{ marginBottom: "16px" }}>
+                          <label htmlFor="priceRushHour" className="mb-1 fw-medium">
+                            Price Rush Hour
+                          </label>
+                          <div className="input-group">
+                            <input
+                              type="text"
+                              className="form-control"
+                              name="priceRushHour"
+                              value={data.priceRushHour}
+                              onChange={handlePriceRushHour}
+                              placeholder="Enter Price Rush Hour"
+                              maxLength={5}
+                            />
+                          </div>
+                          {errors.priceRushHour && (
+                            <div className="text-danger">
+                              {errors.priceRushHour}
+                            </div>
+                          )}
                         </div>
 
                         <div className="text-end mb-2">
