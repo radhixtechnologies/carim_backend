@@ -120,15 +120,18 @@ module.exports = function(sequelize, DataTypes) {
     },
     callerName: {
       type: DataTypes.STRING(255),
-      allowNull: false
+      allowNull: false,
+      defaultValue: ""
     },
     callerCountryCode: {
       type: DataTypes.STRING(255),
-      allowNull: false
+      allowNull: false,
+      defaultValue: ""
     },
     callerPhone: {
       type: DataTypes.STRING(255),
-      allowNull: false
+      allowNull: false,
+      defaultValue: ""
     }
   }, {
     sequelize,
