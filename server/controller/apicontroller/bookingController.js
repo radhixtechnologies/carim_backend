@@ -1497,12 +1497,12 @@ module.exports = {
                     raw: true
                 });
 
-                // Use admin rideAmount for all pricing (instead of hardcoded 10 and 22)
-                const ADMIN_PRICE_PER_KM = parseFloat(adminData?.rideAmount) || 10; // Default to 10 if not set
-                const BASE_PRICE = 100; // First 1km = 100 MRU (changed from 2km to 1km)
-                const FREE_KM = 1; // Changed from 2 to 1
+                // Use admin rideAmount for all pricing 
+                const ADMIN_PRICE_PER_KM = parseFloat(adminData?.rideAmount) || 10;
+                const BASE_PRICE = 100; 
+                const FREE_KM = 1; 
 
-                const pricePerKmOpen = ADMIN_PRICE_PER_KM; // Use admin amount instead of hardcoded 22
+                const pricePerKmOpen = ADMIN_PRICE_PER_KM;
                 const pricePerMinOpen = 1;
 
                 const roundToNearest5 = (num) => {
@@ -1533,7 +1533,7 @@ module.exports = {
                         );
                     }
 
-                    // Calculate price: First 1km = 100 MRU, then ADMIN_PRICE_PER_KM MRU per additional km
+                    // Calculate price: First 1km = 100 MRU,
                     let calculatedPrice;
                     if (rideDistanceKm <= FREE_KM) {
                         calculatedPrice = BASE_PRICE;
@@ -1551,9 +1551,9 @@ module.exports = {
 
                 } else if (rideOpen == 1) {
                     rideDistanceKm = "";
-                    let calculatedPrice = BASE_PRICE; // 100 MRU for first km
+                    let calculatedPrice = BASE_PRICE; 
 
-                    bookingPrice = roundToNearest5(calculatedPrice).toString(); // 100 rounded = 100
+                    bookingPrice = roundToNearest5(calculatedPrice).toString(); 
                     basePrice = bookingPrice;
 
                     console.log(`Open ride (rideOpen=1) - Base price: ${bookingPrice} MRU (First ${FREE_KM}km included), Per km after ${FREE_KM}km: ${ADMIN_PRICE_PER_KM} MRU, Per min: ${pricePerMinOpen} MRU (will be added in real-time)`);
@@ -1925,11 +1925,10 @@ module.exports = {
                         perMinPrice: rideOpen == 1 ? pricePerMinOpen : 0,
                         perKmPrice: ADMIN_PRICE_PER_KM, // Use admin amount
                         freeKm: FREE_KM,
-                        // Indicate real-time price updates only for open rides
                         priceUpdateMessage: rideOpen == 1 ?
                             `Real-time pricing: First ${FREE_KM}km = ${BASE_PRICE} MRU, then +${ADMIN_PRICE_PER_KM} MRU/km + ${pricePerMinOpen} MRU/min` :
                             `Fixed price: First ${FREE_KM}km = ${BASE_PRICE} MRU, then ${ADMIN_PRICE_PER_KM} MRU/km - Total: ${bookingPrice} MRU`,
-                        adminRate: ADMIN_PRICE_PER_KM // Show the admin rate being used
+                        adminRate: ADMIN_PRICE_PER_KM
                     }
                 );
 
