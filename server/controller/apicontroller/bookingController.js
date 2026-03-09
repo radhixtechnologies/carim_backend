@@ -1253,7 +1253,6 @@ module.exports = {
                             }
                         });
                         if (!acceptedRequest) {
-
                             await db.bookings.update(
                                 {
                                     status: '6',
@@ -1301,7 +1300,7 @@ module.exports = {
                     } catch (err) {
                         console.error("Scheduler failed:", err);
                     }
-                }, 180000);
+                }, 60000);
 
                 await db.bookings.update(
                     {
@@ -2369,6 +2368,10 @@ module.exports = {
                 await booking.update({
                     status: newStatus,
                 });
+                await db.rideRequest.update(
+                    { status: 6 },
+                    { where: { bookingId: booking.id } }
+                );
                 io.emit("rideStatusUpdate", {
                     bookingId: booking.id,
                     status: newStatus,
