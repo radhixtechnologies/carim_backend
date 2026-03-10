@@ -1028,7 +1028,7 @@ module.exports = {
                 // Filter drivers who are free (no active bookings) AND totalAmount > 5
                 const freeDrivers = drivers.filter(d => {
                     const hasActiveBooking = d.driverbook && d.driverbook.length > 0;
-                    const hasValidBalance = d.totalAmount !== null && parseFloat(d.totalAmount) > 5;
+                    const hasValidBalance = d.totalAmount !== null && parseFloat(d.totalAmount) >= 50;
                     return !hasActiveBooking && hasValidBalance;
                 });
 
