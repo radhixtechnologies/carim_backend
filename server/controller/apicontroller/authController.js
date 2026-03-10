@@ -14,7 +14,7 @@ const client = require("twilio")(accountSid, authToken);
 
 module.exports = {
 
-    login1: async (req, res) => {
+    login: async (req, res) => {
         try {
             const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
 
@@ -145,7 +145,7 @@ module.exports = {
             return helper.failure(res, msg);
         }
     },
-    login: async (req, res) => {
+    login1: async (req, res) => {
         try {
             const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
 
@@ -285,92 +285,92 @@ module.exports = {
     },
 
 
-    // verifyOtp: async (req, res) => {
-    //     try {
-    //         const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French
-
-    //         const v = new Validator(req.body, {
-    //             otp: 'required',
-    //             countryCode: 'required',
-    //             phoneNumber: 'required',
-    //         });
-
-    //         let errorsResponse = await helper.checkValidation(v);
-    //         if (errorsResponse) {
-    //             return helper.failure(res, errorsResponse);
-    //         }
-
-    //         let user = await db.users.findOne({
-    //             where: {
-    //                 phoneNumber: req.body.phoneNumber,
-    //                 countryCode: req.body.countryCode,
-    //                 deletedAt: null
-    //             },
-    //         });
-
-    //         if (!user) {
-    //             let msg = languageType == 1 ? 'المستخدم غير موجود.' :
-    //                 languageType == 2 ? 'Utilisateur non trouvé.' :
-    //                     'User not found.';
-    //             return helper.failure(res, msg);
-    //         }
-
-    //         if (user.status === "0") {
-    //             let msg = languageType == 1 ? "حسابك معطل من قبل المسؤول. يرجى الاتصال بالمسؤول للمساعدة." :
-    //                 languageType == 2 ? "Votre compte est inactif par l’administrateur. Veuillez contacter l’administrateur pour obtenir de l’aide." :
-    //                     "Your account is inactive by Admin. Please contact the admin.";
-    //             return helper.failure(res, msg);
-    //         }
-
-    //         if (req.body.otp == user.otp) {
-    //             // const loginTime = helper.unixTimestamp();
-
-    //             const token = jwt.sign(
-    //                 {
-    //                     id: user.id
-    //                 },
-    //                 process.env.JWT_SECRET
-    //             );
-
-    //             await db.users.update(
-    //                 {
-    //                     otpVerify: "1",
-    //                     otp: 0,
-    //                 },
-    //                 { where: { id: user.id } }
-    //             );
-
-    //             const updated = await db.users.findOne({
-    //                 where: {
-    //                     phoneNumber: req.body.phoneNumber,
-    //                     countryCode: req.body.countryCode
-    //                 }
-    //             });
-
-    //             let msg = languageType == 1 ? 'تم التحقق من OTP بنجاح.' :
-    //                 languageType == 2 ? 'OTP vérifié avec succès.' :
-    //                     'OTP verified successfully.';
-
-    //             return helper.success(res, msg, {
-    //                 ...updated.toJSON(),
-    //                 token: token
-    //             });
-    //         }
-    //         return helper.success(res, "", {
-    //         });
-
-    //     } catch (error) {
-    //         console.error('verifyOtp error:', error);
-
-    //         let msg = languageType == 1 ? 'حدث خطأ ما' :
-    //             languageType == 2 ? 'Une erreur est survenue' :
-    //                 'Something went wrong';
-
-    //         return helper.failure(res, msg);
-    //     }
-    // },
-
     verifyOtp: async (req, res) => {
+        try {
+            const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French
+
+            const v = new Validator(req.body, {
+                otp: 'required',
+                countryCode: 'required',
+                phoneNumber: 'required',
+            });
+
+            let errorsResponse = await helper.checkValidation(v);
+            if (errorsResponse) {
+                return helper.failure(res, errorsResponse);
+            }
+
+            let user = await db.users.findOne({
+                where: {
+                    phoneNumber: req.body.phoneNumber,
+                    countryCode: req.body.countryCode,
+                    deletedAt: null
+                },
+            });
+
+            if (!user) {
+                let msg = languageType == 1 ? 'المستخدم غير موجود.' :
+                    languageType == 2 ? 'Utilisateur non trouvé.' :
+                        'User not found.';
+                return helper.failure(res, msg);
+            }
+
+            if (user.status === "0") {
+                let msg = languageType == 1 ? "حسابك معطل من قبل المسؤول. يرجى الاتصال بالمسؤول للمساعدة." :
+                    languageType == 2 ? "Votre compte est inactif par l’administrateur. Veuillez contacter l’administrateur pour obtenir de l’aide." :
+                        "Your account is inactive by Admin. Please contact the admin.";
+                return helper.failure(res, msg);
+            }
+
+            if (req.body.otp == user.otp) {
+                // const loginTime = helper.unixTimestamp();
+
+                const token = jwt.sign(
+                    {
+                        id: user.id
+                    },
+                    process.env.JWT_SECRET
+                );
+
+                await db.users.update(
+                    {
+                        otpVerify: "1",
+                        otp: 0,
+                    },
+                    { where: { id: user.id } }
+                );
+
+                const updated = await db.users.findOne({
+                    where: {
+                        phoneNumber: req.body.phoneNumber,
+                        countryCode: req.body.countryCode
+                    }
+                });
+
+                let msg = languageType == 1 ? 'تم التحقق من OTP بنجاح.' :
+                    languageType == 2 ? 'OTP vérifié avec succès.' :
+                        'OTP verified successfully.';
+
+                return helper.success(res, msg, {
+                    ...updated.toJSON(),
+                    token: token
+                });
+            }
+            return helper.success(res, "", {
+            });
+
+        } catch (error) {
+            console.error('verifyOtp error:', error);
+
+            let msg = languageType == 1 ? 'حدث خطأ ما' :
+                languageType == 2 ? 'Une erreur est survenue' :
+                    'Something went wrong';
+
+            return helper.failure(res, msg);
+        }
+    },
+
+    verifyOtp1: async (req, res) => {
         try {
             const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French
 
@@ -461,7 +461,7 @@ module.exports = {
     },
 
 
-    resendOTP: async (req, res) => {
+    resendOTP1: async (req, res) => {
         try {
             const v = new Validator(req.body, {
                 phoneNumber: "required|string",
@@ -494,59 +494,59 @@ module.exports = {
             console.log(error, "==here is error");
         }
     },
-    // resendOTP1: async (req, res) => {
-    //     try {
-    //         const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
+    resendOTP: async (req, res) => {
+        try {
+            const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
 
-    //         const v = new Validator(req.body, {
-    //             countryCode: "required",
-    //             phoneNumber: "required",
-    //         });
+            const v = new Validator(req.body, {
+                countryCode: "required",
+                phoneNumber: "required",
+            });
 
-    //         const errorsResponse = await helper.checkValidation(v);
-    //         if (errorsResponse) {
-    //             return helper.failure(res, errorsResponse);
-    //         }
+            const errorsResponse = await helper.checkValidation(v);
+            if (errorsResponse) {
+                return helper.failure(res, errorsResponse);
+            }
 
-    //         const { countryCode, phoneNumber } = req.body;
+            const { countryCode, phoneNumber } = req.body;
 
-    //         const user = await db.users.findOne({
-    //             where: { phoneNumber, countryCode, deletedAt: null },
-    //             raw: true
-    //         });
+            const user = await db.users.findOne({
+                where: { phoneNumber, countryCode, deletedAt: null },
+                raw: true
+            });
 
-    //         if (!user) {
-    //             let msg = "User not found";
-    //             if (languageType == 1) msg = "المستخدم غير موجود";
-    //             else if (languageType == 2) msg = "Utilisateur non trouvé";
-    //             return helper.failure(res, msg);
-    //         }
+            if (!user) {
+                let msg = "User not found";
+                if (languageType == 1) msg = "المستخدم غير موجود";
+                else if (languageType == 2) msg = "Utilisateur non trouvé";
+                return helper.failure(res, msg);
+            }
 
-    //         const otp = '1111';
-    //         //    const otp =  Math.floor(1000 + Math.random() * 9000).toString();
+            const otp = '1111';
+            //    const otp =  Math.floor(1000 + Math.random() * 9000).toString();
 
-    //         await db.users.update(
-    //             {
-    //                 otp: otp,
-    //                 otpVerify: "0",
-    //             },
-    //             { where: { id: user.id } }
-    //         );
+            await db.users.update(
+                {
+                    otp: otp,
+                    otpVerify: "0",
+                },
+                { where: { id: user.id } }
+            );
 
-    //         let msg = "OTP Re-sent Successfully";
-    //         if (languageType == 1) msg = "تم إعادة إرسال OTP بنجاح";
-    //         else if (languageType == 2) msg = "OTP renvoyé avec succès";
+            let msg = "OTP Re-sent Successfully";
+            if (languageType == 1) msg = "تم إعادة إرسال OTP بنجاح";
+            else if (languageType == 2) msg = "OTP renvoyé avec succès";
 
-    //         return helper.success(res, msg);
+            return helper.success(res, msg);
 
-    //     } catch (error) {
-    //         console.error('resendOTP error:', error);
-    //         let msg = "OTP Not Sent!";
-    //         if (languageType == 1) msg = "لم يتم إرسال OTP!";
-    //         else if (languageType == 2) msg = "OTP non envoyé !";
-    //         return helper.failure(res, msg);
-    //     }
-    // },
+        } catch (error) {
+            console.error('resendOTP error:', error);
+            let msg = "OTP Not Sent!";
+            if (languageType == 1) msg = "لم يتم إرسال OTP!";
+            else if (languageType == 2) msg = "OTP non envoyé !";
+            return helper.failure(res, msg);
+        }
+    },
 
 
     createAccount: async (req, res) => {
