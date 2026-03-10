@@ -14,7 +14,7 @@ const client = require("twilio")(accountSid, authToken);
 
 module.exports = {
 
-    login: async (req, res) => {
+    login1: async (req, res) => {
         try {
             const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
 
@@ -145,7 +145,7 @@ module.exports = {
             return helper.failure(res, msg);
         }
     },
-    login1: async (req, res) => {
+    login: async (req, res) => {
         try {
             const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
 
@@ -285,7 +285,7 @@ module.exports = {
     },
 
 
-    verifyOtp: async (req, res) => {
+    verifyOtp1: async (req, res) => {
         try {
             const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French
 
@@ -370,7 +370,7 @@ module.exports = {
         }
     },
 
-    verifyOtp1: async (req, res) => {
+    verifyOtp: async (req, res) => {
         try {
             const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French
 
@@ -461,7 +461,7 @@ module.exports = {
     },
 
 
-    resendOTP1: async (req, res) => {
+    resendOTP: async (req, res) => {
         try {
             const v = new Validator(req.body, {
                 phoneNumber: "required|string",
@@ -494,7 +494,7 @@ module.exports = {
             console.log(error, "==here is error");
         }
     },
-    resendOTP: async (req, res) => {
+    resendOTP1: async (req, res) => {
         try {
             const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
 
