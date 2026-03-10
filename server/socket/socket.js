@@ -2038,7 +2038,6 @@ module.exports = function (io) {
           case "3": // FINISHED - COMMISSION CUT HOGA YAHAN
             await stopRealTimePricing(bookingId);
 
-            // Get final booking details
             const finalBooking = await db.bookings.findOne({
               where: { id: bookingId },
               raw: true
@@ -2053,7 +2052,6 @@ module.exports = function (io) {
             console.log(`Final price: ${finalPrice} → ${roundedFinalPrice} MRU`);
 
             // ===== GET COMMISSION PERCENTAGE FROM ADMIN =====
-            // Role 0 admin ka commission percent lein
             const adminUser = await db.users.findOne({
               where: { role: '0' },
               attributes: ['id', 'totalAmount', 'adminCommission'],
@@ -2069,7 +2067,7 @@ module.exports = function (io) {
             }
 
             // Admin ka commission percent
-            let commissionPercent = parseFloat(adminUser.adminCommission) || 15; // Default 15% agar null ho
+            let commissionPercent = parseFloat(adminUser.adminCommission) || 15; // Default 15% 
             console.log(`Admin commission percent from DB: ${commissionPercent}%`);
 
             // ===== GET DRIVER DETAILS =====
@@ -2087,13 +2085,13 @@ module.exports = function (io) {
               });
             }
 
-            // ✅ Commission calculate karo BOOKING PRICE se
+            //  Commission calculate karo BOOKING PRICE se
             const commissionAmount = (roundedFinalPrice * commissionPercent) / 100;
 
             // Driver ka current balance
             const driverBalance = parseFloat(driverDetails.totalAmount) || 0;
 
-            // ✅ Driver ke account se commission CUT karo (subtract)
+            // Driver ke account se commission CUT karo (subtract)
             const newDriverBalance = driverBalance - commissionAmount;
 
             console.log(`Booking price: ${roundedFinalPrice} MRU`);
