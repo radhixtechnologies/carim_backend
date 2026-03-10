@@ -2164,12 +2164,12 @@ module.exports = function (io) {
 
             // Send notifications
             await emitToBoth(
-              getUserMsg(`Ride finished successfully. Final price: ${roundedFinalPrice} MRU`,
-                `تم الانتهاء من الرحلة بنجاح. السعر النهائي: ${roundedFinalPrice} MRU`,
-                `Trajet terminé avec succès. Prix final: ${roundedFinalPrice} MRU`),
-              getDriverMsg(`Ride finished successfully. Final price: ${roundedFinalPrice} MRU`,
-                `تم الانتهاء من الرحلة بنجاح. السعر النهائي: ${roundedFinalPrice} MRU`,
-                `Trajet terminé avec succès. Prix final: ${roundedFinalPrice} MRU`),
+              getUserMsg(`Ride finished successfully.`,
+                `تم الانتهاء من الرحلة بنجاح. السعر النهائي`,
+                `Trajet terminé avec succès. Prix final`),
+              getDriverMsg(`Ride finished successfully. `,
+                `تم الانتهاء من الرحلة بنجاح. السعر النهائي`,
+                `Trajet terminé avec succès. Prix final`),
               "3"
             );
 
