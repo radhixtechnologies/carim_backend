@@ -447,7 +447,7 @@ module.exports = {
             }
 
             // 🔹 OTP not approved
-            return helper.success(res, "", {});
+            return helper.error(res, "otp doesn't match", {});
 
         } catch (error) {
             console.error('verifyOtp error:', error);
