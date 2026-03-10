@@ -2062,25 +2062,36 @@ module.exports = {
                     raw: true
                 });
 
-                await db.bookings.destroy({
-                    where: {
-                        driverId: null,
-                        status: '0',
-                        request: '0',
-                        rejectCount: '0',
-                        bookingDate: { [Sequelize.Op.lt]: oneMinuteAgo }
-                    },
-                    force: true
-                });
+                // await db.bookings.destroy({
+                //     where: {
+                //         driverId: null,
+                //         status: '0',
+                //         request: '0',
+                //         rejectCount: '0',
+                //         bookingDate: { [Sequelize.Op.lt]: oneMinuteAgo }
+                //     },
+                //     force: true
+                // });
+                await db.bookings.update(
+                    { status: '6', request: '2' }, // mark as cancelled due to timeout
+                    {
+                        where: {
+                            driverId: null,
+                            status: '0',
+                            request: '0',
+                            rejectCount: '0',
+                            bookingDate: { [Sequelize.Op.lt]: oneMinuteAgo }
+                        },
+                        force: true
+                    }
+                );
 
                 // SOCKET EMIT FOR USER SIDE
                 if (expiredBookings.length > 0) {
                     expiredBookings.forEach(b => {
-                        console.log("Emitting rideStatusUpdate:", b);
-
                         io.emit("rideStatusUpdate", {
                             bookingId: b.id,
-                            status: 6,
+                            status: "6",
                             message: "Ride request expired"
                         });
                     });
@@ -2128,6 +2139,9 @@ module.exports = {
 
                 // ===== FETCH REQUESTS =====
                 const requests = await db.bookings.findAll({
+                    where: {
+                        status: "0"
+                    },
                     include: [
                         {
                             model: db.rideRequest,
