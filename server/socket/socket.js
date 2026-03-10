@@ -1875,6 +1875,166 @@ module.exports = function (io) {
             }
             break;
 
+          // case "3": // FINISHED - COMMISSION CUT HOGA YAHAN
+          //   await stopRealTimePricing(bookingId);
+
+          //   // Get final booking details
+          //   const finalBooking = await db.bookings.findOne({
+          //     where: { id: bookingId },
+          //     raw: true
+          //   });
+
+          //   // Round final price to nearest 5
+          //   let finalPrice = parseFloat(finalBooking.bookingPrice);
+          //   let roundedFinalPrice = roundToNearest5(finalPrice);
+
+          //   // Update booking with rounded price and status
+          //   await db.bookings.update(
+          //     {
+          //       bookingPrice: roundedFinalPrice.toString(),
+          //       status: "3"
+          //     },
+          //     { where: { id: bookingId } }
+          //   );
+
+          //   console.log("========== RIDE COMPLETED - COMMISSION PROCESSING ==========");
+          //   console.log(`Booking ID: ${bookingId}`);
+          //   console.log(`Final price: ${finalPrice} → ${roundedFinalPrice} MRU`);
+
+          //   // ===== GET DRIVER DETAILS =====
+          //   const driverDetails = await db.users.findOne({
+          //     where: { id: driverId, role: "2" },
+          //     attributes: ['id', 'totalAmount', 'adminCommission'],
+          //     raw: true
+          //   });
+
+          //   if (!driverDetails) {
+          //     console.log("❌ Driver not found!");
+          //     return socket.emit("rideStatusUpdate", {
+          //       success: false,
+          //       message: "Driver not found."
+          //     });
+          //   }
+
+          //   // ===== GET COMMISSION PERCENTAGE =====
+          //   // Pehle driver ka adminCommission check karo
+          //   let commissionPercent = parseFloat(driverDetails.adminCommission);
+
+          //   // Agar driver ka commission empty hai to admin ka commission le lo
+          //   if (!commissionPercent || commissionPercent === 0) {
+          //     console.log("⚠️ Driver adminCommission empty, fetching from admin...");
+
+          //     const adminUser = await db.users.findOne({
+          //       where: { role: '0' },
+          //       attributes: ['adminCommission'],
+          //       raw: true
+          //     });
+
+          //     commissionPercent = parseFloat(adminUser?.adminCommission) || 15; // Default 15%
+          //     console.log(`Using admin commission: ${commissionPercent}%`);
+          //   }
+
+          //   // ✅ Driver ka current balance (jisme se commission katega)
+          //   const driverBalance = parseFloat(driverDetails.totalAmount) || 0;
+
+          //   // ✅ Commission calculate karo driver ke totalAmount se (bookingPrice se nahi)
+          //   const commissionAmount = (driverBalance * commissionPercent) / 100;
+
+          //   console.log(`Driver ID: ${driverId}`);
+          //   console.log(`Driver adminCommission in DB: "${driverDetails.adminCommission}"`);
+          //   console.log(`Using commission percent: ${commissionPercent}%`);
+          //   console.log(`Driver balance before deduction: ${driverBalance} MRU`);
+          //   console.log(`Commission calculation: ${driverBalance} × ${commissionPercent}% = ${commissionAmount} MRU`);
+
+          //   if (commissionAmount > 0) {
+          //     // ===== DEDUCT COMMISSION FROM DRIVER'S totalAmount =====
+          //     const newDriverBalance = driverBalance - commissionAmount;
+
+          //     const driverUpdate = await db.users.update(
+          //       { totalAmount: newDriverBalance.toFixed(2).toString() },
+          //       { where: { id: driverId, role: "2" } }
+          //     );
+
+          //     console.log(`Driver update result: ${driverUpdate[0]} row(s) updated`);
+          //     console.log(`Driver balance after deduction: ${newDriverBalance} MRU (deducted ${commissionAmount} MRU)`);
+
+          //     // ===== ADD COMMISSION TO ADMIN'S totalAmount =====
+          //     const adminUser = await db.users.findOne({
+          //       where: { role: '0' },
+          //       attributes: ['id', 'totalAmount'],
+          //       raw: true
+          //     });
+
+          //     if (adminUser) {
+          //       const adminBalance = parseFloat(adminUser.totalAmount) || 0;
+          //       const newAdminBalance = adminBalance + commissionAmount;
+
+          //       const adminUpdate = await db.users.update(
+          //         { totalAmount: newAdminBalance.toFixed(2).toString() },
+          //         { where: { id: adminUser.id, role: '0' } }
+          //       );
+
+          //       console.log(`Admin update result: ${adminUpdate[0]} row(s) updated`);
+          //       console.log(`Admin balance: ${adminBalance} → ${newAdminBalance} MRU (added ${commissionAmount} MRU)`);
+
+          //       // Create admin transaction
+          //       try {
+          //         await db.transactions.create({
+          //           userId: adminUser.id,
+          //           bookingId: bookingId,
+          //           amount: commissionAmount.toString(),
+          //           type: 'commission_earning',
+          //           description: `Commission earned from driver #${driverId} (${commissionPercent}% of their balance)`,
+          //           status: 'completed'
+          //         });
+          //       } catch (txError) {
+          //         console.log("Admin transaction error:", txError.message);
+          //       }
+          //     }
+
+          //     // Create driver transaction
+          //     try {
+          //       await db.transactions.create({
+          //         userId: driverId,
+          //         bookingId: bookingId,
+          //         amount: commissionAmount.toString(),
+          //         type: 'commission_deduction',
+          //         description: `Admin commission ${commissionPercent}% deducted from your balance for ride #${bookingId}`,
+          //         status: 'completed'
+          //       });
+          //     } catch (txError) {
+          //       console.log("Driver transaction error:", txError.message);
+          //     }
+          //   } else {
+          //     console.log("⚠️ Commission amount is 0, skipping deduction");
+          //   }
+
+          //   console.log("========== COMMISSION PROCESSING COMPLETE ==========");
+
+          //   // Send notifications
+          //   await emitToBoth(
+          //     getUserMsg(`Ride finished successfully. Final price: ${roundedFinalPrice} MRU`,
+          //       `تم الانتهاء من الرحلة بنجاح. السعر النهائي: ${roundedFinalPrice} MRU`,
+          //       `Trajet terminé avec succès. Prix final: ${roundedFinalPrice} MRU`),
+          //     getDriverMsg(`Ride finished successfully. Final price: ${roundedFinalPrice} MRU`,
+          //       `تم الانتهاء من الرحلة بنجاح. السعر النهائي: ${roundedFinalPrice} MRU`,
+          //       `Trajet terminé avec succès. Prix final: ${roundedFinalPrice} MRU`),
+          //     "3"
+          //   );
+
+          //   if (user.deviceToken) {
+          //     helper.sendNotification_android(user.deviceToken, {
+          //       message: getUserMsg(
+          //         `Your ride has been completed. Final price: ${roundedFinalPrice} MRU`,
+          //         `تم إكمال رحلتك. السعر النهائي: ${roundedFinalPrice} MRU`,
+          //         `Votre trajet est terminé. Prix final: ${roundedFinalPrice} MRU`
+          //       ),
+          //       type: 9,
+          //       senderId: driverId,
+          //       bookingId: booking.id
+          //     });
+          //   }
+          //   break;
           case "3": // FINISHED - COMMISSION CUT HOGA YAHAN
             await stopRealTimePricing(bookingId);
 
@@ -1888,23 +2048,34 @@ module.exports = function (io) {
             let finalPrice = parseFloat(finalBooking.bookingPrice);
             let roundedFinalPrice = roundToNearest5(finalPrice);
 
-            // Update booking with rounded price and status
-            await db.bookings.update(
-              {
-                bookingPrice: roundedFinalPrice.toString(),
-                status: "3"
-              },
-              { where: { id: bookingId } }
-            );
-
             console.log("========== RIDE COMPLETED - COMMISSION PROCESSING ==========");
             console.log(`Booking ID: ${bookingId}`);
             console.log(`Final price: ${finalPrice} → ${roundedFinalPrice} MRU`);
 
+            // ===== GET COMMISSION PERCENTAGE FROM ADMIN =====
+            // Role 0 admin ka commission percent lein
+            const adminUser = await db.users.findOne({
+              where: { role: '0' },
+              attributes: ['id', 'totalAmount', 'adminCommission'],
+              raw: true
+            });
+
+            if (!adminUser) {
+              console.log("❌ Admin user not found!");
+              return socket.emit("rideStatusUpdate", {
+                success: false,
+                message: "Admin configuration not found."
+              });
+            }
+
+            // Admin ka commission percent
+            let commissionPercent = parseFloat(adminUser.adminCommission) || 15; // Default 15% agar null ho
+            console.log(`Admin commission percent from DB: ${commissionPercent}%`);
+
             // ===== GET DRIVER DETAILS =====
             const driverDetails = await db.users.findOne({
               where: { id: driverId, role: "2" },
-              attributes: ['id', 'totalAmount', 'adminCommission'],
+              attributes: ['id', 'totalAmount'],
               raw: true
             });
 
@@ -1916,98 +2087,80 @@ module.exports = function (io) {
               });
             }
 
-            // ===== GET COMMISSION PERCENTAGE =====
-            // Pehle driver ka adminCommission check karo
-            let commissionPercent = parseFloat(driverDetails.adminCommission);
+            // ✅ Commission calculate karo BOOKING PRICE se
+            const commissionAmount = (roundedFinalPrice * commissionPercent) / 100;
 
-            // Agar driver ka commission empty hai to admin ka commission le lo
-            if (!commissionPercent || commissionPercent === 0) {
-              console.log("⚠️ Driver adminCommission empty, fetching from admin...");
-
-              const adminUser = await db.users.findOne({
-                where: { role: '0' },
-                attributes: ['adminCommission'],
-                raw: true
-              });
-
-              commissionPercent = parseFloat(adminUser?.adminCommission) || 15; // Default 15%
-              console.log(`Using admin commission: ${commissionPercent}%`);
-            }
-
-            // ✅ Driver ka current balance (jisme se commission katega)
+            // Driver ka current balance
             const driverBalance = parseFloat(driverDetails.totalAmount) || 0;
 
-            // ✅ Commission calculate karo driver ke totalAmount se (bookingPrice se nahi)
-            const commissionAmount = (driverBalance * commissionPercent) / 100;
+            // ✅ Driver ke account se commission CUT karo (subtract)
+            const newDriverBalance = driverBalance - commissionAmount;
 
-            console.log(`Driver ID: ${driverId}`);
-            console.log(`Driver adminCommission in DB: "${driverDetails.adminCommission}"`);
-            console.log(`Using commission percent: ${commissionPercent}%`);
+            console.log(`Booking price: ${roundedFinalPrice} MRU`);
+            console.log(`Commission calculation: ${roundedFinalPrice} × ${commissionPercent}% = ${commissionAmount} MRU`);
             console.log(`Driver balance before deduction: ${driverBalance} MRU`);
-            console.log(`Commission calculation: ${driverBalance} × ${commissionPercent}% = ${commissionAmount} MRU`);
+            console.log(`Driver balance after deduction: ${newDriverBalance} MRU`);
 
-            if (commissionAmount > 0) {
-              // ===== DEDUCT COMMISSION FROM DRIVER'S totalAmount =====
-              const newDriverBalance = driverBalance - commissionAmount;
+            // ===== UPDATE DRIVER'S totalAmount (SUBTRACT COMMISSION) =====
+            const driverUpdate = await db.users.update(
+              { totalAmount: newDriverBalance.toFixed(2).toString() },
+              { where: { id: driverId, role: "2" } }
+            );
 
-              const driverUpdate = await db.users.update(
-                { totalAmount: newDriverBalance.toFixed(2).toString() },
-                { where: { id: driverId, role: "2" } }
-              );
+            console.log(`Driver update result: ${driverUpdate[0]} row(s) updated`);
 
-              console.log(`Driver update result: ${driverUpdate[0]} row(s) updated`);
-              console.log(`Driver balance after deduction: ${newDriverBalance} MRU (deducted ${commissionAmount} MRU)`);
+            // ===== UPDATE ADMIN'S totalAmount (ADD COMMISSION) =====
+            const adminBalance = parseFloat(adminUser.totalAmount) || 0;
+            const newAdminBalance = adminBalance + commissionAmount;
 
-              // ===== ADD COMMISSION TO ADMIN'S totalAmount =====
-              const adminUser = await db.users.findOne({
-                where: { role: '0' },
-                attributes: ['id', 'totalAmount'],
-                raw: true
+            const adminUpdate = await db.users.update(
+              { totalAmount: newAdminBalance.toFixed(2).toString() },
+              { where: { id: adminUser.id, role: '0' } }
+            );
+
+            console.log(`Admin update result: ${adminUpdate[0]} row(s) updated`);
+            console.log(`Admin balance: ${adminBalance} → ${newAdminBalance} MRU (added ${commissionAmount} MRU)`);
+
+            // ===== CREATE TRANSACTION RECORDS =====
+
+            // Admin transaction (commission earning)
+            try {
+              await db.transactions.create({
+                userId: adminUser.id,
+                bookingId: bookingId,
+                amount: commissionAmount.toString(),
+                type: 'commission_earning',
+                description: `Commission earned from ride #${bookingId} (${commissionPercent}% of booking price)`,
+                status: 'completed'
               });
-
-              if (adminUser) {
-                const adminBalance = parseFloat(adminUser.totalAmount) || 0;
-                const newAdminBalance = adminBalance + commissionAmount;
-
-                const adminUpdate = await db.users.update(
-                  { totalAmount: newAdminBalance.toFixed(2).toString() },
-                  { where: { id: adminUser.id, role: '0' } }
-                );
-
-                console.log(`Admin update result: ${adminUpdate[0]} row(s) updated`);
-                console.log(`Admin balance: ${adminBalance} → ${newAdminBalance} MRU (added ${commissionAmount} MRU)`);
-
-                // Create admin transaction
-                try {
-                  await db.transactions.create({
-                    userId: adminUser.id,
-                    bookingId: bookingId,
-                    amount: commissionAmount.toString(),
-                    type: 'commission_earning',
-                    description: `Commission earned from driver #${driverId} (${commissionPercent}% of their balance)`,
-                    status: 'completed'
-                  });
-                } catch (txError) {
-                  console.log("Admin transaction error:", txError.message);
-                }
-              }
-
-              // Create driver transaction
-              try {
-                await db.transactions.create({
-                  userId: driverId,
-                  bookingId: bookingId,
-                  amount: commissionAmount.toString(),
-                  type: 'commission_deduction',
-                  description: `Admin commission ${commissionPercent}% deducted from your balance for ride #${bookingId}`,
-                  status: 'completed'
-                });
-              } catch (txError) {
-                console.log("Driver transaction error:", txError.message);
-              }
-            } else {
-              console.log("⚠️ Commission amount is 0, skipping deduction");
+              console.log("Admin transaction created successfully");
+            } catch (txError) {
+              console.log("Admin transaction error:", txError.message);
             }
+
+            // Driver transaction (commission deduction)
+            try {
+              await db.transactions.create({
+                userId: driverId,
+                bookingId: bookingId,
+                amount: commissionAmount.toString(),
+                type: 'commission_deduction',
+                description: `Admin commission ${commissionPercent}% deducted for ride #${bookingId}`,
+                status: 'completed'
+              });
+              console.log("Driver transaction created successfully");
+            } catch (txError) {
+              console.log("Driver transaction error:", txError.message);
+            }
+
+            // Update booking with rounded price and status
+            await db.bookings.update(
+              {
+                bookingPrice: roundedFinalPrice.toString(),
+                status: "3"
+              },
+              { where: { id: bookingId } }
+            );
 
             console.log("========== COMMISSION PROCESSING COMPLETE ==========");
 
