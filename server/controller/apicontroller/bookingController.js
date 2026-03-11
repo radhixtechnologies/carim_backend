@@ -1497,7 +1497,8 @@ module.exports = {
     },
 
 
-    driverAccptReject1: (io) => {
+
+    driverAccptReject2: (io) => {
         return async (req, res) => {
             let languageType = Number(req.headers.languagetype);
 
@@ -1532,7 +1533,7 @@ module.exports = {
                     attributes: [
                         'approve', 'status', 'block', 'suspend',
                         'firstName', 'lastName', 'image',
-                        'deviceToken', 'languagee_type'
+                        'deviceToken', 'languagee_type', 'totalAmount'
                     ],
                     raw: true
                 });
@@ -1608,11 +1609,35 @@ module.exports = {
                         return helper.failure(res, msg);
                     }
 
+                    // ===== ADMIN COMMISSION CHECK =====
+                    const adminUser = await db.users.findOne({
+                        where: { role: '0' },
+                        attributes: ['adminCommission'],
+                        raw: true
+                    });
+
+                    // If no admin commission found, default to 0
+                    const adminCommissionPercentage = adminUser ? parseFloat(adminUser.adminCommission) || 0 : 0;
+
+                    // Calculate commission amount based on booking price
+                    const bookingPrice = parseFloat(bookingCheck.bookingPrice) || 0;
+                    const commissionAmount = (bookingPrice * adminCommissionPercentage) / 100;
+
+                    const driverBalance = parseFloat(driver.totalAmount) || 0;
+
+                    if (driverBalance < commissionAmount) {
+                        let msg = `Insufficient balance`;
+                        if (languageType == 1) msg = `رصيد غير كاف. العمولة المطلوبة:`;
+                        else if (languageType == 2) msg = `Solde insuffisant. Commission requise`;
+                        return helper.failure(res, msg);
+                    }
+
                     const [updated] = await db.bookings.update(
                         {
                             driverId,
                             request: '1',
                             status: '0',
+                            adminCommission: commissionAmount.toString()
                         },
                         {
                             where: {
@@ -1909,9 +1934,12 @@ module.exports = {
                     const driverBalance = parseFloat(driver.totalAmount) || 0;
 
                     if (driverBalance < commissionAmount) {
-                        let msg = `Insufficient balance`;
-                        if (languageType == 1) msg = `رصيد غير كاف. العمولة المطلوبة:`;
-                        else if (languageType == 2) msg = `Solde insuffisant. Commission requise`;
+                        const requiredAmount = (commissionAmount - driverBalance).toFixed(2);
+                        
+                        let msg = `Insufficient Balance. Recharge with ${requiredAmount} MRU to continue`;
+                        if (languageType == 1) msg = `رصيد غير كاف. أعد الشحن بمبلغ ${requiredAmount} MRU للمتابعة`;
+                        else if (languageType == 2) msg = `Solde insuffisant. Rechargez avec ${requiredAmount} MRU pour continuer`;
+                        
                         return helper.failure(res, msg);
                     }
 
