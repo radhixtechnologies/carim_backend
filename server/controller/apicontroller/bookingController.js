@@ -326,9 +326,17 @@ module.exports = {
     //                 raw: true
     //             });
 
+    //             let ADMIN_PRICE_PER_KM = 0;
 
-    //             // Use admin rideAmount for all pricing 
-    //             const ADMIN_PRICE_PER_KM = parseFloat(adminData?.rideAmount) || 10;
+    //             // Normal pricing
+    //             if (adminData && adminData.status == 0) {
+    //                 ADMIN_PRICE_PER_KM = parseFloat(adminData.rideAmount);
+    //             }
+    //             // Rush hour pricing
+    //             if (adminData && adminData.status == 1) {
+    //                 ADMIN_PRICE_PER_KM = parseFloat(adminData.priceRushHour);
+    //             }
+    //             // const ADMIN_PRICE_PER_KM = parseFloat(adminData?.rideAmount) || 10;
     //             const BASE_PRICE = 100;
     //             const FREE_KM = 1;
 
@@ -652,7 +660,6 @@ module.exports = {
     //                         }
     //                     });
     //                     if (!acceptedRequest) {
-
     //                         await db.bookings.update(
     //                             {
     //                                 status: '6',
@@ -700,7 +707,7 @@ module.exports = {
     //                 } catch (err) {
     //                     console.error("Scheduler failed:", err);
     //                 }
-    //             }, 180000);
+    //             }, 60000);
 
     //             await db.bookings.update(
     //                 {
@@ -754,10 +761,7 @@ module.exports = {
     //                     perMinPrice: rideOpen == 1 ? pricePerMinOpen : 0,
     //                     perKmPrice: ADMIN_PRICE_PER_KM, // Use admin amount
     //                     freeKm: FREE_KM,
-    //                     // priceUpdateMessage: rideOpen == 1 ?
-    //                     //     `Real-time pricing: First ${FREE_KM}km = ${BASE_PRICE} MRU, then +${ADMIN_PRICE_PER_KM} MRU/km + ${pricePerMinOpen} MRU/min` :
-    //                     //     `Fixed price: First ${FREE_KM}km = ${BASE_PRICE} MRU, then ${ADMIN_PRICE_PER_KM} MRU/km - Total: ${bookingPrice} MRU`,
-    //                     // adminRate: ADMIN_PRICE_PER_KM
+
     //                 }
     //             );
 
@@ -1366,7 +1370,6 @@ module.exports = {
             }
         };
     },
-
 
     updateDropLocationAndPrice: (io) => {
         return async (req, res) => {
