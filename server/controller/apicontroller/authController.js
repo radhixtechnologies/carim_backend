@@ -1431,7 +1431,7 @@ module.exports = {
         }
     },
 
-    transactionSsHistory1: async (req, res) => {
+    transactionSsHistory: async (req, res) => {
         try {
             const languageType = Number(req.headers.languagetype) || 0;
             const driverId = req.user.id;
@@ -1499,76 +1499,5 @@ module.exports = {
             });
         }
     },
-    transactionSsHistory: async (req, res) => {
-        try {
-            const languageType = Number(req.headers.languagetype) || 0;
-            const driverId = req.user.id;
-
-            const driverStatus = await db.users.findOne({
-                where: { id: driverId },
-                attributes: ['status', 'block', 'suspend', 'totalAmount'],
-                raw: true
-            });
-
-            if (!driverStatus) {
-                let msg = "User not found";
-                if (languageType == 1) msg = "المستخدم غير موجود";
-                else if (languageType == 2) msg = "Utilisateur non trouvé";
-                return helper.failure(res, msg);
-            }
-
-            if (driverStatus.status === "0") {
-                return helper.error2(res, "Your account has been deactivated by admin.");
-            }
-
-            if (driverStatus.block === "1") {
-                return helper.error1(res, "Your account has been blocked by admin.");
-            }
-
-            if (driverStatus.suspend === "1") {
-                return helper.error3(res, "Your account has been suspended by admin.");
-            }
-
-            const { status } = req.body;
-
-            let whereCondition = {
-                userId: driverId
-            };
-
-            if (status) {
-                whereCondition.status = status;
-            }
-
-            const history = await db.transactions.findAll({
-                where: whereCondition,
-                order: [["createdAt", "DESC"]],
-            });
-
-            let msg = "Payment history fetched successfully";
-            if (languageType == 1) msg = "تم جلب سجل المدفوعات بنجاح";
-            else if (languageType == 2) msg = "Historique des paiements récupéré avec succès";
-
-            return res.json({
-                status: true,
-                message: msg,
-                body: {
-                    currentBalance: driverStatus.totalAmount || "0.00",
-                    history: history.map(item => {
-                        const data = item.toJSON();
-                        data.adminCommission = data.amount;
-                        return data;
-                    })
-                }
-            });
-
-        } catch (error) {
-            console.error('transactionSsHistory error:', error);
-
-            return res.status(500).json({
-                status: false,
-                message: "Something went wrong",
-                error: error.message
-            });
-        }
-    },
+ 
 }
