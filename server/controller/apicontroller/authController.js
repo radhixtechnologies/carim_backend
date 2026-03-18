@@ -1393,135 +1393,135 @@ module.exports = {
     //         return helper.failure(res, msg);
     //     }
     // },
-userActiveRide: async (req, res) => {
-    try {
-        const languageType = Number(req.headers.languagetype) || 0;
-        const userId = req.user.id;
+    userActiveRide: async (req, res) => {
+        try {
+            const languageType = Number(req.headers.languagetype) || 0;
+            const userId = req.user.id;
 
-        // ---------------- USER STATUS ----------------
-        const userStatus = await db.users.findOne({
-            where: { id: userId },
-            attributes: ['status', 'block', 'suspend', 'role'],
-            raw: true
-        });
+            // ---------------- USER STATUS ----------------
+            const userStatus = await db.users.findOne({
+                where: { id: userId },
+                attributes: ['status', 'block', 'suspend', 'role'],
+                raw: true
+            });
 
-        if (!userStatus) {
-            let msg = "User not found.";
-            if (languageType == 1) msg = "المستخدم غير موجود.";
-            else if (languageType == 2) msg = "Utilisateur non trouvé.";
-            return helper.failure(res, msg);
-        }
+            if (!userStatus) {
+                let msg = "User not found.";
+                if (languageType == 1) msg = "المستخدم غير موجود.";
+                else if (languageType == 2) msg = "Utilisateur non trouvé.";
+                return helper.failure(res, msg);
+            }
 
-        if (userStatus.status === "0") {
-            let msg = "Your account has been deactivated by admin.";
-            if (languageType == 1) msg = "تم تعطيل حسابك من قبل المسؤول.";
-            else if (languageType == 2) msg = "Votre compte a été désactivé par l’administrateur.";
-            return helper.error2(res, msg);
-        }
+            if (userStatus.status === "0") {
+                let msg = "Your account has been deactivated by admin.";
+                if (languageType == 1) msg = "تم تعطيل حسابك من قبل المسؤول.";
+                else if (languageType == 2) msg = "Votre compte a été désactivé par l’administrateur.";
+                return helper.error2(res, msg);
+            }
 
-        if (userStatus.block === "1") {
-            let msg = "Your account has been blocked by admin.";
-            if (languageType == 1) msg = "تم حظر حسابك من قبل المسؤول.";
-            else if (languageType == 2) msg = "Votre compte a été bloqué par l’administrateur.";
-            return helper.error1(res, msg);
-        }
+            if (userStatus.block === "1") {
+                let msg = "Your account has been blocked by admin.";
+                if (languageType == 1) msg = "تم حظر حسابك من قبل المسؤول.";
+                else if (languageType == 2) msg = "Votre compte a été bloqué par l’administrateur.";
+                return helper.error1(res, msg);
+            }
 
-        if (userStatus.suspend === "1") {
-            let msg = "Your account has been suspended by admin.";
-            if (languageType == 1) msg = "تم تعليق حسابك من قبل المسؤول.";
-            else if (languageType == 2) msg = "Votre compte a été suspendu par l’administrateur.";
-            return helper.error3(res, msg);
-        }
+            if (userStatus.suspend === "1") {
+                let msg = "Your account has been suspended by admin.";
+                if (languageType == 1) msg = "تم تعليق حسابك من قبل المسؤول.";
+                else if (languageType == 2) msg = "Votre compte a été suspendu par l’administrateur.";
+                return helper.error3(res, msg);
+            }
 
-        // ---------------- FETCH ACTIVE RIDE ----------------
-        const activeRide = await db.bookings.findOne({
-            where: {
-                userId: userId,
-                status: { [Sequelize.Op.in]: ['0', '1', '2'] } // pending, accepted, ongoing
-            },
-            include: [
-                {
-                    model: db.users,
-                    as: 'driverbook',
-                    attributes: [
-                        'id',
-                        'firstName',
-                        'lastName',
-                        'phoneNumber',
-                        'image',
-                        'latitude',
-                        'longitude'
-                    ]
-                }
-            ],
-            order: [['id', 'DESC']]
-        });
+            // ---------------- FETCH ACTIVE RIDE ----------------
+            const activeRide = await db.bookings.findOne({
+                where: {
+                    userId: userId,
+                    status: { [Sequelize.Op.in]: ['0', '1', '2'] } // pending, accepted, ongoing
+                },
+                include: [
+                    {
+                        model: db.users,
+                        as: 'driverbook',
+                        attributes: [
+                            'id',
+                            'firstName',
+                            'lastName',
+                            'phoneNumber',
+                            'image',
+                            'latitude',
+                            'longitude'
+                        ]
+                    }
+                ],
+                order: [['id', 'DESC']]
+            });
 
-        // ---------------- NO ACTIVE RIDE ----------------
-        if (!activeRide) {
-            let msg = "No active ride";
-            if (languageType == 1) msg = "لا توجد رحلة نشطة";
-            else if (languageType == 2) msg = "Aucune course active";
+            // ---------------- NO ACTIVE RIDE ----------------
+            if (!activeRide) {
+                let msg = "No active ride";
+                if (languageType == 1) msg = "لا توجد رحلة نشطة";
+                else if (languageType == 2) msg = "Aucune course active";
+
+                return helper.success(res, msg, {
+                    hasActiveRide: false,
+                    ride: null
+                });
+            }
+
+            // ---------------- ACTIVE RIDE FOUND ----------------
+            let msg = "Active ride found";
+            if (languageType == 1) msg = "تم العثور على رحلة نشطة";
+            else if (languageType == 2) msg = "Course active trouvée";
+
+            const driver = activeRide.driverbook;
 
             return helper.success(res, msg, {
-                hasActiveRide: false,
-                ride: null
-            });
-        }
+                hasActiveRide: false, // ✅ Force false (as per your requirement)
 
-        // ---------------- ACTIVE RIDE FOUND ----------------
-        let msg = "Active ride found";
-        if (languageType == 1) msg = "تم العثور على رحلة نشطة";
-        else if (languageType == 2) msg = "Course active trouvée";
+                ride: {
+                    id: activeRide.id,
+                    orderId: activeRide.orderId,
+                    status: activeRide.status,
+                    request: activeRide.request,
 
-        const driver = activeRide.driverbook;
+                    pickupLocation: activeRide.pickupLocation,
+                    dropLocation: activeRide.dropLocation,
 
-        return helper.success(res, msg, {
-            hasActiveRide: false, // ✅ Force false (as per your requirement)
-
-            ride: {
-                id: activeRide.id,
-                orderId: activeRide.orderId,
-                status: activeRide.status,
-                request: activeRide.request,
-
-                pickupLocation: activeRide.pickupLocation,
-                dropLocation: activeRide.dropLocation,
-
-                coordinates: {
-                    pickup: {
-                        latitude: activeRide.pickupLatitude,
-                        longitude: activeRide.pickupLongitude
+                    coordinates: {
+                        pickup: {
+                            latitude: activeRide.pickupLatitude,
+                            longitude: activeRide.pickupLongitude
+                        },
+                        drop: {
+                            latitude: activeRide.dropLatitude,
+                            longitude: activeRide.dropLongitude
+                        }
                     },
-                    drop: {
-                        latitude: activeRide.dropLatitude,
-                        longitude: activeRide.dropLongitude
-                    }
-                },
 
-                driver: driver ? {
-                    id: driver.id,
-                    fullName: `${driver.firstName} ${driver.lastName}`,
-                    phone: driver.phoneNumber,
-                    image: driver.image,
-                    latitude: driver.latitude,
-                    longitude: driver.longitude
-                } : null
-            }
-        });
+                    driver: driver ? {
+                        id: driver.id,
+                        fullName: `${driver.firstName} ${driver.lastName}`,
+                        phone: driver.phoneNumber,
+                        image: driver.image,
+                        latitude: driver.latitude,
+                        longitude: driver.longitude
+                    } : null
+                }
+            });
 
-    } catch (error) {
-        console.error("Error in userActiveRide:", error);
+        } catch (error) {
+            console.error("Error in userActiveRide:", error);
 
-        const languageType = Number(req.headers.languagetype) || 0;
+            const languageType = Number(req.headers.languagetype) || 0;
 
-        let msg = "Something went wrong.";
-        if (languageType == 1) msg = "حدث خطأ ما.";
-        else if (languageType == 2) msg = "Une erreur est survenue.";
+            let msg = "Something went wrong.";
+            if (languageType == 1) msg = "حدث خطأ ما.";
+            else if (languageType == 2) msg = "Une erreur est survenue.";
 
-        return helper.failure(res, msg);
-    }
-},
+            return helper.failure(res, msg);
+        }
+    },
 
     testLocation: async (req, res) => {
         try {
@@ -1628,5 +1628,5 @@ userActiveRide: async (req, res) => {
             });
         }
     },
- 
+
 }

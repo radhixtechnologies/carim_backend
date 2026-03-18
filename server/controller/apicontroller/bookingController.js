@@ -2176,7 +2176,7 @@ module.exports = {
 
                 // ===== ACTIVE RIDE CHECK =====
                 const activeRide = await db.bookings.findOne({
-                    where: { driverId, status: { [Sequelize.Op.in]: ['0', '1', '2'] } }
+                    where: { driverId, status: { [Sequelize.Op.in]: ['0',] } }
                 });
 
                 if (activeRide) {
