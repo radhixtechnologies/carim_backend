@@ -13,6 +13,13 @@ const reportController = require('../controller/admincontroller/reportController
 const bannerController = require('../controller/admincontroller/bannerController');
 const transactionController = require('../controller/admincontroller/transactionController');
 
+router.get('/aboutus',cmsController.aboutus);
+router.post('/aboutus',cmsController.updateabout);
+router.get('/privacypolicy',cmsController.privacy_policy);
+router.post('/privacypolicy',cmsController.privacypolicy);    
+router.get('/termsconditions',cmsController.term);
+router.post('/termsconditions',cmsController.updateterm);
+
 
 router.post('/login',auth.login);
 router.use(authtoken.verifyToken);  
@@ -48,12 +55,7 @@ router.get('/contactDetail/:id',contactUsController.contactView);
 router.post('/contact/:id',contactUsController.contactDelete);
 
 // router for cms
-router.get('/privacypolicy',cmsController.privacy_policy);
-router.post('/privacypolicy',cmsController.privacypolicy);    
-router.get('/aboutus',cmsController.aboutus);
-router.post('/aboutus',cmsController.updateabout);      
-router.get('/termsconditions',cmsController.term);
-router.post('/termsconditions',cmsController.updateterm);
+
 
 // faqs
 router.get('/faqlist',faqController.FAQList);

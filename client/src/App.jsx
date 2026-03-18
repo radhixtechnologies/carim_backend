@@ -29,6 +29,9 @@ import ActiveBookingList from './Admin/Bookings/ActiveBookingList';
 import ScreenShotList from './Admin/Transactions/ScreenShotList';
 import BookingCompleted from './Admin/Bookings/BookingCompleted';
 import DriverBookingList from './Admin/Drivers/DriverBookingList';
+import AboutUsApp from './Admin/AppCms/AboutUsApp';
+import PrivacyPolicyApp from './Admin/AppCms/PrivacyPolicyApp';
+import TermsConditionsApp from './Admin/AppCms/TermsConditionsApp';
 
 
 const App = () => {
@@ -55,6 +58,9 @@ const App = () => {
     <>
       <Router>
         <Routes>
+          <Route path='/about' element={<AboutUsApp />} />
+          <Route path='/privacy' element={<PrivacyPolicyApp />} />
+          <Route path='/terms' element={<TermsConditionsApp />} />
           <Route path='/login' element={<Login />} />
           <Route path='/' element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" />} />
           <Route element={<Layout />}>
