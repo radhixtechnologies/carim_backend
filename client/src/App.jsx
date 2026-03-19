@@ -32,6 +32,7 @@ import DriverBookingList from './Admin/Drivers/DriverBookingList';
 import AboutUsApp from './Admin/AppCms/AboutUsApp';
 import PrivacyPolicyApp from './Admin/AppCms/PrivacyPolicyApp';
 import TermsConditionsApp from './Admin/AppCms/TermsConditionsApp';
+import DeleteAccount from './Admin/AppCms/DeleteAcount';
 
 
 const App = () => {
@@ -61,6 +62,7 @@ const App = () => {
           <Route path='/about' element={<AboutUsApp />} />
           <Route path='/privacy' element={<PrivacyPolicyApp />} />
           <Route path='/terms' element={<TermsConditionsApp />} />
+          <Route path='/deleteAcount' element={<DeleteAccount />} />
           <Route path='/login' element={<Login />} />
           <Route path='/' element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" />} />
           <Route element={<Layout />}>
