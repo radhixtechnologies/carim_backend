@@ -10,65 +10,6 @@ admin.initializeApp({
 });
 module.exports = {
 
-
-
-    // sendNotification_android: async function (token, noti_data) {
-    //     if (!token || token.trim() === "") {
-    //         console.warn("No device token provided, skipping push notification.");
-    //         return false;
-    //     }
-    //     console.log(token, "token");
-    //     console.log(noti_data, "noti_data");
-    //     try {
-    //         const message = {
-    //             token: token,
-    //             notification: {
-    //                 title: noti_data.title || "Carim",
-    //                 body: noti_data.message || "",
-    //             },
-    //             data: {
-    //                 titleData: String(noti_data.title || "Notification"),
-    //                 messageData: String(noti_data.message || ""),
-    //                 senderId: String(noti_data.senderId || ""),
-    //                 type: String(noti_data.type || ""),
-    //                 notificationId: String(noti_data.notificationId || "0"),
-    //                 bookingId: String(noti_data.bookingId || 0),
-    //                 ...(noti_data.senderName && { senderName: String(noti_data.senderName) }),
-    //                 ...(noti_data.senderImage && { senderImage: String(noti_data.senderImage) }),
-    //                 ...(noti_data.phoneNumber && { phoneNumber: String(noti_data.phoneNumber) }),
-    //             },
-    //             apns: {
-    //                 payload: {
-    //                     aps: {
-    //                         // sound: "default",
-    //                         sound: "user_app.caf",
-    //                         badge: 1,
-    //                     },
-    //                 },
-    //             },
-    //             android: {
-    //                 notification: {
-    //                     sound: "default",
-    //                     channelId: "default",
-    //                 },
-    //             },
-    //         };
-    //         console.log(message, "iiiiiiiiiiiiiiiiiiiiiiii");
-
-    //         const response = await admin.messaging().send(message);
-    //         console.log("Push sent successfully:", response);
-    //         return true;
-    //     } catch (error) {
-    //         console.error("Error sending push notification:", error.message || error);
-    //         if (error.code === 'messaging/invalid-registration-token' ||
-    //             error.code === 'messaging/registration-token-not-registered') {
-    //             console.log(`Invalid token: ${token}, you may want to remove it from database`);
-    //         }
-
-    //         throw error;
-    //     }
-    // },
-
     sendNotification_android: async function (token, noti_data) {
         if (!token || typeof token !== "string" || token.trim() === "") {
             console.warn("Invalid device token, skipping push:", token);
