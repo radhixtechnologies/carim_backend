@@ -14,7 +14,7 @@ const client = require("twilio")(accountSid, authToken);
 
 module.exports = {
 
-    login: async (req, res) => {
+    login1: async (req, res) => {
         try {
             const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
 
@@ -145,7 +145,7 @@ module.exports = {
             return helper.failure(res, msg);
         }
     },
-    login1: async (req, res) => {
+    login: async (req, res) => {
         try {
             const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
 
@@ -1500,90 +1500,93 @@ module.exports = {
             });
         }
     },
-    transactionSsHistory1: async (req, res) => {
-        try {
-            const languageType = Number(req.headers.languagetype) || 0;
-            const driverId = req.user.id;
+    // transactionSsHistory1: async (req, res) => {
+    //     try {
+    //         const languageType = Number(req.headers.languagetype) || 0;
+    //         const driverId = req.user.id;
 
-            const driverStatus = await db.users.findOne({
-                where: { id: driverId },
-                attributes: ['status', 'block', 'suspend', 'totalAmount'],
-                raw: true
-            });
+    //         const driverStatus = await db.users.findOne({
+    //             where: { id: driverId },
+    //             attributes: ['status', 'block', 'suspend', 'totalAmount'],
+    //             raw: true
+    //         });
 
-            if (!driverStatus) {
-                let msg = "User not found";
-                if (languageType == 1) msg = "المستخدم غير موجود";
-                else if (languageType == 2) msg = "Utilisateur non trouvé";
-                return helper.failure(res, msg);
-            }
+    //         if (!driverStatus) {
+    //             let msg = "User not found";
+    //             if (languageType == 1) msg = "المستخدم غير موجود";
+    //             else if (languageType == 2) msg = "Utilisateur non trouvé";
+    //             return helper.failure(res, msg);
+    //         }
 
-            if (driverStatus.status === "0") {
-                return helper.error2(res, "Your account has been deactivated by admin.");
-            }
+    //         if (driverStatus.status === "0") {
+    //             return helper.error2(res, "Your account has been deactivated by admin.");
+    //         }
+    //         if (driverStatus.block === "1") {
+    //             return helper.error1(res, "Your account has been blocked by admin.");
+    //         }
+    //         if (driverStatus.suspend === "1") {
+    //             return helper.error3(res, "Your account has been suspended by admin.");
+    //         }
 
-            if (driverStatus.block === "1") {
-                return helper.error1(res, "Your account has been blocked by admin.");
-            }
+    //         const { status } = req.body;
+    //         let paymentWhere = {
+    //             user_id: driverId
+    //         };
+    //         if (status) {
+    //             paymentWhere.status = status;
+    //         }
 
-            if (driverStatus.suspend === "1") {
-                return helper.error3(res, "Your account has been suspended by admin.");
-            }
+    //         const payments = await db.payments.findAll({
+    //             where: paymentWhere,
+    //             order: [["createdAt", "DESC"]],
+    //             raw: true
+    //         });
 
-            const { status } = req.body;
+    //         // Completed rides from bookings
+    //         const bookings = await db.bookings.findAll({
+    //             where: {
+    //                 driverId: driverId,
+    //                 status: "3"
+    //             },
+    //             attributes: ['id', 'bookingPrice', 'adminAmountCut', 'createdAt'],
+    //             order: [["createdAt", "DESC"]],
+    //             raw: true
+    //         });
 
-            let paymentWhere = {
-                user_id: driverId
-            };
-            if (status) {
-                paymentWhere.status = status;
-            }
+    //         const bookingCommissions = bookings.map(booking => {
+    //             const matchingPayment = payments.find(p => p.id_sedad == booking.id);
 
-            const payments = await db.payments.findAll({
-                where: paymentWhere,
-                order: [["createdAt", "DESC"]],
-                raw: true
-            });
+    //             return {
+    //                 id: booking.id,
+    //                 bookingId: booking.id,
+    //                 bookingPrice: booking.bookingPrice,
+    //                 adminAmountCut: booking.adminAmountCut || "0",
+    //                 createdAt: booking.createdAt,
+    //             };
+    //         });
 
-            const bookings = await db.bookings.findAll({
-                where: {
-                    driverId: driverId,
-                    status: "3"
-                },
-                attributes: ['id', 'bookingPrice', 'adminAmountCut', 'createdAt'],
-                order: [["createdAt", "DESC"]],
-                raw: true
-            });
+    //         let msg = "Payment history fetched successfully";
+    //         if (languageType == 1) msg = "تم جلب سجل المدفوعات بنجاح";
+    //         else if (languageType == 2) msg = "Historique des paiements récupéré avec succès";
 
-            const bookingCommissions = bookings.map(booking => ({
-                id: booking.id,
-                bookingId: booking.id,
-                adminAmountCut: booking.adminAmountCut || "0",
-                createdAt: booking.createdAt,
-            }));
+    //         return res.json({
+    //             status: true,
+    //             message: msg,
+    //             body: {
+    //                 currentBalance: driverStatus.totalAmount || "0.00",
+    //                 history: payments,
+    //                 commissions: bookingCommissions
+    //             }
+    //         });
 
-            let msg = "Payment history fetched successfully";
-            if (languageType == 1) msg = "تم جلب سجل المدفوعات بنجاح";
-            else if (languageType == 2) msg = "Historique des paiements récupéré avec succès";
+    //     } catch (error) {
+    //         console.error('transactionSsHistory error:', error);
 
-            return res.json({
-                status: true,
-                message: msg,
-                body: {
-                    currentBalance: driverStatus.totalAmount || "0.00",
-                    history: payments,                     
-                    commissions: bookingCommissions          
-                }
-            });
-
-        } catch (error) {
-            console.error('transactionSsHistory error:', error);
-
-            return res.status(500).json({
-                status: false,
-                message: "Something went wrong",
-                error: error.message
-            });
-        }
-    },
+    //         return res.status(500).json({
+    //             status: false,
+    //             message: "Something went wrong",
+    //             error: error.message
+    //         });
+    //     }
+    // },
 }
