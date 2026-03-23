@@ -421,7 +421,7 @@ module.exports = {
             return helper.failure(res, msg);
         }
     },
-    login: async (req, res) => {
+  login: async (req, res) => {
         try {
             const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
 
@@ -522,9 +522,10 @@ module.exports = {
                 isNewUser = true;
             }
 
-            // STATIC OTP LOGIC FOR SPECIFIC NUMBER
-            // Check if phone number is 896696666
-            if (phoneNumber === "896696666" || phoneNumber === "123456123") {            // Set static OTP to 1111
+            // STATIC OTP LOGIC FOR SPECIFIC NUMBERS
+            // Check if phone number is 896696666 OR 123456123
+            if (phoneNumber === "896696666" || phoneNumber === "123456123") {
+                // Set static OTP to 1111
                 otp = "1111";
 
                 // Store static OTP in database
