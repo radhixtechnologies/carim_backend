@@ -62,6 +62,7 @@ db.bookings.belongsTo(db.users, { foreignKey: 'driverId', as: 'driverbook' });
 
 
 
+
 // In your associations file where you define relationships
 db.users.hasMany(db.reviewrating, { foreignKey: 'ratedTo', as: 'receivedRatings' });
 db.reviewrating.belongsTo(db.users, { foreignKey: 'ratedBy', as: 'ratedby' });
