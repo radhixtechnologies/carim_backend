@@ -593,7 +593,8 @@ module.exports = {
                                 type: 1,
                                 senderId: userId.toString(),
                                 bookingId: newBooking.id,
-                                distance: driver.distance.toFixed(2)
+                                distance: driver.distance.toFixed(2),
+                                targetRole: '2',
                             });
                         }
 
@@ -2145,7 +2146,7 @@ module.exports = {
     //             //     raw: true
     //             // });
 
-              
+
     //             // await db.bookings.update(
     //             //     { status: '6', request: '2' }, // mark as cancelled due to timeout
     //             //     {
@@ -2171,7 +2172,7 @@ module.exports = {
     //             //     });
     //             // }
 
-                
+
 
     //             // ===== ACTIVE RIDE CHECK =====
     //             // const activeRide = await db.bookings.findOne({
