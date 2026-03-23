@@ -14,137 +14,137 @@ const client = require("twilio")(accountSid, authToken);
 
 module.exports = {
 
-    login1: async (req, res) => {
-        try {
-            const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
+    // login1: async (req, res) => {
+    //     try {
+    //         const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
 
-            // 🔹 validate input
-            const v = new Validator(req.body, {
-                countryCode: "required",
-                phoneNumber: "required",
-                role: "required",
-            });
+    //         // 🔹 validate input
+    //         const v = new Validator(req.body, {
+    //             countryCode: "required",
+    //             phoneNumber: "required",
+    //             role: "required",
+    //         });
 
-            const errorsResponse = await helper.checkValidation(v);
-            if (errorsResponse) return helper.failure(res, errorsResponse);
+    //         const errorsResponse = await helper.checkValidation(v);
+    //         if (errorsResponse) return helper.failure(res, errorsResponse);
 
-            const { deviceToken, deviceType, phoneNumber, languagee_type, countryCode, role } = req.body;
+    //         const { deviceToken, deviceType, phoneNumber, languagee_type, countryCode, role } = req.body;
 
-            const existingUser = await db.users.findOne({
-                where: { phoneNumber, countryCode, role, deletedAt: null },
-            });
+    //         const existingUser = await db.users.findOne({
+    //             where: { phoneNumber, countryCode, role, deletedAt: null },
+    //         });
 
-            let user;
-            let isNewUser = false;
-            const otp = '1111';
-            const rideOtp = '1111';
+    //         let user;
+    //         let isNewUser = false;
+    //         const otp = '1111';
+    //         const rideOtp = '1111';
 
 
 
-            const loginTime = helper.unixTimestamp();
+    //         const loginTime = helper.unixTimestamp();
 
-            if (existingUser) {
-                if (existingUser.status === "0") {
-                    let msg = "Your account has been deactivated by admin.";
-                    if (languageType === 1) msg = "تم تعطيل حسابك من قبل المسؤول.";
-                    else if (languageType === 2) msg = "Votre compte a été désactivé par l’administrateur.";
-                    return helper.failure(res, msg);
-                }
+    //         if (existingUser) {
+    //             if (existingUser.status === "0") {
+    //                 let msg = "Your account has been deactivated by admin.";
+    //                 if (languageType === 1) msg = "تم تعطيل حسابك من قبل المسؤول.";
+    //                 else if (languageType === 2) msg = "Votre compte a été désactivé par l’administrateur.";
+    //                 return helper.failure(res, msg);
+    //             }
 
-                if (existingUser.block === "1") {
-                    let msg = "Your account has been blocked by admin.";
-                    if (languageType === 1) msg = "تم حظر حسابك من قبل المسؤول.";
-                    else if (languageType === 2) msg = "Votre compte a été bloqué par l’administrateur.";
-                    return helper.failure(res, msg);
-                }
+    //             if (existingUser.block === "1") {
+    //                 let msg = "Your account has been blocked by admin.";
+    //                 if (languageType === 1) msg = "تم حظر حسابك من قبل المسؤول.";
+    //                 else if (languageType === 2) msg = "Votre compte a été bloqué par l’administrateur.";
+    //                 return helper.failure(res, msg);
+    //             }
 
-                if (existingUser.suspend === "1") {
-                    let msg = "Your account has been suspended by admin.";
-                    if (languageType === 1) msg = "تم تعليق حسابك من قبل المسؤول.";
-                    else if (languageType === 2) msg = "Votre compte a été suspendu par l’administrateur.";
-                    return helper.failure(res, msg);
-                }
+    //             if (existingUser.suspend === "1") {
+    //                 let msg = "Your account has been suspended by admin.";
+    //                 if (languageType === 1) msg = "تم تعليق حسابك من قبل المسؤول.";
+    //                 else if (languageType === 2) msg = "Votre compte a été suspendu par l’administrateur.";
+    //                 return helper.failure(res, msg);
+    //             }
 
-                // Example driver approval check
-                if (existingUser.role === '2' && existingUser.otpVerify === "1") {
-                    if (existingUser.isProfileComplete === "1" && existingUser.vehicle === "1") {
-                        if (existingUser.approve !== "1") {
-                            let msg = "Your driver account is not approved yet.";
-                            if (languageType === 1) msg = "حساب السائق الخاص بك لم يتم الموافقة عليه بعد.";
-                            else if (languageType === 2) msg = "Votre compte conducteur n’est pas encore approuvé.";
-                            return helper.failure(res, msg);
-                        }
-                    }
-                }
+    //             // Example driver approval check
+    //             if (existingUser.role === '2' && existingUser.otpVerify === "1") {
+    //                 if (existingUser.isProfileComplete === "1" && existingUser.vehicle === "1") {
+    //                     if (existingUser.approve !== "1") {
+    //                         let msg = "Your driver account is not approved yet.";
+    //                         if (languageType === 1) msg = "حساب السائق الخاص بك لم يتم الموافقة عليه بعد.";
+    //                         else if (languageType === 2) msg = "Votre compte conducteur n’est pas encore approuvé.";
+    //                         return helper.failure(res, msg);
+    //                     }
+    //                 }
+    //             }
 
-                user = existingUser;
+    //             user = existingUser;
 
-                // 🔹 update user loginTime, device info, OTP
-                const updateData = {
-                    // online: '1',
-                    otp,
-                    rideOtp,
-                    loginTime,
-                    updatedAt: helper.unixTimestamp(),
-                };
-                if (deviceToken) {
-                    updateData.deviceToken = deviceToken;
-                    updateData.deviceType = deviceType || null;
-                }
+    //             // 🔹 update user loginTime, device info, OTP
+    //             const updateData = {
+    //                 // online: '1',
+    //                 otp,
+    //                 rideOtp,
+    //                 loginTime,
+    //                 updatedAt: helper.unixTimestamp(),
+    //             };
+    //             if (deviceToken) {
+    //                 updateData.deviceToken = deviceToken;
+    //                 updateData.deviceType = deviceType || null;
+    //             }
 
-                await db.users.update(updateData, { where: { id: user.id } });
+    //             await db.users.update(updateData, { where: { id: user.id } });
 
-                user = await db.users.findOne({ where: { id: user.id, deletedAt: null } });
+    //             user = await db.users.findOne({ where: { id: user.id, deletedAt: null } });
 
-            } else {
-                const userWithSamePhone = await db.users.findOne({
-                    where: { phoneNumber, countryCode, deletedAt: null }
-                });
+    //         } else {
+    //             const userWithSamePhone = await db.users.findOne({
+    //                 where: { phoneNumber, countryCode, deletedAt: null }
+    //             });
 
-                if (userWithSamePhone) {
-                    let msg = "Phone number already registered with a different role";
-                    if (languageType === 1) msg = "رقم الهاتف مسجل بالفعل بدور مختلف";
-                    else if (languageType === 2) msg = "Le numéro de téléphone est déjà enregistré avec un rôle différent";
-                    return helper.failure(res, msg);
-                }
+    //             if (userWithSamePhone) {
+    //                 let msg = "Phone number already registered with a different role";
+    //                 if (languageType === 1) msg = "رقم الهاتف مسجل بالفعل بدور مختلف";
+    //                 else if (languageType === 2) msg = "Le numéro de téléphone est déjà enregistré avec un rôle différent";
+    //                 return helper.failure(res, msg);
+    //             }
 
-                user = await db.users.create({
-                    countryCode,
-                    phoneNumber,
-                    role,
-                    deviceToken: deviceToken || null,
-                    deviceType: deviceType || null,
-                    loginTime,
-                    otp,
-                    rideOtp,
-                    languagee_type,
-                    status: "1",
-                });
+    //             user = await db.users.create({
+    //                 countryCode,
+    //                 phoneNumber,
+    //                 role,
+    //                 deviceToken: deviceToken || null,
+    //                 deviceType: deviceType || null,
+    //                 loginTime,
+    //                 otp,
+    //                 rideOtp,
+    //                 languagee_type,
+    //                 status: "1",
+    //             });
 
-                isNewUser = true;
-            }
-            const token = jwt.sign({ id: user.id, loginTime }, process.env.JWT_SECRET, { expiresIn: "7d" });
+    //             isNewUser = true;
+    //         }
+    //         const token = jwt.sign({ id: user.id, loginTime }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
-            const responseData = { ...user.toJSON(), token, otp };
+    //         const responseData = { ...user.toJSON(), token, otp };
 
-            if (isNewUser) {
-                let msg = "Account created successfully. OTP sent for verification.";
-                if (languageType === 1) msg = "تم إنشاء الحساب بنجاح. تم إرسال OTP للتحقق.";
-                else if (languageType === 2) msg = "Compte créé avec succès. OTP envoyé pour vérification.";
-                return helper.success(res, msg, responseData);
-            }
+    //         if (isNewUser) {
+    //             let msg = "Account created successfully. OTP sent for verification.";
+    //             if (languageType === 1) msg = "تم إنشاء الحساب بنجاح. تم إرسال OTP للتحقق.";
+    //             else if (languageType === 2) msg = "Compte créé avec succès. OTP envoyé pour vérification.";
+    //             return helper.success(res, msg, responseData);
+    //         }
 
-            let msg = "OTP sent successfully for verification";
-            if (languageType === 1) msg = "تم إرسال OTP للتحقق بنجاح";
-            else if (languageType === 2) msg = "OTP envoyé avec succès pour vérification";
-            return helper.success(res, msg, responseData);
+    //         let msg = "OTP sent successfully for verification";
+    //         if (languageType === 1) msg = "تم إرسال OTP للتحقق بنجاح";
+    //         else if (languageType === 2) msg = "OTP envoyé avec succès pour vérification";
+    //         return helper.success(res, msg, responseData);
 
-        } catch (error) {
-            console.error("Login error:", error);
-            let msg = "Something went wrong";
-            return helper.failure(res, msg);
-        }
-    },
+    //     } catch (error) {
+    //         console.error("Login error:", error);
+    //         let msg = "Something went wrong";
+    //         return helper.failure(res, msg);
+    //     }
+    // },
     login: async (req, res) => {
         try {
             const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
@@ -1432,7 +1432,7 @@ module.exports = {
         }
     },
 
-    transactionSsHistory: async (req, res) => {
+    transactionSsHistory1: async (req, res) => {
         try {
             const languageType = Number(req.headers.languagetype) || 0;
             const driverId = req.user.id;
@@ -1500,93 +1500,93 @@ module.exports = {
             });
         }
     },
-    // transactionSsHistory1: async (req, res) => {
-    //     try {
-    //         const languageType = Number(req.headers.languagetype) || 0;
-    //         const driverId = req.user.id;
+    transactionSsHistory: async (req, res) => {
+        try {
+            const languageType = Number(req.headers.languagetype) || 0;
+            const driverId = req.user.id;
 
-    //         const driverStatus = await db.users.findOne({
-    //             where: { id: driverId },
-    //             attributes: ['status', 'block', 'suspend', 'totalAmount'],
-    //             raw: true
-    //         });
+            const driverStatus = await db.users.findOne({
+                where: { id: driverId },
+                attributes: ['status', 'block', 'suspend', 'totalAmount'],
+                raw: true
+            });
 
-    //         if (!driverStatus) {
-    //             let msg = "User not found";
-    //             if (languageType == 1) msg = "المستخدم غير موجود";
-    //             else if (languageType == 2) msg = "Utilisateur non trouvé";
-    //             return helper.failure(res, msg);
-    //         }
+            if (!driverStatus) {
+                let msg = "User not found";
+                if (languageType == 1) msg = "المستخدم غير موجود";
+                else if (languageType == 2) msg = "Utilisateur non trouvé";
+                return helper.failure(res, msg);
+            }
 
-    //         if (driverStatus.status === "0") {
-    //             return helper.error2(res, "Your account has been deactivated by admin.");
-    //         }
-    //         if (driverStatus.block === "1") {
-    //             return helper.error1(res, "Your account has been blocked by admin.");
-    //         }
-    //         if (driverStatus.suspend === "1") {
-    //             return helper.error3(res, "Your account has been suspended by admin.");
-    //         }
+            if (driverStatus.status === "0") {
+                return helper.error2(res, "Your account has been deactivated by admin.");
+            }
+            if (driverStatus.block === "1") {
+                return helper.error1(res, "Your account has been blocked by admin.");
+            }
+            if (driverStatus.suspend === "1") {
+                return helper.error3(res, "Your account has been suspended by admin.");
+            }
 
-    //         const { status } = req.body;
-    //         let paymentWhere = {
-    //             user_id: driverId
-    //         };
-    //         if (status) {
-    //             paymentWhere.status = status;
-    //         }
+            const { status } = req.body;
+            let paymentWhere = {
+                user_id: driverId
+            };
+            if (status) {
+                paymentWhere.status = status;
+            }
 
-    //         const payments = await db.payments.findAll({
-    //             where: paymentWhere,
-    //             order: [["createdAt", "DESC"]],
-    //             raw: true
-    //         });
+            const payments = await db.payments.findAll({
+                where: paymentWhere,
+                order: [["createdAt", "DESC"]],
+                raw: true
+            });
 
-    //         // Completed rides from bookings
-    //         const bookings = await db.bookings.findAll({
-    //             where: {
-    //                 driverId: driverId,
-    //                 status: "3"
-    //             },
-    //             attributes: ['id', 'bookingPrice', 'adminAmountCut', 'createdAt'],
-    //             order: [["createdAt", "DESC"]],
-    //             raw: true
-    //         });
+            // Completed rides from bookings
+            const bookings = await db.bookings.findAll({
+                where: {
+                    driverId: driverId,
+                    status: "3"
+                },
+                attributes: ['id', 'bookingPrice', 'adminAmountCut', 'createdAt'],
+                order: [["createdAt", "DESC"]],
+                raw: true
+            });
 
-    //         const bookingCommissions = bookings.map(booking => {
-    //             const matchingPayment = payments.find(p => p.id_sedad == booking.id);
+            const bookingCommissions = bookings.map(booking => {
+                const matchingPayment = payments.find(p => p.id_sedad == booking.id);
 
-    //             return {
-    //                 id: booking.id,
-    //                 bookingId: booking.id,
-    //                 bookingPrice: booking.bookingPrice,
-    //                 adminAmountCut: booking.adminAmountCut || "0",
-    //                 createdAt: booking.createdAt,
-    //             };
-    //         });
+                return {
+                    id: booking.id,
+                    bookingId: booking.id,
+                    bookingPrice: booking.bookingPrice,
+                    adminAmountCut: booking.adminAmountCut || "0",
+                    createdAt: booking.createdAt,
+                };
+            });
 
-    //         let msg = "Payment history fetched successfully";
-    //         if (languageType == 1) msg = "تم جلب سجل المدفوعات بنجاح";
-    //         else if (languageType == 2) msg = "Historique des paiements récupéré avec succès";
+            let msg = "Payment history fetched successfully";
+            if (languageType == 1) msg = "تم جلب سجل المدفوعات بنجاح";
+            else if (languageType == 2) msg = "Historique des paiements récupéré avec succès";
 
-    //         return res.json({
-    //             status: true,
-    //             message: msg,
-    //             body: {
-    //                 currentBalance: driverStatus.totalAmount || "0.00",
-    //                 history: payments,
-    //                 commissions: bookingCommissions
-    //             }
-    //         });
+            return res.json({
+                status: true,
+                message: msg,
+                body: {
+                    currentBalance: driverStatus.totalAmount || "0.00",
+                    history: payments,
+                    commissions: bookingCommissions
+                }
+            });
 
-    //     } catch (error) {
-    //         console.error('transactionSsHistory error:', error);
+        } catch (error) {
+            console.error('transactionSsHistory error:', error);
 
-    //         return res.status(500).json({
-    //             status: false,
-    //             message: "Something went wrong",
-    //             error: error.message
-    //         });
-    //     }
-    // },
+            return res.status(500).json({
+                status: false,
+                message: "Something went wrong",
+                error: error.message
+            });
+        }
+    },
 }
