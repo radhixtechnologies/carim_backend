@@ -717,6 +717,11 @@ module.exports = {
                 const updated = await db.users.findOne({
                     where: { phoneNumber, countryCode }
                 });
+                 const token = jwt.sign(
+                    { id: user.id },
+                    process.env.JWT_SECRET
+                );
+
 
                 let msg = languageType == 1 ? 'تم التحقق من OTP بنجاح.' :
                     languageType == 2 ? 'OTP vérifié avec succès.' :
@@ -739,11 +744,7 @@ module.exports = {
 
             if (checkOtp.status === "approved") {
 
-                const token = jwt.sign(
-                    { id: user.id },
-                    process.env.JWT_SECRET
-                );
-
+               
                 await db.users.update(
                     {
                         otpVerify: "1",
