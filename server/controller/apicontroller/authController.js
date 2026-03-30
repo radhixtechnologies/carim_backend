@@ -421,7 +421,7 @@ module.exports = {
             return helper.failure(res, msg);
         }
     },
-  login: async (req, res) => {
+    login: async (req, res) => {
         try {
             const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
 
@@ -663,88 +663,48 @@ module.exports = {
     //     }
     // },
 
-    verifyOtp: async (req, res) => {
-        try {
-            const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French
+   verifyOtp: async (req, res) => {
+    try {
+        const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French
 
-            const v = new Validator(req.body, {
-                otp: 'required',
-                countryCode: 'required',
-                phoneNumber: 'required',
-            });
+        const v = new Validator(req.body, {
+            otp: 'required',
+            countryCode: 'required',
+            phoneNumber: 'required',
+        });
 
-            let errorsResponse = await helper.checkValidation(v);
-            if (errorsResponse) {
-                return helper.failure(res, errorsResponse);
-            }
+        let errorsResponse = await helper.checkValidation(v);
+        if (errorsResponse) {
+            return helper.failure(res, errorsResponse);
+        }
 
-            const { otp, phoneNumber, countryCode } = req.body;
+        const { otp, phoneNumber, countryCode } = req.body;
 
-            let user = await db.users.findOne({
-                where: {
-                    phoneNumber,
-                    countryCode,
-                    deletedAt: null
-                },
-            });
+        let user = await db.users.findOne({
+            where: {
+                phoneNumber,
+                countryCode,
+                deletedAt: null
+            },
+        });
 
-            if (!user) {
-                let msg = languageType == 1 ? 'المستخدم غير موجود.' :
-                    languageType == 2 ? 'Utilisateur non trouvé.' :
-                        'User not found.';
-                return helper.failure(res, msg);
-            }
+        if (!user) {
+            let msg = languageType == 1 ? 'المستخدم غير موجود.' :
+                languageType == 2 ? 'Utilisateur non trouvé.' :
+                    'User not found.';
+            return helper.failure(res, msg);
+        }
 
-            if (user.status === "0") {
-                let msg = languageType == 1 ? "حسابك معطل من قبل المسؤول. يرجى الاتصال بالمسؤول للمساعدة." :
-                    languageType == 2 ? "Votre compte est inactif par l’administrateur. Veuillez contacter l’administrateur pour obtenir de l’aide." :
-                        "Your account is inactive by Admin. Please contact the admin.";
-                return helper.failure(res, msg);
-            }
+        if (user.status === "0") {
+            let msg = languageType == 1 ? "حسابك معطل من قبل المسؤول. يرجى الاتصال بالمسؤول للمساعدة." :
+                languageType == 2 ? "Votre compte est inactif par l’administrateur. Veuillez contacter l’administrateur pour obtenir de l’aide." :
+                    "Your account is inactive by Admin. Please contact the admin.";
+            return helper.failure(res, msg);
+        }
 
-            // 🔹 Twilio Verify check (correct service SID)
-            if(phoneNumber=="123456123"){
-
-             if(otp==1111){
-                 await db.users.update(
-                    {
-                        otpVerify: "1",
-                        otp: 0,
-                    },
-                    { where: { id: user.id } }
-                );
-
-                const updated = await db.users.findOne({
-                    where: { phoneNumber, countryCode }
-                });
-                 const token = jwt.sign(
-                    { id: user.id },
-                    process.env.JWT_SECRET
-                );
-
-
-                let msg = languageType == 1 ? 'تم التحقق من OTP بنجاح.' :
-                    languageType == 2 ? 'OTP vérifié avec succès.' :
-                        'OTP verified successfully.';
-
-                return helper.success(res, msg, {
-                    ...updated.toJSON(),
-                    token: token
-                });
-
-             }
-            }
-
-            const checkOtp = await client.verify.v2.services(user.otp)
-                .verificationChecks
-                .create({
-                    to: countryCode + phoneNumber,
-                    code: otp,
-                });
-
-            if (checkOtp.status === "approved") {
-
-               
+        // 🔹 Twilio Verify check (correct service SID)
+        if (phoneNumber == "123456123") {
+            if (otp == 1111) {
                 await db.users.update(
                     {
                         otpVerify: "1",
@@ -756,6 +716,11 @@ module.exports = {
                 const updated = await db.users.findOne({
                     where: { phoneNumber, countryCode }
                 });
+                
+                const token = jwt.sign(
+                    { id: user.id },
+                    process.env.JWT_SECRET
+                );
 
                 let msg = languageType == 1 ? 'تم التحقق من OTP بنجاح.' :
                     languageType == 2 ? 'OTP vérifié avec succès.' :
@@ -766,18 +731,57 @@ module.exports = {
                     token: token
                 });
             }
-
-            // 🔹 OTP not approved
-            return helper.error(res, "otp doesn't match", {});
-
-        } catch (error) {
-            console.error('verifyOtp error:', error);
-
-            let msg ='Something went wrong';
-
-            return helper.failure(res, msg);
         }
-    },
+
+        const checkOtp = await client.verify.v2.services(user.otp)
+            .verificationChecks
+            .create({
+                to: countryCode + phoneNumber,
+                code: otp,
+            });
+
+        if (checkOtp.status === "approved") {
+            await db.users.update(
+                {
+                    otpVerify: "1",
+                    otp: 0,
+                },
+                { where: { id: user.id } }
+            );
+
+            const updated = await db.users.findOne({
+                where: { phoneNumber, countryCode }
+            });
+            
+            // Move token definition here
+            const token = jwt.sign(
+                { id: user.id },
+                process.env.JWT_SECRET
+            );
+
+            let msg = languageType == 1 ? 'تم التحقق من OTP بنجاح.' :
+                languageType == 2 ? 'OTP vérifié avec succès.' :
+                    'OTP verified successfully.';
+
+            return helper.success(res, msg, {
+                ...updated.toJSON(),
+                token: token
+            });
+        }
+
+        // 🔹 OTP not approved
+        return helper.error(res, "otp doesn't match", {});
+
+    } catch (error) {
+        console.error('verifyOtp error:', error);
+
+        let msg = 'Something went wrong';
+
+        return helper.failure(res, msg);
+    }
+},
+
+
 
 
     resendOTP: async (req, res) => {
