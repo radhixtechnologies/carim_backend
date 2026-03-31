@@ -524,7 +524,7 @@ module.exports = {
 
             // STATIC OTP LOGIC FOR SPECIFIC NUMBERS
             // Check if phone number is 896696666 OR 123456123
-            if (phoneNumber === "896696666" || phoneNumber === "123456123") {
+            if (phoneNumber == "896696666" || phoneNumber == "123456123" || phoneNumber == "98765431" || phoneNumber == "98765432" || phoneNumber == "98765433" || phoneNumber == "98765434" || phoneNumber == "98765435" || phoneNumber == "98765436" || phoneNumber == "98765437" || phoneNumber == "98765438") {
                 // Set static OTP to 1111
                 otp = "1111";
 
@@ -703,7 +703,7 @@ module.exports = {
             }
 
             // 🔹 Twilio Verify check (correct service SID)
-            if (phoneNumber == "123456123" || phoneNumber == "896696666") {
+            if (phoneNumber == "123456123" || phoneNumber == "896696666" || phoneNumber == "98765431" || phoneNumber == "98765432" || phoneNumber == "98765433" || phoneNumber == "98765434" || phoneNumber == "98765435" || phoneNumber == "98765436" || phoneNumber == "98765437" || phoneNumber == "98765438") {
                 if (otp == 1111) {
                     await db.users.update(
                         {
