@@ -102,6 +102,14 @@ module.exports = {
             body: body
         });
     },
+    failured: function (res, message = "", body = {}) {
+        return res.status(409).json({
+            success: false,
+            status: 409,
+            message: message,
+            body: body
+        });
+    },
     error: function (res, message = "", body = {}) {
         return res.status(403).json({
             success: false,

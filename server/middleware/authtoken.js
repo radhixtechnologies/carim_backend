@@ -109,7 +109,7 @@ module.exports = {
       req.user = userData;
       next();
     } catch (error) {
-      return helper.failure(res, "Token not found", 400);
+      return helper.error(res, "Invalid token");
     }
   },
 };
