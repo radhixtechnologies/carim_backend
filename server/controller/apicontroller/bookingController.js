@@ -1879,8 +1879,8 @@ module.exports = {
                 }
 
                 // ===== CLEAN EXPIRED BOOKINGS =====
-                // const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
-                const oneMinuteAgo = new Date(Date.now() - 50 * 24 * 60 * 60 * 1000);
+                const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
+                //const oneMinuteAgo = new Date(Date.now() - 50 * 24 * 60 * 60 * 1000);
                 const expiredBookings = await db.bookings.findAll({
                     where: {
                         driverId: null,
