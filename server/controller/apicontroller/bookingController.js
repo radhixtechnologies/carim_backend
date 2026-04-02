@@ -1304,7 +1304,7 @@ module.exports = {
                     } catch (err) {
                         console.error("Scheduler failed:", err);
                     }
-                }, 60000);
+                }, 50 * 24 * 60 * 60 * 1000);
 
                 await db.bookings.update(
                     {
