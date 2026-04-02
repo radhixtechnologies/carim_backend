@@ -958,7 +958,7 @@ module.exports = {
                     totalDistance = distance;
 
                     // ---------------- CHECK IF RIDE DISTANCE EXCEEDS 30KM ----------------
-                    const MAX_RIDE_DISTANCE_KM = 300000;
+                    const MAX_RIDE_DISTANCE_KM = 30;
                     if (rideDistanceKm > MAX_RIDE_DISTANCE_KM) {
                         return helper.failure(res,
                             languageType === 1 ? `لا يمكن حجز رحلة تزيد مسافتها عن ٣٠ كم (المسافة: ${rideDistanceKm.toFixed(2)} كم)` :
@@ -1046,7 +1046,7 @@ module.exports = {
                 }
 
                 // ---------------- FILTER DRIVERS WITHIN 40KM RADIUS ----------------
-                const MAX_DRIVER_DISTANCE_KM = 300000; // Changed from 50km to 40km
+                const MAX_DRIVER_DISTANCE_KM = 3; // Changed from 50km to 40km
                 const nearbyDrivers = [];
 
                 for (const driver of freeDrivers) {
@@ -1071,7 +1071,7 @@ module.exports = {
                     return helper.failure(res,
                         languageType === 1 ? "لا يوجد سائقون متاحون ضمن نطاق ٤٠ كم" :
                             languageType === 2 ? "Aucun chauffeur disponible dans un rayon de 3 km" :
-                                "No drivers available within 300000km radius"
+                                "No drivers available within 3km radius"
                     );
                 }
 
@@ -1304,7 +1304,7 @@ module.exports = {
                     } catch (err) {
                         console.error("Scheduler failed:", err);
                     }
-                }, 50 * 24 * 60 * 60 * 1000);
+                }, 60000);
 
                 await db.bookings.update(
                     {
@@ -1338,7 +1338,7 @@ module.exports = {
                         callerCountryCode,
                         nearbyDriversCount: nearbyDrivers.length,
                         maxDriverDistance: MAX_DRIVER_DISTANCE_KM,
-                        maxRideDistance: 300000,
+                        maxRideDistance: 30,
                         notificationsSent: notificationPromises.length,
                         // Price details
                         priceDetails: {
@@ -1879,8 +1879,8 @@ module.exports = {
                 }
 
                 // ===== CLEAN EXPIRED BOOKINGS =====
-                // const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
-                const oneMinuteAgo = new Date(Date.now() - 50 * 24 * 60 * 60 * 1000);
+                const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
+
                 const expiredBookings = await db.bookings.findAll({
                     where: {
                         driverId: null,
@@ -1943,16 +1943,16 @@ module.exports = {
                 // );
 
                 // ===== ACTIVE RIDE CHECK =====
-                // const activeRide = await db.bookings.findOne({
-                //     where: { driverId, status: { [Sequelize.Op.in]: ['0', '1', '2'] } }
-                // });
+                const activeRide = await db.bookings.findOne({
+                    where: { driverId, status: { [Sequelize.Op.in]: ['0', '1', '2'] } }
+                });
 
-                // if (activeRide) {
-                //     let msg = "You are currently on a ride";
-                //     if (languageType == 1) msg = "أنت حاليًا في رحلة";
-                //     else if (languageType == 2) msg = "Vous êtes actuellement en course";
-                //     return helper.success(res, msg, { totalRequests: 0, requests: [] });
-                // }
+                if (activeRide) {
+                    let msg = "You are currently on a ride";
+                    if (languageType == 1) msg = "أنت حاليًا في رحلة";
+                    else if (languageType == 2) msg = "Vous êtes actuellement en course";
+                    return helper.success(res, msg, { totalRequests: 0, requests: [] });
+                }
 
                 // ===== GET DRIVER LAST FREE TIME =====
                 let lastFreeTime = driver.lastFreeTime
