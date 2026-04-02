@@ -1943,16 +1943,16 @@ module.exports = {
                 // );
 
                 // ===== ACTIVE RIDE CHECK =====
-                const activeRide = await db.bookings.findOne({
-                    where: { driverId, status: { [Sequelize.Op.in]: ['0', '1', '2'] } }
-                });
+                // const activeRide = await db.bookings.findOne({
+                //     where: { driverId, status: { [Sequelize.Op.in]: ['0', '1', '2'] } }
+                // });
 
-                if (activeRide) {
-                    let msg = "You are currently on a ride";
-                    if (languageType == 1) msg = "أنت حاليًا في رحلة";
-                    else if (languageType == 2) msg = "Vous êtes actuellement en course";
-                    return helper.success(res, msg, { totalRequests: 0, requests: [] });
-                }
+                // if (activeRide) {
+                //     let msg = "You are currently on a ride";
+                //     if (languageType == 1) msg = "أنت حاليًا في رحلة";
+                //     else if (languageType == 2) msg = "Vous êtes actuellement en course";
+                //     return helper.success(res, msg, { totalRequests: 0, requests: [] });
+                // }
 
                 // ===== GET DRIVER LAST FREE TIME =====
                 let lastFreeTime = driver.lastFreeTime
