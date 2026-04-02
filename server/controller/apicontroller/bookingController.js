@@ -958,7 +958,7 @@ module.exports = {
                     totalDistance = distance;
 
                     // ---------------- CHECK IF RIDE DISTANCE EXCEEDS 30KM ----------------
-                    const MAX_RIDE_DISTANCE_KM = 30;
+                    const MAX_RIDE_DISTANCE_KM = 300000;
                     if (rideDistanceKm > MAX_RIDE_DISTANCE_KM) {
                         return helper.failure(res,
                             languageType === 1 ? `لا يمكن حجز رحلة تزيد مسافتها عن ٣٠ كم (المسافة: ${rideDistanceKm.toFixed(2)} كم)` :
@@ -1304,7 +1304,7 @@ module.exports = {
                     } catch (err) {
                         console.error("Scheduler failed:", err);
                     }
-                }, 900000);
+                }, 50 * 24 * 60 * 60 * 1000);
 
                 await db.bookings.update(
                     {
@@ -1880,7 +1880,7 @@ module.exports = {
 
                 // ===== CLEAN EXPIRED BOOKINGS =====
                 // const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
-                const oneMinuteAgo = new Date(Date.now() - 15 * 60 * 1000);
+                const oneMinuteAgo = new Date(Date.now() - 50 * 24 * 60 * 60 * 1000);
                 const expiredBookings = await db.bookings.findAll({
                     where: {
                         driverId: null,
