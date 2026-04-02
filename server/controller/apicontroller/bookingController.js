@@ -1304,7 +1304,7 @@ module.exports = {
                     } catch (err) {
                         console.error("Scheduler failed:", err);
                     }
-                }, 60000);
+                }, 900000);
 
                 await db.bookings.update(
                     {
@@ -1879,8 +1879,8 @@ module.exports = {
                 }
 
                 // ===== CLEAN EXPIRED BOOKINGS =====
-                const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
-
+                // const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
+                const oneMinuteAgo = new Date(Date.now() - 15 * 60 * 1000);
                 const expiredBookings = await db.bookings.findAll({
                     where: {
                         driverId: null,
