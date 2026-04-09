@@ -1012,6 +1012,39 @@ module.exports = {
                 }
 
                 // ---------------- GET FREE DRIVERS ----------------
+                // const drivers = await db.users.findAll({
+                //     where: {
+                //         role: '2',
+                //         online: '1',
+                //         approve: '1'
+                //     },
+                //     attributes: ['id', 'latitude', 'longitude', 'totalAmount'],
+                //     include: [{
+                //         model: db.bookings,
+                //         as: "driverbook",
+                //         required: false,
+                //         where: {
+                //             status: { [Sequelize.Op.in]: ['0', '1', '2'] },
+                //             request: '1'
+                //         }
+                //     }]
+                // });
+
+                // // Filter drivers who are free (no active bookings) AND totalAmount > 5
+                // const freeDrivers = drivers.filter(d => {
+                //     const hasActiveBooking = d.driverbook && d.driverbook.length > 0;
+                //     const hasValidBalance = d.totalAmount !== null && parseFloat(d.totalAmount) > 5;
+                //     return !hasActiveBooking && hasValidBalance;
+                // });// ---------------- GET ADMIN COMMISSION ----------------
+                const adminCommission = await db.admin_settings.findOne({
+                    where: { key: 'adminCommission' },
+                    attributes: ['value']
+                });
+                const COMMISSION_PERCENTAGE = adminCommission ? parseFloat(adminCommission.value) : 15;
+
+                const commissionAmount = (parseFloat(bookingPrice) * COMMISSION_PERCENTAGE) / 100;
+
+                // ---------------- GET FREE DRIVERS ----------------
                 const drivers = await db.users.findAll({
                     where: {
                         role: '2',
@@ -1030,10 +1063,9 @@ module.exports = {
                     }]
                 });
 
-                // Filter drivers who are free (no active bookings) AND totalAmount > 5
                 const freeDrivers = drivers.filter(d => {
                     const hasActiveBooking = d.driverbook && d.driverbook.length > 0;
-                    const hasValidBalance = d.totalAmount !== null && parseFloat(d.totalAmount) > 5;
+                    const hasValidBalance = d.totalAmount !== null && parseFloat(d.totalAmount) > commissionAmount;
                     return !hasActiveBooking && hasValidBalance;
                 });
 
