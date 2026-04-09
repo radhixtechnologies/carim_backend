@@ -1036,11 +1036,11 @@ module.exports = {
                 //     const hasValidBalance = d.totalAmount !== null && parseFloat(d.totalAmount) > 5;
                 //     return !hasActiveBooking && hasValidBalance;
                 // });// ---------------- GET ADMIN COMMISSION ----------------
-                const adminCommission = await db.admin_settings.findOne({
-                    where: { key: 'adminCommission' },
-                    attributes: ['value']
+                const adminCommission = await db.users.findOne({
+                    where: { role: "0" },
+                    attributes: ['id', 'adminCommission']
                 });
-                const COMMISSION_PERCENTAGE = adminCommission ? parseFloat(adminCommission.value) : 15;
+                const COMMISSION_PERCENTAGE = adminCommission ? parseFloat(adminCommission.adminCommission) : 15;
 
                 const commissionAmount = (parseFloat(bookingPrice) * COMMISSION_PERCENTAGE) / 100;
 
