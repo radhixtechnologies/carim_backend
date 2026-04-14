@@ -958,7 +958,7 @@ module.exports = {
                     totalDistance = distance;
 
                     // ---------------- CHECK IF RIDE DISTANCE EXCEEDS 30KM ----------------
-                    const MAX_RIDE_DISTANCE_KM = 300000;
+                    const MAX_RIDE_DISTANCE_KM = 300;
                     if (rideDistanceKm > MAX_RIDE_DISTANCE_KM) {
                         return helper.failure(res,
                             languageType === 1 ? `لا يمكن حجز رحلة تزيد مسافتها عن ٣٠ كم (المسافة: ${rideDistanceKm.toFixed(2)} كم)` :
@@ -1078,7 +1078,7 @@ module.exports = {
                 }
 
                 // ---------------- FILTER DRIVERS WITHIN 40KM RADIUS ----------------
-                const MAX_DRIVER_DISTANCE_KM = 300000; // Changed from 50km to 40km
+                const MAX_DRIVER_DISTANCE_KM = 3; // Changed from 50km to 40km
                 const nearbyDrivers = [];
 
                 for (const driver of freeDrivers) {
@@ -1336,7 +1336,7 @@ module.exports = {
                     } catch (err) {
                         console.error("Scheduler failed:", err);
                     }
-                }, 864000000);
+                }, 960000);
 
                 await db.bookings.update(
                     {
