@@ -1370,7 +1370,7 @@ module.exports = {
                         callerCountryCode,
                         nearbyDriversCount: nearbyDrivers.length,
                         maxDriverDistance: MAX_DRIVER_DISTANCE_KM,
-                        maxRideDistance: 300000,
+                        maxRideDistance: 300,
                         notificationsSent: notificationPromises.length,
                         // Price details
                         priceDetails: {
@@ -1912,7 +1912,7 @@ module.exports = {
 
                 // ===== CLEAN EXPIRED BOOKINGS =====
                 // const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
-                const oneMinuteAgo = new Date(Date.now() - 50 * 24 * 60 * 1000);
+                const oneMinuteAgo = new Date(Date.now() - 15 * 60 * 1000);
 
                 const expiredBookings = await db.bookings.findAll({
                     where: {
