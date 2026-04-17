@@ -274,7 +274,8 @@ function Sidebar({ isOpen }) {
                       Transaction list
                     </Link>
                   </li> */}
-                  <li>
+
+                  {/* <li>
                     <Link
                       className={isActive("/screenshotlist") ? "active" : ""}
                       to="/screenshotlist"
@@ -282,7 +283,8 @@ function Sidebar({ isOpen }) {
                     >
                       Transaction Proof list
                     </Link>
-                  </li>
+                  </li> */}
+                  
                 </ul>
               )}
             </li>
