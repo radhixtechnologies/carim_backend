@@ -389,16 +389,6 @@ module.exports = {
             const dateFilter = req.query.dateFilter || "all";
 
             let whereCondition = {};
-            let userWhereCondition = {};
-            if (search) {
-                userWhereCondition = {
-                    [Op.or]: [
-                        { firstName: { [Op.like]: `%${search}%` } },
-                        { lastName: { [Op.like]: `%${search}%` } },
-                    ]
-                };
-            }
-
             if (dateFilter !== 'all') {
                 const daysAgo = parseInt(dateFilter, 10);
                 if (!isNaN(daysAgo)) {
@@ -410,29 +400,80 @@ module.exports = {
                     };
                 }
             }
-            const includeUser = {
-                model: db.users,
-                as: 'user', 
-                attributes: ['id', 'firstName', 'lastName', 'email', 'countryCode', 'phoneNumber'],
-                where: Object.keys(userWhereCondition).length > 0 ? userWhereCondition : undefined,
-                required: !!search 
-            };
 
-            const totalWalletRecharge = await db.payments.count({
-                where: whereCondition,
-                include: Object.keys(userWhereCondition).length > 0 ? [includeUser] : [],
-                distinct: true
-            });
+            let userIds = [];
+            if (search) {
+                const matchedUsers = await db.users.findAll({
+                    where: {
+                        [Op.or]: [
+                            { firstName: { [Op.like]: `%${search}%` } },
+                            { lastName: { [Op.like]: `%${search}%` } },
+                        ]
+                    },
+                    attributes: ['id']
+                });
+                userIds = matchedUsers.map(user => user.id);
 
-            const data = await db.payments.findAll({
-                where: whereCondition,
-                include: [includeUser],
+                if (userIds.length === 0) {
+                    return helper.success(res, "Driver Wallet fetched successfully", {
+                        data: [],
+                        total: 0,
+                        page,
+                        limit,
+                        totalPages: 0,
+                    });
+                }
+            }
+            let dataOptions = {
+                include: [{
+                    model: db.users,
+                    as: 'user',
+                    attributes: ['id', 'firstName', 'lastName', 'email', 'countryCode', 'phoneNumber'],
+                    required: !!search 
+                }],
                 limit,
                 offset,
                 order: [["id", "DESC"]],
                 distinct: true
-            });
+            };
 
+            if (search && userIds.length > 0) {
+                dataOptions.include[0].where = {
+                    id: {
+                        [Op.in]: userIds
+                    }
+                };
+            }
+
+            if (Object.keys(whereCondition).length > 0) {
+                dataOptions.where = whereCondition;
+            }
+
+            const data = await db.payments.findAll(dataOptions);
+
+            let totalWalletRecharge;
+            if (search && userIds.length > 0) {
+                const paymentsWithUsers = await db.payments.findAll({
+                    where: whereCondition,
+                    include: [{
+                        model: db.users,
+                        as: 'user',
+                        where: {
+                            id: {
+                                [Op.in]: userIds
+                            }
+                        },
+                        required: true
+                    }],
+                    attributes: ['id'],
+                    distinct: true
+                });
+                totalWalletRecharge = paymentsWithUsers.length;
+            } else {
+                totalWalletRecharge = await db.payments.count({
+                    where: whereCondition
+                });
+            }
             return helper.success(res, "Driver Wallet fetched successfully", {
                 data,
                 total: totalWalletRecharge,
@@ -445,7 +486,6 @@ module.exports = {
             return helper.error(res, "Something went wrong", error);
         }
     },
-
     driverWaletView: async (req, res) => {
         try {
             const { id } = req.params;
