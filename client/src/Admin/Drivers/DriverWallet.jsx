@@ -16,7 +16,7 @@ const DriverWallet = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [dateFilter, setDateFilter] = useState("all");
-  const [selectedContact, setSelectedContact] = useState(null);
+  const [selectedPayment, setSelectedPayments] = useState(null);
   const limit = 10;
 
   const dateFilters = [
@@ -77,7 +77,7 @@ const DriverWallet = () => {
   };
 
   const handleViewDetails = (payment) => {
-    setSelectedContact(payment);
+    setSelectedPayments(payment);
   };
 
   const prepareDataForExport = () => {
@@ -272,38 +272,38 @@ const DriverWallet = () => {
           </div>
         </div>
         <div className="offcanvas-body">
-          {selectedContact ? (
+          {selectedPayment ? (
             <>
               <table className="table table-borderless" style={{ marginLeft: "-8px" }}>
                 <tbody>
                   <tr>
                     <th>First Name:</th>
                     <td className="text-end text-black fw-medium">
-                      {selectedContact.user?.firstName || "N/A"}
+                      {selectedPayment.user?.firstName || "N/A"}
                     </td>
                   </tr>
                   <tr>
                     <th>Last Name:</th>
                     <td className="text-end text-black fw-medium">
-                      {selectedContact.user?.lastName || "N/A"}
+                      {selectedPayment.user?.lastName || "N/A"}
                     </td>
                   </tr>
                   <tr>
                     <th>Phone Number:</th>
                     <td className="text-end text-black fw-medium">
-                      {selectedContact.user?.countryCode || ""} {selectedContact.user?.phoneNumber || "N/A"}
+                      {selectedPayment.user?.countryCode || ""} {selectedPayment.user?.phoneNumber || "N/A"}
                     </td>
                   </tr>
                   <tr>
                     <th>Amount:</th>
                     <td className="text-end text-black fw-medium">
-                      ${selectedContact.amount || "0"}
+                      ${selectedPayment.amount || "0"}
                     </td>
                   </tr>
                   <tr>
                     <th>Transaction Date:</th>
                     <td className="text-end text-black fw-medium">
-                      {new Date(selectedContact.createdAt).toLocaleString()}
+                      {new Date(selectedPayment.createdAt).toLocaleString()}
                     </td>
                   </tr>
                 </tbody>
