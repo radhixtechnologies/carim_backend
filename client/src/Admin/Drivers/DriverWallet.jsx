@@ -80,6 +80,50 @@ const DriverWallet = () => {
     setSelectedPayments(payment);
   };
 
+   const deleteDriverWalllet = async (id) => {
+      const result = await Swal.fire({
+        title: "Are you sure?",
+        text: "You won't be able to revert this!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#1e3308",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, delete it!",
+      });
+  
+      if (result.isConfirmed) {
+        try {
+          await axiosInstance.post(`/driverWalletDelete/${id}`);
+  
+          const response = await axiosInstance.get(
+            `/driverWaletHistory?page=${currentPage}&limit=${limit}&search=${encodeURIComponent(
+              searchTerm
+            )}&dateFilter=${dateFilter}`
+          );
+  
+          if (response.data.success) {
+            const newTotalPages = response.data.body.totalPages;
+            const newData = response.data.body.data;
+            if (newData.length === 0 && currentPage > 1) {
+              setCurrentPage((prevPage) => prevPage - 1);
+            } else {
+              setPayments(newData);
+              setTotalPages(newTotalPages);
+            }
+  
+            Swal.fire("Deleted!", "Wallet Recharge has been deleted.", "success");
+          }
+        } catch (error) {
+          Swal.fire(
+            "Error!",
+            error.response?.data?.message || "Error deleting contact",
+            "error"
+          );
+        }
+      } else {
+      }
+    };
+
   const prepareDataForExport = () => {
     return payments.map((payment) => ({
       "First Name": payment.user?.firstName || "",
@@ -213,6 +257,19 @@ const DriverWallet = () => {
                                       onClick={() => handleViewDetails(payment)}
                                     >
                                       <i className="ri-eye-fill font-size-16"></i>
+                                    </button>
+
+                                    <button
+                                      onClick={() => deleteDriverWalllet(payment.id)}
+                                      className="btn btn-soft-danger px-2 btn-sm"
+                                      style={{
+                                        backgroundColor: "#ea5455",
+                                        borderColor: "#ea5455",
+                                        color: "#fff",
+                                      }}
+                                      title="Delete Wallet Recharge"
+                                    >
+                                      <i className="ri-delete-bin-line font-size-16"></i>{" "}
                                     </button>
                                   </div>
                                 </td>
