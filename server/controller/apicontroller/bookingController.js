@@ -776,7 +776,7 @@ module.exports = {
     //         }
     //     };
     // },
-    bookRide1: (io) => {
+    bookRide: (io) => {
         return async (req, res) => {
             let languageType = Number(req.headers.languagetype) || 0;
             const getPushMessage = (lang, en, ar, fr) => {
@@ -1404,7 +1404,7 @@ module.exports = {
             }
         };
     },
-    bookRide: (io) => {
+    bookRide1: (io) => {
         return async (req, res) => {
             let languageType = Number(req.headers.languagetype) || 0;
             const getPushMessage = (lang, en, ar, fr) => {
