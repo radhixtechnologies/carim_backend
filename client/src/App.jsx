@@ -33,6 +33,7 @@ import AboutUsApp from './Admin/AppCms/AboutUsApp';
 import PrivacyPolicyApp from './Admin/AppCms/PrivacyPolicyApp';
 import TermsConditionsApp from './Admin/AppCms/TermsConditionsApp';
 import DeleteAccount from './Admin/AppCms/DeleteAcount';
+import DriverWallet from './Admin/Drivers/DriverWallet';
 
 
 const App = () => {
@@ -91,6 +92,7 @@ const App = () => {
             <Route path="/documentlist/:driverId?" element={<PrivateRoute element={<DriverDocuments />} />} />
             <Route path="/screenshotlist" element={<PrivateRoute element={<ScreenShotList />} />} />
             <Route path="/bookingcompleted" element={<PrivateRoute element={<BookingCompleted />} />} />
+            <Route path="/driverwalletList" element={<PrivateRoute element={<DriverWallet />} />} />
 
           </Route>
         </Routes>

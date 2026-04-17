@@ -63,6 +63,8 @@ module.exports = {
             return helper.error(res, "Something went wrong", error);
         }
     },
+
+    
     contactDelete: async (req, res) => {
         try {
             const { id } = req.params;

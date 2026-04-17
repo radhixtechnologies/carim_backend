@@ -203,6 +203,15 @@ function Sidebar({ isOpen }) {
                       Document listings
                     </Link>
                   </li>
+                  <li>
+                    <Link
+                      className={isActive("/driverwalletList") ? "active" : ""}
+                      to="/driverwalletList"
+                      onClick={handleLinkClick}
+                    >
+                      Driver Wallet Recharge
+                    </Link>
+                  </li>
                 </ul>
               )}
             </li>

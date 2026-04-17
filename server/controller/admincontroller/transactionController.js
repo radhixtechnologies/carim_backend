@@ -1,6 +1,9 @@
 const db = require("../../models");
 const helper = require("../../helper/helper");
+const { Op } = require("sequelize");
 
+// Add this association
+db.payments.belongsTo(db.users, { foreignKey: 'user_id', as: 'user', targetKey: 'id' });
 module.exports = {
     transactionList: async (req, res) => {
         try {
@@ -379,22 +382,84 @@ module.exports = {
 
     driverWaletHistory: async (req, res) => {
         try {
-            const payments = await db.payments.findAll({
-                order: [["createdAt", "DESC"]],
-                raw: true
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 10;
+            const offset = (page - 1) * limit;
+            const search = req.query.search || "";
+            const dateFilter = req.query.dateFilter || "all";
+
+            let whereCondition = {};
+            let userWhereCondition = {};
+            if (search) {
+                userWhereCondition = {
+                    [Op.or]: [
+                        { firstName: { [Op.like]: `%${search}%` } },
+                        { lastName: { [Op.like]: `%${search}%` } },
+                    ]
+                };
+            }
+
+            if (dateFilter !== 'all') {
+                const daysAgo = parseInt(dateFilter, 10);
+                if (!isNaN(daysAgo)) {
+                    const startDate = new Date();
+                    startDate.setDate(startDate.getDate() - daysAgo);
+
+                    whereCondition.createdAt = {
+                        [Op.gte]: startDate,
+                    };
+                }
+            }
+            const includeUser = {
+                model: db.users,
+                as: 'user', 
+                attributes: ['id', 'firstName', 'lastName', 'email', 'countryCode', 'phoneNumber'],
+                where: Object.keys(userWhereCondition).length > 0 ? userWhereCondition : undefined,
+                required: !!search 
+            };
+
+            const totalWalletRecharge = await db.payments.count({
+                where: whereCondition,
+                include: Object.keys(userWhereCondition).length > 0 ? [includeUser] : [],
+                distinct: true
             });
-            return helper.success(res, "Payment history fetched successfully", payments);
+
+            const data = await db.payments.findAll({
+                where: whereCondition,
+                include: [includeUser],
+                limit,
+                offset,
+                order: [["id", "DESC"]],
+                distinct: true
+            });
+
+            return helper.success(res, "Driver Wallet fetched successfully", {
+                data,
+                total: totalWalletRecharge,
+                page,
+                limit,
+                totalPages: Math.ceil(totalWalletRecharge / limit),
+            });
         } catch (error) {
-            console.error('driverWaletHistory error:', error);
-            return helper.failure(res, "Error fetching payment history");
+            console.error("Error fetching driver wallet:", error);
+            return helper.error(res, "Something went wrong", error);
         }
     },
+
     driverWaletView: async (req, res) => {
         try {
-            const payments = await db.payments.findOne({ where: { id: req.params.id } })
-            return helper.success(res, "Payment history fetched successfully", payments);
+            const { id } = req.params;
+            const data = await db.payments.findByPk(id, {
+                include: [{
+                    model: db.users,
+                    as: 'user',
+                    attributes: ['id', 'firstName', 'lastName', 'email', 'countryCode', 'phoneNumber']
+                }]
+            });
+            return res.status(200).json({ message: true, data });
         } catch (error) {
-            console.log(error, "error");
+            return helper.error(res, "Something went wrong", error);
         }
-    }
+    },
+
 };
