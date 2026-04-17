@@ -776,7 +776,7 @@ module.exports = {
     //         }
     //     };
     // },
-    bookRide: (io) => {
+    bookRide1: (io) => {
         return async (req, res) => {
             let languageType = Number(req.headers.languagetype) || 0;
             const getPushMessage = (lang, en, ar, fr) => {
@@ -1404,7 +1404,7 @@ module.exports = {
             }
         };
     },
-    bookRide1: (io) => {
+    bookRide: (io) => {
         return async (req, res) => {
             let languageType = Number(req.headers.languagetype) || 0;
             const getPushMessage = (lang, en, ar, fr) => {
@@ -1417,9 +1417,9 @@ module.exports = {
                 const userId = req.user.id;
                 const { type } = req.body;
                 console.log("Received type:", type);
-                // ✅ SIRF TYPE 0 KE LIYE PRICE DIKHAO
-                // ✅ SIRF TYPE 1 KE LIYE BOOKING CREATE KARO
-                // ✅ BAAKI SAB (2,3,undefined etc) PE ERROR DO
+                // SIRF TYPE 0 KE LIYE PRICE DIKHAO
+                // SIRF TYPE 1 KE LIYE BOOKING CREATE KARO
+                // BAAKI SAB (2,3,undefined etc) PE ERROR DO
 
                 // ---------------- USER STATUS ----------------
                 const userStatus = await db.users.findOne({
@@ -1594,7 +1594,7 @@ module.exports = {
                     basePrice = bookingPrice;
                 }
 
-                // ✅ TYPE 0: SIRF PRICE DIKHAO, BOOKING CREATE MAT KARO
+                // TYPE 0: SIRF PRICE DIKHAO, BOOKING CREATE MAT KARO
                 if (type == 0) {
                     return helper.success(res,
                         languageType === 1 ? "تم حساب سعر الرحلة" :
@@ -1625,7 +1625,7 @@ module.exports = {
                     );
                 }
 
-                // ✅ TYPE 1: BOOKING CREATE KARO
+                //  TYPE 1: BOOKING CREATE KARO
                 if (type == 1) {
                     // ---------------- ACTIVE RIDE CHECK ----------------
                     if (userStatus.role != '3') {
@@ -1978,7 +1978,7 @@ module.exports = {
                     );
                 }
 
-                // ✅ TYPE 2, 3, UNDEFINED, YA KUCCH AUR: ERROR
+                // TYPE 2, 3, UNDEFINED, YA KUCCH AUR: ERROR
                 return helper.failure(res,
                     languageType === 1 ? "type only 0 and 1" :
                         languageType === 2 ? "Le type ne peut être que 0 ou 1" :
