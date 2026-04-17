@@ -377,4 +377,24 @@ module.exports = {
         }
     },
 
+    driverWaletHistory: async (req, res) => {
+        try {
+            const payments = await db.payments.findAll({
+                order: [["createdAt", "DESC"]],
+                raw: true
+            });
+            return helper.success(res, "Payment history fetched successfully", payments);
+        } catch (error) {
+            console.error('driverWaletHistory error:', error);
+            return helper.failure(res, "Error fetching payment history");
+        }
+    },
+    driverWaletView: async (req, res) => {
+        try {
+            const payments = await db.payments.findOne({ where: { id: req.params.id } })
+            return helper.success(res, "Payment history fetched successfully", payments);
+        } catch (error) {
+            console.log(error, "error");
+        }
+    }
 };

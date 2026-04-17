@@ -103,5 +103,7 @@ router.get('/transferscreenshotlist', transactionController.screenshotlist);
 router.post('/transferscreenshotdelete/:id', transactionController.screenshotdelete);
 router.post('/transferscreenshotstatus', transactionController.screenshotstatus);
 
+router.get('/driverWaletHistory',transactionController.driverWaletHistory);
+router.get('/driverWaletView/:id',transactionController.driverWaletView);
 
 module.exports = router;
