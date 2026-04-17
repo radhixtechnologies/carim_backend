@@ -105,5 +105,6 @@ router.post('/transferscreenshotstatus', transactionController.screenshotstatus)
 
 router.get('/driverWaletHistory',transactionController.driverWaletHistory);
 router.get('/driverWaletView/:id',transactionController.driverWaletView);
+router.post('/driverWalletDelete/:id',transactionController.driverWalletDelete);
 
 module.exports = router;

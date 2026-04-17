@@ -501,5 +501,15 @@ module.exports = {
             return helper.error(res, "Something went wrong", error);
         }
     },
+    driverWalletDelete: async (req, res) => {
+            try {
+                const { id } = req.params;
+                const data = await db.payments.destroy({ where: { id } });
+                return helper.success(res, "Driver wallet Recharge deleted successfully");
+    
+            } catch (error) {
+                return helper.error(res, "Something went wrong", error);
+            }
+        },
 
 };
