@@ -2124,7 +2124,6 @@ module.exports = {
         };
     },
 
-
     driverAccptReject: (io) => {
         return async (req, res) => {
             let languageType = Number(req.headers.languagetype);

@@ -501,6 +501,7 @@ module.exports = {
             return helper.error(res, "Something went wrong", error);
         }
     },
+    
     driverWalletDelete: async (req, res) => {
             try {
                 const { id } = req.params;
