@@ -6,16 +6,24 @@ import "@fortawesome/fontawesome-free/css/all.min.css";
 import "@fancyapps/fancybox/dist/jquery.fancybox.css";
 import "@fancyapps/fancybox";
 import { axiosInstance, BASE_URL } from "../../Config";
+import Pagination from "@mui/material/Pagination";
+import Stack from "@mui/material/Stack";
 
 const DriverDocuments = () => {
   const [users, setUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+
   const [selectedUser, setSelectedUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filteredDriverId, setFilteredDriverId] = useState(null);
   const [showOffcanvas, setShowOffcanvas] = useState(false);
   const [driverName, setDriverName] = useState("");
   const [dateFilter, setDateFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const itemsPerPage = 10;
+
+
 
   const { driverId } = useParams();
   const navigate = useNavigate();
@@ -27,26 +35,27 @@ const DriverDocuments = () => {
     { value: "180", label: "Last 6 Months" },
     { value: "365", label: "Last Year" },
   ];
-
   useEffect(() => {
     if (driverId) {
       setFilteredDriverId(driverId);
-      fetchDriverData(driverId);
+      fetchDriverData(driverId, 1);
     } else {
-      fetchAllData();
+      fetchAllData(1);
     }
   }, [driverId, dateFilter]);
 
-  const fetchDriverData = async (id) => {
+  const fetchDriverData = async (id, pageNum = currentPage) => {
     try {
       setLoading(true);
       const response = await axiosInstance.get(
-        `/document?driverId=${id}&dateFilter=${dateFilter}`
+        `/document?driverId=${id}&dateFilter=${dateFilter}&page=${pageNum}&limit=${itemsPerPage}&search=${encodeURIComponent(searchTerm)}`
       );
 
       if (response.data.success && response.data.body.data.length > 0) {
         const driverData = response.data.body.data;
         setUsers(driverData);
+        setTotalPages(response.data.body.totalPages || 1);
+        setCurrentPage(response.data.body.currentPage || 1);
 
         if (driverData.length > 0 && driverData[0].name) {
           setDriverName(driverData[0].name);
@@ -73,21 +82,23 @@ const DriverDocuments = () => {
     }
   };
 
-  const fetchAllData = async () => {
+  const fetchAllData = async (pageNum = currentPage) => {
     try {
       setLoading(true);
       const response = await axiosInstance.get(
-        `/document?dateFilter=${dateFilter}`
+        `/document?dateFilter=${dateFilter}&page=${pageNum}&limit=${itemsPerPage}&search=${encodeURIComponent(searchTerm)
+        }`
       );
 
       if (response.data.success) {
         setUsers(response.data.body.data || []);
+        setTotalPages(response.data.body.totalPages || 1);
+        setCurrentPage(response.data.body.currentPage || 1);
         setDriverName("");
       } else {
         toast.error(response.data.message || "Failed to load document list");
       }
     } catch (error) {
-      toast.error("An error occurred while fetching the document list");
     } finally {
       setLoading(false);
     }
@@ -99,13 +110,30 @@ const DriverDocuments = () => {
     setDateFilter("all");
     navigate("/documentlist");
   };
-
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
+    setCurrentPage(1);
   };
 
+  const handleSearch = () => {
+    setCurrentPage(1);
+    if (filteredDriverId) {
+      fetchDriverData(filteredDriverId, 1);
+    } else {
+      fetchAllData(1);
+    }
+  };
+  const handlePageChange = (event, value) => {
+    setCurrentPage(value);
+    if (filteredDriverId) {
+      fetchDriverData(filteredDriverId, value);
+    } else {
+      fetchAllData(value);
+    }
+  };
   const handleDateFilter = (value) => {
     setDateFilter(value);
+    setCurrentPage(1);
   };
 
   const handleViewDetails = (user) => {
@@ -205,18 +233,13 @@ const DriverDocuments = () => {
       : "Driver Documents Listings";
   };
 
+
   const getCurrentFilterLabel = () => {
     const filter = dateFilters.find((f) => f.value === dateFilter);
     return filter ? filter.label : "All Data";
   };
 
-  const displayUsers = filteredDriverId
-    ? users
-    : users.filter(
-        (user) =>
-          user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          user.email?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+
 
   return (
     <>
@@ -281,18 +304,23 @@ const DriverDocuments = () => {
                       className="card-head justify-content-start adjusttwo mb-3"
                       style={{ flexWrap: "nowrap" }}
                     >
-                      {!filteredDriverId && (
-                        <div className="tbl-search position-relative me-3">
-                          <input
-                            type="text"
-                            className="form-control"
-                            placeholder="Search by name or email..."
-                            value={searchTerm}
-                            onChange={handleSearchChange}
-                          />
-                          <i className="ri-search-line" />
-                        </div>
-                      )}
+
+                      <div className="tbl-search position-relative me-3">
+                        <input
+                          type="text"
+                          className="form-control"
+                          placeholder="Search by name or email..."
+                          value={searchTerm}
+                          onChange={handleSearchChange}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              handleSearch();
+                            }
+                          }}
+                        />
+                        <i className="ri-search-line" />
+                      </div>
+
 
                       {/* Date Filter Dropdown */}
                       <div className="dropdown tbl-drop">
@@ -309,9 +337,8 @@ const DriverDocuments = () => {
                           {dateFilters.map((filter) => (
                             <li key={filter.value}>
                               <button
-                                className={`dropdown-item ${
-                                  dateFilter === filter.value ? "active" : ""
-                                }`}
+                                className={`dropdown-item ${dateFilter === filter.value ? "active" : ""
+                                  }`}
                                 type="button"
                                 onClick={() => handleDateFilter(filter.value)}
                               >
@@ -342,8 +369,8 @@ const DriverDocuments = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {displayUsers.length > 0 ? (
-                            displayUsers.map((user, index) => (
+                          {users.length > 0 ? (
+                            users.map((user, index) => (
                               <tr key={user.id}>
                                 <td>{index + 1}</td>
                                 {/* <td>
@@ -371,9 +398,8 @@ const DriverDocuments = () => {
 
                                 {/* <td>{user.email || ""}</td> */}
                                 <td>
-                                  {`${user.location || ""}${
-                                    user.location && user.location ? ", " : ""
-                                  }${user.location || ""}` || ""}
+                                  {`${user.location || ""}${user.location && user.location ? ", " : ""
+                                    }${user.location || ""}` || ""}
                                 </td>
                                 <td>
                                   <div className="dropdown dropup">
@@ -395,13 +421,12 @@ const DriverDocuments = () => {
                                           disabled
                                         >
                                           <i
-                                            className={`${
-                                              user.documentVerify === "0"
-                                                ? "ri-time-line text-warning"
-                                                : user.documentVerify === "1"
+                                            className={`${user.documentVerify === "0"
+                                              ? "ri-time-line text-warning"
+                                              : user.documentVerify === "1"
                                                 ? "ri-check-line text-success"
                                                 : "ri-close-line text-danger"
-                                            } me-2`}
+                                              } me-2`}
                                           ></i>
                                           {getApprovalLabel(
                                             user.documentVerify
@@ -443,8 +468,8 @@ const DriverDocuments = () => {
                                 <td>
                                   {user.createdAt
                                     ? new Date(
-                                        user.createdAt
-                                      ).toLocaleDateString()
+                                      user.createdAt
+                                    ).toLocaleDateString()
                                     : ""}
                                 </td>
                                 <td>
@@ -468,16 +493,28 @@ const DriverDocuments = () => {
                                 style={{ textAlign: "center", padding: "20px" }}
                               >
                                 {filteredDriverId
-                                  ? `No documents found for ${
-                                      driverName ||
-                                      `Driver ID: ${filteredDriverId}`
-                                    }`
+                                  ? `No documents found for ${driverName ||
+                                  `Driver ID: ${filteredDriverId}`
+                                  }`
                                   : "No drivers found"}
                               </td>
                             </tr>
                           )}
                         </tbody>
                       </table>
+                      <div className="d-flex justify-content-center align-items-center mt-3">
+                        <Stack
+                          spacing={2}
+                          className="d-flex justify-content-center mt-3"
+                        >
+                          <Pagination
+                            count={totalPages}
+                            page={currentPage}
+                            onChange={handlePageChange}
+                            color="primary"
+                          />
+                        </Stack>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -774,13 +811,12 @@ const DriverDocuments = () => {
                         <li>
                           <button className="dropdown-item" disabled>
                             <i
-                              className={`${
-                                selectedUser.documentVerify === "0"
-                                  ? "ri-time-line text-warning"
-                                  : selectedUser.documentVerify === "1"
+                              className={`${selectedUser.documentVerify === "0"
+                                ? "ri-time-line text-warning"
+                                : selectedUser.documentVerify === "1"
                                   ? "ri-check-line text-success"
                                   : "ri-close-line text-danger"
-                              } me-2`}
+                                } me-2`}
                             ></i>
                             {getApprovalLabel(selectedUser.documentVerify)}
                             <i className="ri-check-line ms-2"></i>
@@ -868,14 +904,12 @@ const DriverDocuments = () => {
                   <tr>
                     <td>Location:</td>
                     <td className="text-end text-black fw-medium">
-                      {`${selectedUser.location || ""}${
-                        selectedUser.location && selectedUser.location ? ", " : ""
-                      }${selectedUser.location || ""}${
-                        (selectedUser.location || selectedUser.location) &&
-                        selectedUser.location
+                      {`${selectedUser.location || ""}${selectedUser.location && selectedUser.location ? ", " : ""
+                        }${selectedUser.location || ""}${(selectedUser.location || selectedUser.location) &&
+                          selectedUser.location
                           ? ", "
                           : ""
-                      }${selectedUser.location || ""}` || ""}
+                        }${selectedUser.location || ""}` || ""}
                     </td>
                   </tr>
                   <tr>

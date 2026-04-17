@@ -173,7 +173,7 @@ const DriverList = () => {
         })
       );
     } catch (error) {
-      toast.error("Failed to update approval status");
+      toast.error("network error");
     }
   };
 

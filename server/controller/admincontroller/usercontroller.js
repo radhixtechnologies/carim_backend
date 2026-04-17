@@ -564,7 +564,8 @@ module.exports = {
 
             if (search && search.trim() !== "") {
                 whereCondition[Op.or] = [
-                    { name: { [Op.like]: `%${search}%` } },
+                    { firstName: { [Op.like]: `%${search}%` } },
+                    { lastName: { [Op.like]: `%${search}%` } },
                     { email: { [Op.like]: `%${search}%` } },
                 ];
             }
@@ -612,7 +613,7 @@ module.exports = {
             const user = await db.users.findOne({ where: { id } });
             if (!user) {
                 return helper.error(res, "User not found");
-            } 
+            }
             await db.users.update({ priceStatus }, { where: { id } });
             return helper.success(res, " priceStatus updated successfully", {
                 id,
