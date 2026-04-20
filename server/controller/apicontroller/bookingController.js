@@ -1464,8 +1464,8 @@ module.exports = {
     //                 callerPhone,
     //                 callerCountryCode,
     //                 callerName,
-    //                 bookingPrice,   
-    //                 rideDistance     
+    //                 bookingPrice,
+    //                 rideDistance
     //             } = req.body;
 
     //             // ---------------- VALIDATION ----------------
@@ -1627,9 +1627,9 @@ module.exports = {
     //                 pickupLongitude,
     //                 dropLatitude: dropLatitude || "",
     //                 dropLongitude: dropLongitude || "",
-    //                 bookingPrice: bookingPrice.toString(),          
-    //                 rideDistance: rideDistance ? rideDistance.toString() : "", 
-    //                 basePrice: bookingPrice.toString(),              
+    //                 bookingPrice: bookingPrice.toString(),
+    //                 rideDistance: rideDistance ? rideDistance.toString() : "",
+    //                 basePrice: bookingPrice.toString(),
     //                 request: '0',
     //                 rideOpen: rideOpen || 0,
     //                 callerPhone: callerPhone || "",
@@ -1903,8 +1903,8 @@ module.exports = {
                     callerPhone,
                     callerCountryCode,
                     callerName,
-                    bookingPrice,   
-                    rideDistance     
+                    bookingPrice,
+                    rideDistance
                 } = req.body;
 
                 // ---------------- VALIDATION ----------------
@@ -1925,9 +1925,8 @@ module.exports = {
                     );
                 }
 
-                // 🔥🔥🔥 YAHAN SE VALIDATION HATA DIYA 🔥🔥🔥
-                // bookingPrice aur rideDistance required nahi hai ab
-                // Max distance check bhi hata diya
+                // 🔥🔥🔥 bookingPrice aur rideDistance KI VALIDATION HATA DI (Non-required) 🔥🔥🔥
+                // Ab frontend se bhejoge toh store hoga, nahi bhejoge toh default "0" hoga
 
                 // ---------------- ACTIVE RIDE CHECK ----------------
                 if (userStatus.role != '3') {
@@ -1984,13 +1983,19 @@ module.exports = {
                     return R * (2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x)));
                 };
 
-                // 🔥🔥🔥 CHANGE: Driver ke paas kam se kam 30 MRU hone chahiye 🔥🔥🔥
-                const MINIMUM_BALANCE_REQUIRED = 30;
-
+                // 🔥🔥🔥 DRIVER BALANCE LOGIC: 0-30 MRU walo ko bhi request + pehle wala commission check 🔥🔥🔥
                 const freeDrivers = drivers.filter(d => {
                     const hasActiveBooking = d.driverbook && d.driverbook.length > 0;
-                    const hasValidBalance = d.totalAmount !== null && parseFloat(d.totalAmount) >= MINIMUM_BALANCE_REQUIRED;
-                    return !hasActiveBooking && hasValidBalance;
+                    const driverBalance = parseFloat(d.totalAmount) || 0;
+
+                    // Pehle wala logic: Commission amount se zyada balance
+                    const hasHighBalance = driverBalance > commissionAmount;
+
+                    // Nayi condition: Balance 0 se 30 ke beech mein hai (0,5,10,15,20,25,30 sabko)
+                    const isLowBalance = driverBalance >= 0 && driverBalance <= 30;
+
+                    // Agar active booking nahi hai, aur (balance high hai YA balance low hai)
+                    return !hasActiveBooking && (hasHighBalance || isLowBalance);
                 });
 
                 if (!freeDrivers.length) {
@@ -3522,7 +3527,7 @@ module.exports = {
                 callerCountryCode: booking.callerCountryCode || "",
                 callerPhone: booking.callerPhone || "",
                 callerName: booking.callerName || "",
-                rideDistance:booking.rideDistance
+                rideDistance: booking.rideDistance
                 // rideDistanceKm
             });
 
