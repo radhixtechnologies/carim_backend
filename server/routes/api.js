@@ -8,15 +8,16 @@ const bookingController = require('../controller/apicontroller/bookingController
 
 module.exports = (io) => {
     
-router.use(middleware.authenticateHeader);
-router.get("/getcms", authController.getCmsContent);
-//fileupload
-router.post('/fileupload', authController.fileUploadDriver)
-router.post('/login', authController.login);
-
-
-router.use(middleware.verifyUser);
-
+    
+    router.use(middleware.authenticateHeader);
+    router.get('/adminGet', authController.adminGet);
+    router.get("/getcms", authController.getCmsContent);
+    //fileupload
+    router.post('/fileupload', authController.fileUploadDriver)
+    router.post('/login', authController.login);
+    
+    
+    router.use(middleware.verifyUser);
 router.post("/verifyOtp", authController.verifyOtp);
 router.post("/resendotp", authController.resendOTP);
 router.post("/deleteaccount", authController.deleteAccount);
