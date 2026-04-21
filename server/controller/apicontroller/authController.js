@@ -1929,7 +1929,7 @@ module.exports = {
             }
             return res.status(200).json({
                 success: true,
-                data: data
+                body: data
             });
         } catch (error) {
             console.log(error, "error");
