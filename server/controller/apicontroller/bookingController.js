@@ -756,7 +756,7 @@ module.exports = {
     //                         // pricingModel: rideOpen == 0 ?
     //                         //     `First ${FREE_KM}km = ${BASE_PRICE} MRU, then ${ADMIN_PRICE_PER_KM} MRU/km` :
     //                         //     `First ${FREE_KM}km = ${BASE_PRICE} MRU, then ${ADMIN_PRICE_PER_KM} MRU/km + ${pricePerMinOpen} MRU/min (real-time)`,
-    //                         // adminRate: ADMIN_PRICE_PER_KM 
+    //                         // adminRate: ADMIN_PRICE_PER_KM
     //                     },
     //                     // For open rides, return pricing info for real-time calculation
     //                     perMinPrice: rideOpen == 1 ? pricePerMinOpen : 0,
@@ -1384,7 +1384,7 @@ module.exports = {
                             // pricingModel: rideOpen == 0 ?
                             //     `First ${FREE_KM}km = ${BASE_PRICE} MRU, then ${ADMIN_PRICE_PER_KM} MRU/km` :
                             //     `First ${FREE_KM}km = ${BASE_PRICE} MRU, then ${ADMIN_PRICE_PER_KM} MRU/km + ${pricePerMinOpen} MRU/min (real-time)`,
-                            // adminRate: ADMIN_PRICE_PER_KM 
+                            // adminRate: ADMIN_PRICE_PER_KM
                         },
                         // For open rides, return pricing info for real-time calculation
                         perMinPrice: rideOpen == 1 ? pricePerMinOpen : 0,
@@ -2855,7 +2855,7 @@ module.exports = {
                 const BASE_PRICE = 100;
                 const FREE_KM = 3;
                 const pricePerKmOpen = ADMIN_PRICE_PER_KM;
-                const pricePerMinOpen = 1;
+                const pricePerMinOpen = 5;
 
                 const roundToNearest5 = (num) => {
                     return Math.round(parseFloat(num) / 5) * 5;
