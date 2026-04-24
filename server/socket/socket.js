@@ -1215,10 +1215,10 @@ module.exports = function (io) {
 
                   const basePrice = parseFloat(currentBooking.basePrice || 100);
                   const currentPrice = parseFloat(currentBooking.bookingPrice || basePrice);
-                  const pricePerMin = 1;
+                  const pricePerMin = 5;
 
                   let newPrice = currentPrice + pricePerMin;
-                  const totalMinutes = (parseInt(currentBooking.totalMinutes) || 0) + 1;
+                  const totalMinutes = (parseInt(currentBooking.totalMinutes) || 0) + 5;
 
                   await db.bookings.update(
                     {
@@ -1237,7 +1237,7 @@ module.exports = function (io) {
                         bookingId: bookingId,
                         newPrice: newPrice.toString(),
                         totalMinutes: totalMinutes,
-                        addedAmount: 1,
+                        addedAmount: 5,
                         timestamp: new Date().toISOString()
                       });
                     });
@@ -1249,7 +1249,7 @@ module.exports = function (io) {
                         bookingId: bookingId,
                         newPrice: newPrice.toString(),
                         totalMinutes: totalMinutes,
-                        addedAmount: 1,
+                        addedAmount: 5,
                         timestamp: new Date().toISOString()
                       });
                     });
