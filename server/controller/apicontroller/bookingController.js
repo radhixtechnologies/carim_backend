@@ -2871,14 +2871,147 @@ module.exports = {
 
 
 
+    // updateDropLocationAndPrice: (io) => {
+    //     return async (req, res) => {
+    //         try {
+    //             const userId = req.user.id;
+    //             const { bookingId, dropLocation, dropLatitude, dropLongitude } = req.body;
+
+    //             if (!bookingId || !dropLatitude || !dropLongitude) {
+    //                 return helper.failure(res, 'Booking ID and drop coordinates are required.');
+    //             }
+
+    //             const booking = await db.bookings.findOne({
+    //                 where: {
+    //                     id: bookingId,
+    //                     userId,
+    //                     rideOpen: 1,
+    //                     status: '0',
+    //                     request: '1'
+    //                 }
+    //             });
+
+    //             if (!booking) return helper.failure(res, 'Active open ride booking not found.');
+
+    //             const startLat = booking.lastLatitude
+    //                 ? parseFloat(booking.lastLatitude)
+    //                 : parseFloat(booking.pickupLatitude);
+
+    //             const startLng = booking.lastLongitude
+    //                 ? parseFloat(booking.lastLongitude)
+    //                 : parseFloat(booking.pickupLongitude);
+
+    //             const dropLat = parseFloat(dropLatitude);
+    //             const dropLng = parseFloat(dropLongitude);
+
+    //             if (isNaN(startLat) || isNaN(startLng) || isNaN(dropLat) || isNaN(dropLng)) {
+    //                 return helper.failure(res, 'Invalid coordinates.');
+    //             }
+
+    //             // ---------------- DISTANCE UTILS ----------------
+    //             const toRad = v => v * Math.PI / 180;
+    //             const calculateDistance = (a, b, c, d) => {
+    //                 const R = 6371;
+    //                 const dLat = toRad(c - a);
+    //                 const dLon = toRad(d - b);
+    //                 const x =
+    //                     Math.sin(dLat / 2) ** 2 +
+    //                     Math.cos(toRad(a)) * Math.cos(toRad(c)) *
+    //                     Math.sin(dLon / 2) ** 2;
+    //                 return R * (2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x)));
+    //             };
+
+    //             const segmentDistanceKm = calculateDistance(
+    //                 startLat,
+    //                 startLng,
+    //                 dropLat,
+    //                 dropLng
+    //             );
+
+    //             if (segmentDistanceKm > 30) {
+    //                 return helper.failure(res, 'Drop location must be within 30 km of your current location');
+    //             }
+
+    //             // ---------------- ADMIN PRICE PER KM ----------------
+    //             const adminData = await db.users.findOne({
+    //                 where: { role: '0' },
+    //                 attributes: ['rideAmount'],
+    //                 raw: true
+    //             });
+
+    //             const pricePerKm = adminData?.rideAmount
+    //                 ? parseFloat(adminData.rideAmount)
+    //                 : 10; // safety fallback
+
+    //             if (isNaN(pricePerKm) || pricePerKm <= 0) {
+    //                 return helper.failure(res, 'Invalid ride amount set by admin');
+    //             }
+
+    //             // ---------------- ACCUMULATE DISTANCE & PRICE ----------------
+    //             const totalDistanceKm =
+    //                 parseFloat(booking.travelledDistance || 0) + segmentDistanceKm;
+
+    //             const newBookingPrice = Math.round(
+    //                 totalDistanceKm * pricePerKm
+    //             ).toString();
+
+    //             // ---------------- UPDATE BOOKING ----------------
+    //             await booking.update({
+    //                 dropLocation: dropLocation || "",
+    //                 dropLatitude: dropLatitude.toString(),
+    //                 dropLongitude: dropLongitude.toString(),
+    //                 travelledDistance: totalDistanceKm.toString(),
+    //                 bookingPrice: newBookingPrice,
+    //                 lastLatitude: dropLat.toString(),
+    //                 lastLongitude: dropLng.toString()
+    //             });
+
+    //             // ---------------- SOCKET UPDATE ----------------
+    //             if (global.onlineUsers) {
+    //                 Object.keys(onlineUsers).forEach(driverId => {
+    //                     onlineUsers[driverId].forEach(sockId => {
+    //                         io.to(sockId).emit("rideStatusUpdate", {
+    //                             bookingId: booking.id,
+    //                             dropLocation,
+    //                             dropLatitude,
+    //                             dropLongitude,
+    //                             bookingPrice: newBookingPrice,
+    //                             rideDistanceKm: totalDistanceKm.toFixed(2)
+    //                         });
+    //                     });
+    //                 });
+    //             }
+
+    //             // ---------------- RESPONSE ----------------
+    //             return helper.success(res, 'Drop location updated successfully', {
+    //                 bookingId: booking.id,
+    //                 dropLocation,
+    //                 dropLatitude,
+    //                 dropLongitude,
+    //                 bookingPrice: newBookingPrice,
+    //                 rideDistanceKm: totalDistanceKm.toFixed(2)
+    //             });
+
+    //         } catch (error) {
+    //             console.error('Update drop error:', error);
+    //             return helper.failure(res, 'Something went wrong while updating drop location.');
+    //         }
+    //     };
+    // },
     updateDropLocationAndPrice: (io) => {
         return async (req, res) => {
             try {
                 const userId = req.user.id;
                 const { bookingId, dropLocation, dropLatitude, dropLongitude } = req.body;
 
+                let languageType = Number(req.headers.languagetype) || 0;
+
                 if (!bookingId || !dropLatitude || !dropLongitude) {
-                    return helper.failure(res, 'Booking ID and drop coordinates are required.');
+                    return helper.failure(res,
+                        languageType === 1 ? "معرف الحجز وإحداثيات الوجهة مطلوبة." :
+                            languageType === 2 ? "L'ID de réservation et les coordonnées de destination sont requis." :
+                                "Booking ID and drop coordinates are required."
+                    );
                 }
 
                 const booking = await db.bookings.findOne({
@@ -2886,12 +3019,18 @@ module.exports = {
                         id: bookingId,
                         userId,
                         rideOpen: 1,
-                        status: '0',
+                        status: '2',
                         request: '1'
                     }
                 });
 
-                if (!booking) return helper.failure(res, 'Active open ride booking not found.');
+                if (!booking) {
+                    return helper.failure(res,
+                        languageType === 1 ? "رحلة مفتوحة نشطة غير موجودة." :
+                            languageType === 2 ? "Course ouverte active non trouvée." :
+                                "Active open ride booking not found."
+                    );
+                }
 
                 const startLat = booking.lastLatitude
                     ? parseFloat(booking.lastLatitude)
@@ -2905,10 +3044,13 @@ module.exports = {
                 const dropLng = parseFloat(dropLongitude);
 
                 if (isNaN(startLat) || isNaN(startLng) || isNaN(dropLat) || isNaN(dropLng)) {
-                    return helper.failure(res, 'Invalid coordinates.');
+                    return helper.failure(res,
+                        languageType === 1 ? "إحداثيات غير صالحة." :
+                            languageType === 2 ? "Coordonnées invalides." :
+                                "Invalid coordinates."
+                    );
                 }
 
-                // ---------------- DISTANCE UTILS ----------------
                 const toRad = v => v * Math.PI / 180;
                 const calculateDistance = (a, b, c, d) => {
                     const R = 6371;
@@ -2929,33 +3071,40 @@ module.exports = {
                 );
 
                 if (segmentDistanceKm > 30) {
-                    return helper.failure(res, 'Drop location must be within 30 km of your current location');
+                    return helper.failure(res,
+                        languageType === 1 ? "يجب أن يكون موقع الوجهة ضمن 30 كم من موقعك الحالي." :
+                            languageType === 2 ? "Le lieu de dépôt doit être à moins de 30 km de votre position actuelle." :
+                                "Drop location must be within 30 km of your current location"
+                    );
                 }
 
                 // ---------------- ADMIN PRICE PER KM ----------------
                 const adminData = await db.users.findOne({
                     where: { role: '0' },
-                    attributes: ['rideAmount'],
+                    attributes: ['rideAmount', 'priceRushHour', 'status'],
                     raw: true
                 });
 
-                const pricePerKm = adminData?.rideAmount
-                    ? parseFloat(adminData.rideAmount)
-                    : 10; // safety fallback
+                // Default price per km - 23 MRU (as per your requirement)
+                let pricePerKm = 23;
 
-                if (isNaN(pricePerKm) || pricePerKm <= 0) {
-                    return helper.failure(res, 'Invalid ride amount set by admin');
+                if (adminData) {
+                    if (adminData.status == 0 && adminData.rideAmount) {
+                        pricePerKm = parseFloat(adminData.rideAmount);
+                    } else if (adminData.status == 1 && adminData.priceRushHour) {
+                        pricePerKm = parseFloat(adminData.priceRushHour);
+                    }
                 }
 
-                // ---------------- ACCUMULATE DISTANCE & PRICE ----------------
-                const totalDistanceKm =
-                    parseFloat(booking.travelledDistance || 0) + segmentDistanceKm;
+                const BASE_PRICE = 100;
+                const FREE_KM = 3;
 
-                const newBookingPrice = Math.round(
-                    totalDistanceKm * pricePerKm
-                ).toString();
+                const travelledDistanceSoFar = parseFloat(booking.travelledDistance || 0);
+                const totalDistanceKm = travelledDistanceSoFar + segmentDistanceKm;
+                const extraKm = Math.max(0, totalDistanceKm - FREE_KM);
+                const newBookingPrice = Math.round(BASE_PRICE + (extraKm * pricePerKm)).toString();
+                const distanceCharge = Math.round(extraKm * pricePerKm);
 
-                // ---------------- UPDATE BOOKING ----------------
                 await booking.update({
                     dropLocation: dropLocation || "",
                     dropLatitude: dropLatitude.toString(),
@@ -2966,38 +3115,60 @@ module.exports = {
                     lastLongitude: dropLng.toString()
                 });
 
-                // ---------------- SOCKET UPDATE ----------------
                 if (global.onlineUsers) {
-                    Object.keys(onlineUsers).forEach(driverId => {
-                        onlineUsers[driverId].forEach(sockId => {
+                    if (global.onlineUsers[userId]) {
+                        global.onlineUsers[userId].forEach(sockId => {
                             io.to(sockId).emit("rideStatusUpdate", {
                                 bookingId: booking.id,
-                                dropLocation,
-                                dropLatitude,
-                                dropLongitude,
+                                dropLocation: dropLocation || "",
+                                dropLatitude: dropLatitude.toString(),
+                                dropLongitude: dropLongitude.toString(),
                                 bookingPrice: newBookingPrice,
-                                rideDistanceKm: totalDistanceKm.toFixed(2)
+                                rideDistanceKm: totalDistanceKm.toFixed(2),
+                                priceBreakdown: {
+                                    basePrice: BASE_PRICE,
+                                    freeKm: FREE_KM,
+                                    pricePerKm: pricePerKm,
+                                    totalDistanceKm: totalDistanceKm.toFixed(2),
+                                    extraKm: extraKm.toFixed(2),
+                                    distanceCharge: distanceCharge,
+                                    total: newBookingPrice
+                                }
                             });
                         });
-                    });
+                    }
                 }
 
-                // ---------------- RESPONSE ----------------
                 return helper.success(res, 'Drop location updated successfully', {
                     bookingId: booking.id,
-                    dropLocation,
-                    dropLatitude,
-                    dropLongitude,
+                    dropLocation: dropLocation || "",
+                    dropLatitude: dropLatitude.toString(),
+                    dropLongitude: dropLongitude.toString(),
                     bookingPrice: newBookingPrice,
-                    rideDistanceKm: totalDistanceKm.toFixed(2)
+                    rideDistanceKm: totalDistanceKm.toFixed(2),
+                    pricePerKm: pricePerKm,
+                    priceBreakdown: {
+                        basePrice: BASE_PRICE,
+                        freeKm: FREE_KM,
+                        totalDistanceKm: totalDistanceKm.toFixed(2),
+                        extraKm: extraKm.toFixed(2),
+                        distanceCharge: distanceCharge,
+                        total: newBookingPrice
+                    }
                 });
 
             } catch (error) {
                 console.error('Update drop error:', error);
-                return helper.failure(res, 'Something went wrong while updating drop location.');
+                let languageType = Number(req.headers.languagetype) || 0;
+                return helper.failure(res,
+                    languageType === 1 ? "حدث خطأ أثناء تحديث موقع الوجهة." :
+                        languageType === 2 ? "Une erreur est survenue lors de la mise à jour de l'emplacement de dépôt." :
+                            "Something went wrong while updating drop location."
+                );
             }
         };
     },
+
 
     driverAccptReject: (io) => {
         return async (req, res) => {
