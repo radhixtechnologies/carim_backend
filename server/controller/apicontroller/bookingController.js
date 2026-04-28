@@ -3157,7 +3157,7 @@ bookRide: (io) => {
                 }
 
                 // ---------------- FILTER DRIVERS WITHIN 3KM RADIUS ----------------
-                const MAX_DRIVER_DISTANCE_KM = 3;
+                const MAX_DRIVER_DISTANCE_KM = 15;
                 const nearbyDrivers = [];
 
                 for (const driver of freeDrivers) {
