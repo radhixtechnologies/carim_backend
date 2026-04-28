@@ -2360,7 +2360,6 @@ module.exports = function (io) {
           userId: userId,
           unread_count: count
         });
-
       } catch (err) {
         console.log("Read All Notification Error:", err);
       }
