@@ -15,6 +15,7 @@ const Profile = () => {
     adminCommission: "",
     rideAmount: "",
     priceRushHour: "",
+    parkingCharge: "",
     status: 0, // Add status field
   });
   const [imagePreview, setImagePreview] = useState(null);
@@ -198,6 +199,17 @@ const Profile = () => {
       }));
     }
   };
+  const handleParkingCharge = (e) => {
+    const { value } = e.target;
+    const cleanedValue = value.replace(/\s/g, "");
+
+    if (cleanedValue === "" || /^[0-9]*\.?[0-9]*$/.test(cleanedValue)) {
+      setData((prevData) => ({
+        ...prevData,
+        parkingCharge: cleanedValue
+      }));
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -238,6 +250,8 @@ const Profile = () => {
     formData.append("adminCommission", data.adminCommission);
     formData.append("rideAmount", data.rideAmount);
     formData.append("priceRushHour", data.priceRushHour);
+    formData.append("parkingCharge", data.parkingCharge);
+
     formData.append("status", data.status);
 
     if (selectedImage) {
@@ -519,6 +533,27 @@ const Profile = () => {
                           {errors.priceRushHour && (
                             <div className="text-danger">
                               {errors.priceRushHour}
+                            </div>
+                          )}
+                        </div>
+                         <div style={{ marginBottom: "16px" }}>
+                          <label htmlFor="parkingCharge" className="mb-1 fw-medium">
+                            Price Parking
+                          </label>
+                          <div className="input-group">
+                            <input
+                              type="text"
+                              className="form-control"
+                              name="parkingCharge"
+                              value={data.parkingCharge}
+                              onChange={handleParkingCharge}
+                              placeholder="Enter Price Parking"
+                              maxLength={5}
+                            />
+                          </div>
+                          {errors.parkingCharge && (
+                            <div className="text-danger">
+                              {errors.parkingCharge}
                             </div>
                           )}
                         </div>
