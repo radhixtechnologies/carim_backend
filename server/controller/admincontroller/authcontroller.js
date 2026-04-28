@@ -91,6 +91,7 @@ module.exports = {
                     rideAmount: req.body.rideAmount || find_user.rideAmount,
                     priceRushHour: req.body.priceRushHour || find_user.priceRushHour,
                     priceStatus: req.body.priceStatus || find_user.priceStatus,
+                    parkingCharge: req.body.parkingCharge || find_user.parkingCharge,
 
                 },
                 { where: { id: userId } }
