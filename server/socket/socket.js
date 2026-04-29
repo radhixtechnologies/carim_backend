@@ -546,6 +546,7 @@ module.exports = function (io) {
         });
       }
     });
+
     socket.on("updateLocation", async (data) => {
       try {
         const { userId, latitude, longitude, location } = data;
@@ -626,156 +627,192 @@ module.exports = function (io) {
               currLng
             );
 
-            // ========== PARKING CHARGE LOGIC ==========
-            // Parking charge tab lagega jab lastUpdateTime update nahi hua (location same hai)
+            console.log(`📏 Distance moved: ${segmentDistanceKm * 1000} meters`);
 
-            if (segmentDistanceKm === 0) {
-              // Driver ruka hai - Parking charge lagega
-              console.log("🔴 Driver PARKED - Calculating parking charge...");
+            // ========== PER-MINUTE +5 PRICE LOGIC ==========
+            // Every time updateLocation fires while ride status = '2',
+            // check how many full minutes have passed since lastUpdateTime
+            // and add 5 per minute to bookingPrice (moving OR stopped).
+            const PRICE_PER_MINUTE = 5;
 
-              const adminData = await db.users.findOne({
-                where: { role: '0' },
-                attributes: ['parkingCharge'],
-                raw: true
-              });
+            const currentTime = new Date();
+            const lastUpdateTime = booking.lastUpdateTime
+              ? new Date(booking.lastUpdateTime)
+              : new Date(booking.createdAt);
 
-              let parkingRatePerMinute = 0;
-              if (adminData?.parkingCharge && adminData.parkingCharge !== "") {
-                parkingRatePerMinute = parseFloat(adminData.parkingCharge);
-              }
+            const minutesSinceLastUpdate = Math.floor(
+              (currentTime - lastUpdateTime) / (1000 * 60)
+            );
 
-              if (parkingRatePerMinute > 0) {
-                const currentTime = new Date();
-                let lastParkingMinutes = parseFloat(booking.lastParkingMinutes || 0);
+            // Only add if at least 1 full minute has passed
+            const perMinuteCharge = minutesSinceLastUpdate > 0
+              ? minutesSinceLastUpdate * PRICE_PER_MINUTE
+              : 0;
 
-                // Last update time se calculate karo (createdAt nahi)
-                let lastUpdateTime = booking.lastUpdateTime ? new Date(booking.lastUpdateTime) : new Date(booking.createdAt);
-                const minutesSinceLastUpdate = Math.floor((currentTime - lastUpdateTime) / (1000 * 60));
-
-                console.log(`Minutes since last update: ${minutesSinceLastUpdate}`);
-                console.log(`Last Parking Minutes: ${lastParkingMinutes}`);
-
-                if (minutesSinceLastUpdate > 0) {
-                  const newParkingMinutes = minutesSinceLastUpdate;
-                  const parkingChargeToAdd = newParkingMinutes * parkingRatePerMinute;
-
-                  const existingParkingCharge = parseFloat(booking.totalParkingCharge || 0);
-                  const newTotalParkingCharge = existingParkingCharge + parkingChargeToAdd;
-                  const newLastParkingMinutes = lastParkingMinutes + newParkingMinutes;
-
-                  // Update parking charge ONLY - location update nahi kar rahe
-                  await booking.update({
-                    lastParkingMinutes: newLastParkingMinutes.toString(),
-                    totalParkingCharge: newTotalParkingCharge.toString()
-                  });
-
-                  // Reload booking to get updated totalParkingCharge
-                  await booking.reload();
-
-                  console.log(`✅ Parking Added: ${newParkingMinutes} min × ${parkingRatePerMinute} = ${parkingChargeToAdd}`);
-                  console.log(`💰 Total Parking Charge: ${newTotalParkingCharge}`);
-
-                  // Update booking price with new parking charge
-                  const pricePerKm = parseFloat(await db.users.findOne({ where: { role: '0' }, attributes: ['rideAmount'], raw: true }).then(a => a?.rideAmount) || 10);
-                  const totalDistanceKm = parseFloat(booking.travelledDistance || 0);
-                  const extraKm = Math.max(0, totalDistanceKm - 3);
-                  const BASE_PRICE = 100;
-                  const newBookingPrice = Math.round(BASE_PRICE + (extraKm * pricePerKm) + newTotalParkingCharge).toString();
-
-                  await booking.update({
-                    bookingPrice: newBookingPrice
-                  });
-
-                  console.log(`💰 Updated Booking Price with Parking: ${newBookingPrice}`);
-
-                  // Send update to user
-                  if (global.onlineUsers && onlineUsers[booking.userId]) {
-                    onlineUsers[booking.userId].forEach(sockId => {
-                      io.to(sockId).emit("parkingChargeUpdate", {
-                        bookingId: booking.id,
-                        parkingChargeAdded: parkingChargeToAdd,
-                        totalParkingCharge: newTotalParkingCharge,
-                        bookingPrice: newBookingPrice
-                      });
-                    });
-                  }
-                }
-              }
-            } else {
-              // Driver move kar raha hai - Parking charge mat laga, location update kar
-              console.log(`🟢 Driver MOVING: ${segmentDistanceKm}km - Updating location`);
+            if (perMinuteCharge > 0) {
+              console.log(`⏱️ Per-minute charge: +₹${perMinuteCharge} (${minutesSinceLastUpdate} min × ₹${PRICE_PER_MINUTE})`);
             }
 
-            // GPS noise ignore (only update if distance is between 0 and 30km)
-            if (segmentDistanceKm > 0 && segmentDistanceKm <= 30) {
+            // ========== PARKING CHARGE LOGIC WITH 5 MIN GRACE PERIOD ==========
+            const PARKING_THRESHOLD_KM = 0.01; // 10 meters threshold
+            const GRACE_PERIOD_MINUTES = 5; // 5 minutes free waiting time
 
-              // ---------------- ADMIN PRICE PER KM ----------------
-              const adminData = await db.users.findOne({
-                where: { role: '0' },
-                attributes: ['rideAmount'],
-                raw: true
-              });
+            // Get admin parking charge rate
+            const adminData = await db.users.findOne({
+              where: { role: '0' },
+              attributes: ['parkingCharge', 'rideAmount'],
+              raw: true
+            });
 
-              const pricePerKm = adminData?.rideAmount
-                ? parseFloat(adminData.rideAmount)
-                : 10;
+            const parkingRatePerMinute = parseFloat(adminData?.parkingCharge) || 0;
+            const pricePerKm = parseFloat(adminData?.rideAmount) || 10;
 
-              const BASE_PRICE = 100;
-              const FREE_KM = 3;
+            // ***** UPDATED LOGIC WITH GRACE PERIOD *****
+            if (segmentDistanceKm <= PARKING_THRESHOLD_KM) {
 
-              if (!isNaN(pricePerKm) && pricePerKm > 0) {
+              if (parkingRatePerMinute > 0 && minutesSinceLastUpdate > 0) {
+                let lastParkingMinutes = parseFloat(booking.lastParkingMinutes || 0);
+                let existingParkingCharge = parseFloat(booking.totalParkingCharge || 0);
 
-                // Calculate total distance travelled so far
-                const totalDistanceKm =
-                  parseFloat(booking.travelledDistance || 0) + segmentDistanceKm;
+                // Calculate total waiting minutes including this interval
+                const totalWaitingMinutes = lastParkingMinutes + minutesSinceLastUpdate;
 
-                // Calculate extra kilometers beyond free km
+                let parkingChargeToAdd = 0;
+                let chargeableMinutes = 0;
+
+                // Check if total waiting minutes exceed grace period
+                if (totalWaitingMinutes > GRACE_PERIOD_MINUTES) {
+                  if (lastParkingMinutes <= GRACE_PERIOD_MINUTES) {
+                    // Just crossed the grace period
+                    chargeableMinutes = totalWaitingMinutes - GRACE_PERIOD_MINUTES;
+                  } else {
+                    // Already beyond grace period, charge all new minutes
+                    chargeableMinutes = minutesSinceLastUpdate;
+                  }
+                  parkingChargeToAdd = chargeableMinutes * parkingRatePerMinute;
+                } else {
+                  console.log(`✅ Still within ${GRACE_PERIOD_MINUTES} min grace period - No parking charge`);
+                }
+
+                const newTotalParkingMinutes = totalWaitingMinutes;
+                const newTotalParkingCharge = existingParkingCharge + parkingChargeToAdd;
+
+                // ---- COMBINE: existing bookingPrice + per-minute + parking ----
+                const currentBookingPrice = parseFloat(booking.bookingPrice || 0);
+                const newBookingPrice = Math.round(
+                  currentBookingPrice + perMinuteCharge + parkingChargeToAdd
+                );
+
+                // Update booking with parking data + per-minute charge + new time
+                await booking.update({
+                  lastParkingMinutes: newTotalParkingMinutes.toString(),
+                  totalParkingCharge: newTotalParkingCharge.toString(),
+                  bookingPrice: newBookingPrice.toString(),
+                  lastUpdateTime: currentTime, // Update time but NOT location
+                });
+
+                await booking.reload();
+
+                if (parkingChargeToAdd > 0) {
+                  console.log(`✅ Parking Added: +${chargeableMinutes} min → +₹${parkingChargeToAdd}`);
+                }
+                console.log(`💰 Per-min: +₹${perMinuteCharge} | Parking: ₹${newTotalParkingCharge} | Total Price: ₹${newBookingPrice}`);
+
+                // Send parking update to user
+                if (global.onlineUsers && onlineUsers[booking.userId]) {
+                  onlineUsers[booking.userId].forEach(sockId => {
+                    io.to(sockId).emit("parkingChargeUpdate", {
+                      bookingId: booking.id,
+                      parkingMinutesAdded: chargeableMinutes,
+                      waitingMinutesTotal: newTotalParkingMinutes,
+                      gracePeriodMinutes: GRACE_PERIOD_MINUTES,
+                      parkingChargeAdded: parkingChargeToAdd,
+                      totalParkingCharge: newTotalParkingCharge,
+                      totalParkingMinutes: newTotalParkingMinutes,
+                      perMinuteChargeAdded: perMinuteCharge,
+                      bookingPrice: newBookingPrice,
+                      isGracePeriod: newTotalParkingMinutes <= GRACE_PERIOD_MINUTES
+                    });
+                  });
+                }
+
+              } else if (perMinuteCharge > 0) {
+                // Parking rate is 0 but per-minute charge still applies
+                const currentBookingPrice = parseFloat(booking.bookingPrice || 0);
+                const newBookingPrice = Math.round(currentBookingPrice + perMinuteCharge);
+
+                await booking.update({
+                  bookingPrice: newBookingPrice.toString(),
+                  lastUpdateTime: currentTime,
+                });
+
+                await booking.reload();
+
+                console.log(`💰 Per-min only (stopped): +₹${perMinuteCharge} | Total Price: ₹${newBookingPrice}`);
+
+                if (global.onlineUsers && onlineUsers[booking.userId]) {
+                  onlineUsers[booking.userId].forEach(sockId => {
+                    io.to(sockId).emit("parkingChargeUpdate", {
+                      bookingId: booking.id,
+                      perMinuteChargeAdded: perMinuteCharge,
+                      bookingPrice: newBookingPrice,
+                      isGracePeriod: false
+                    });
+                  });
+                }
+              }
+
+            } else
+              if (segmentDistanceKm > PARKING_THRESHOLD_KM && segmentDistanceKm <= 30) {
+                // Driver is MOVING - Reset parking and update location
+                console.log("🟢 Driver MOVING - Resetting parking and updating location");
+
+                let currentTotalParkingCharge = parseFloat(booking.totalParkingCharge || 0);
+
+                // Calculate distance charge
+                const totalDistanceKm = parseFloat(booking.travelledDistance || 0) + segmentDistanceKm;
+                const BASE_PRICE = 100;
+                const FREE_KM = 3;
                 const extraKm = Math.max(0, totalDistanceKm - FREE_KM);
                 const distanceCharge = Math.round(extraKm * pricePerKm);
 
-                // Get current total parking charge (already updated)
-                const currentTotalParkingCharge = parseFloat(booking.totalParkingCharge || 0);
-
-                // New price = Base price + distance charge + TOTAL PARKING CHARGE
+                // ---- COMBINE: base + distance + parking + per-minute ----
                 const newBookingPrice = Math.round(
-                  BASE_PRICE + (extraKm * pricePerKm) + currentTotalParkingCharge
-                ).toString();
+                  BASE_PRICE + distanceCharge + currentTotalParkingCharge + perMinuteCharge
+                );
 
-                // ---------------- UPDATE BOOKING (LOCATION UPDATE) ----------------
+                // Update booking with new location, reset parking minutes, apply per-minute charge
                 await booking.update({
                   dropLatitude: currLat.toString(),
                   dropLongitude: currLng.toString(),
                   dropLocation: location || booking.dropLocation,
                   travelledDistance: totalDistanceKm.toString(),
-                  bookingPrice: newBookingPrice,
+                  bookingPrice: newBookingPrice.toString(),
                   lastLatitude: currLat.toString(),
                   lastLongitude: currLng.toString(),
-                  lastUpdateTime: new Date(),  // 👈 Last update time update ho raha hai
-                  lastParkingMinutes: '0'  // Reset parking minutes
+                  lastUpdateTime: currentTime,
+                  lastParkingMinutes: '0' // Reset parking minutes when moving
                 });
 
-                // Reload booking
                 await booking.reload();
 
-                console.log(`========================================`);
-                console.log(`📊 RIDE UPDATE SUMMARY:`);
-                console.log(`Total Distance: ${totalDistanceKm.toFixed(2)}km`);
-                console.log(`Base Price: ${BASE_PRICE}`);
-                console.log(`Distance Charge: ${distanceCharge}`);
-                console.log(`Parking Charge: ${currentTotalParkingCharge}`);
-                console.log(`💰 TOTAL BOOKING PRICE: ${newBookingPrice}`);
-                console.log(`========================================`);
+                console.log(`📊 MOVING UPDATE:`);
+                console.log(`  Distance: +${segmentDistanceKm.toFixed(3)}km (Total: ${totalDistanceKm.toFixed(2)}km)`);
+                console.log(`  Per-min charge: +₹${perMinuteCharge}`);
+                console.log(`  Parking: ₹${currentTotalParkingCharge}`);
+                console.log(`  Total Price: ₹${newBookingPrice}`);
 
-                // ---------------- SOCKET UPDATE TO USER ----------------
+                // Send ride update to user
                 if (global.onlineUsers && onlineUsers[booking.userId]) {
                   onlineUsers[booking.userId].forEach(sockId => {
                     io.to(sockId).emit("rideStatusUpdate", {
                       bookingId: booking.id,
                       dropLatitude: currLat.toString(),
                       dropLongitude: currLng.toString(),
-                      bookingPrice: newBookingPrice,
+                      bookingPrice: newBookingPrice.toString(),
                       rideDistanceKm: totalDistanceKm.toFixed(2),
                       totalParkingCharge: currentTotalParkingCharge,
+                      perMinuteChargeAdded: perMinuteCharge,
                       priceBreakdown: {
                         basePrice: BASE_PRICE,
                         freeKm: FREE_KM,
@@ -784,13 +821,13 @@ module.exports = function (io) {
                         pricePerKm: pricePerKm,
                         distanceCharge: distanceCharge,
                         parkingCharge: currentTotalParkingCharge,
+                        perMinuteCharge: perMinuteCharge,
                         total: newBookingPrice
                       }
                     });
                   });
                 }
               }
-            }
           }
         }
 
@@ -829,8 +866,516 @@ module.exports = function (io) {
 
 
 
+    socket.on("rideStatusUpdate", async (data) => {
+      try {
+        let { bookingId, status, driverId } = data;
 
-    // socket.on("rideStatusUpdate1", async (data) => {
+        if (!bookingId || !status) {
+          return socket.emit("rideStatusUpdate", {
+            success: false,
+            message: "Booking ID and status are required."
+          });
+        }
+
+        // If driverId is null or empty, fetch it from booking
+        if (!driverId) {
+          console.log("driverId is null/empty, fetching from booking...");
+          const bookingInfo = await db.bookings.findOne({
+            where: { id: bookingId },
+            attributes: ['driverId'],
+            raw: true
+          });
+
+          if (!bookingInfo || !bookingInfo.driverId) {
+            return socket.emit("rideStatusUpdate", {
+              success: false,
+              message: "Booking not found or no driver assigned."
+            });
+          }
+
+          driverId = bookingInfo.driverId;
+          console.log(`Fetched driverId from booking: ${driverId}`);
+        }
+
+        console.log(bookingId, driverId, "bookingIdbookingIdbookingId>>>");
+
+        if (!['0', '1', '2', '3', '4'].includes(status)) {
+          return socket.emit("rideStatusUpdate", {
+            success: false,
+            message: "Invalid status value."
+          });
+        }
+
+        const booking = await db.bookings.findOne({
+          where: { id: bookingId, driverId },
+          include: [{
+            model: db.users,
+            as: 'userbook',
+            attributes: ['id', 'rideOtp', 'socketId', 'deviceToken', 'status', 'block', 'suspend', 'languagee_type']
+          }]
+        });
+
+        if (!booking) {
+          return socket.emit("rideStatusUpdate", {
+            success: false,
+            message: "Booking not found",
+            code: 404
+          });
+        }
+
+        const currentStatus = booking.status;
+
+        const driver = await db.users.findOne({
+          where: { id: driverId },
+          attributes: [
+            'id',
+            'deviceToken',
+            'status',
+            'block',
+            'suspend',
+            'languagee_type'
+          ],
+          raw: true
+        });
+
+        if (!driver) {
+          return socket.emit("rideStatusUpdate", {
+            success: false,
+            message: "Driver not found."
+          });
+        }
+
+        if (driver.status === "0")
+          return socket.emit("rideStatusUpdate", { success: false, message: "Driver deactivated" });
+        if (driver.block === "1")
+          return socket.emit("rideStatusUpdate", { success: false, message: "Driver blocked" });
+        if (driver.suspend === "1")
+          return socket.emit("rideStatusUpdate", { success: false, message: "Driver suspended" });
+
+        const user = booking.userbook;
+
+        if (!user) {
+          return socket.emit("rideStatusUpdate", {
+            success: false,
+            message: "User not found"
+          });
+        }
+
+        if (user.status === "0")
+          return socket.emit("rideStatusUpdate", { success: false, message: "User deactivated" });
+        if (user.block === "1")
+          return socket.emit("rideStatusUpdate", { success: false, message: "User blocked" });
+        if (user.suspend === "1")
+          return socket.emit("rideStatusUpdate", { success: false, message: "User suspended" });
+
+        // ================= LANGUAGE HELPERS =================
+        const getUserMsg = (en, ar, fr) =>
+          user.languagee_type === 1 ? ar : user.languagee_type === 2 ? fr : en;
+
+        const getDriverMsg = (en, ar, fr) =>
+          driver.languagee_type === 1 ? ar : driver.languagee_type === 2 ? fr : en;
+
+        // ================= ROUND TO NEAREST 5 HELPER =================
+        const roundToNearest5 = (num) => {
+          return Math.round(parseFloat(num) / 5) * 5;
+        };
+
+        // ================= EMIT FUNCTION =================
+        const emitToBoth = async (
+          userMsg,
+          driverMsg,
+          statusData,
+          otpVerified = false
+        ) => {
+
+          await db.notifications.create({
+            sender_id: driverId,
+            receiver_id: user.id,
+            bookingId: booking.id,
+            type: Number(statusData),
+            message: userMsg,
+            is_read: 0,
+            status: 0
+          });
+
+          if (onlineUsers[user.id]) {
+            onlineUsers[user.id].forEach(sid => {
+              io.to(sid).emit("rideStatusUpdate", {
+                success: true,
+                message: userMsg,
+                bookingId: booking.id,
+                status: statusData,
+                otpVerified: true
+              });
+            });
+          }
+
+          if (onlineUsers[driverId]) {
+            onlineUsers[driverId].forEach(sid => {
+              io.to(sid).emit("rideStatusUpdate", {
+                success: true,
+                message: driverMsg,
+                bookingId: booking.id,
+                status: statusData,
+                otpVerified: true
+              });
+            });
+          }
+        };
+
+        const startRealTimePricing = async (bookingId) => {
+          try {
+            const rideBooking = await db.bookings.findOne({
+              where: { id: bookingId },
+              raw: true
+            });
+
+            if (rideBooking && rideBooking.rideOpen == 1) {
+              console.log(`Starting real-time pricing for open ride: ${bookingId}`);
+
+              if (!global.priceIntervals) {
+                global.priceIntervals = {};
+              }
+
+              if (global.priceIntervals[bookingId]) {
+                clearInterval(global.priceIntervals[bookingId]);
+              }
+
+              const intervalId = setInterval(async () => {
+                try {
+                  const currentBooking = await db.bookings.findOne({
+                    where: { id: bookingId },
+                    raw: true
+                  });
+
+                  if (!currentBooking || currentBooking.rideOpen != 1) {
+                    console.log(`Booking ${bookingId} not found or rideOpen changed, stopping pricing`);
+                    clearInterval(global.priceIntervals[bookingId]);
+                    delete global.priceIntervals[bookingId];
+                    return;
+                  }
+
+                  // CHECK WHEN LAST LOCATION UPDATE WAS RECEIVED
+                  const lastUpdateTime = currentBooking.lastUpdateTime
+                    ? new Date(currentBooking.lastUpdateTime)
+                    : new Date(currentBooking.createdAt);
+
+                  const currentTime = new Date();
+                  const secondsSinceLastUpdate = (currentTime - lastUpdateTime) / 1000;
+
+                  console.log(`📡 Last location update was ${Math.round(secondsSinceLastUpdate)} seconds ago`);
+
+                  // IF MORE THAN 60 SECONDS - ADD FALLBACK PER-MINUTE CHARGE
+                  if (secondsSinceLastUpdate >= 60) {
+                    const minutesSinceLastUpdate = Math.floor(secondsSinceLastUpdate / 60);
+                    const PRICE_PER_MINUTE = 5;
+                    const fallbackCharge = minutesSinceLastUpdate * PRICE_PER_MINUTE;
+
+                    if (fallbackCharge > 0) {
+                      const currentPrice = parseFloat(currentBooking.bookingPrice || 100);
+                      const newPrice = currentPrice + fallbackCharge;
+                      const totalMinutes = (parseInt(currentBooking.totalMinutes) || 0) + minutesSinceLastUpdate;
+
+                      // Update booking with fallback charges
+                      await db.bookings.update(
+                        {
+                          bookingPrice: newPrice.toString(),
+                          totalMinutes: totalMinutes.toString(),
+                          lastPriceUpdate: currentTime.toISOString(),
+                          // IMPORTANT: DO NOT update lastUpdateTime here
+                          // We want to track actual location update time separately
+                        },
+                        { where: { id: bookingId } }
+                      );
+
+                      console.log(`⚠️ FALLBACK CHARGE: No location update for ${Math.round(secondsSinceLastUpdate)}s`);
+                      console.log(`   Added: +${fallbackCharge} MRU (${minutesSinceLastUpdate} min × ₹${PRICE_PER_MINUTE})`);
+                      console.log(`   New Price: ${newPrice} MRU`);
+
+                      // Send notification to both driver and user
+                      if (onlineUsers[currentBooking.driverId]) {
+                        onlineUsers[currentBooking.driverId].forEach(sockId => {
+                          io.to(sockId).emit("priceUpdate", {
+                            bookingId: bookingId,
+                            newPrice: newPrice.toString(),
+                            totalMinutes: totalMinutes,
+                            addedAmount: fallbackCharge,
+                            reason: "no_location_update",
+                            minutesWithoutUpdate: minutesSinceLastUpdate,
+                            timestamp: currentTime.toISOString()
+                          });
+                        });
+                      }
+
+                      if (onlineUsers[currentBooking.userId]) {
+                        onlineUsers[currentBooking.userId].forEach(sockId => {
+                          io.to(sockId).emit("priceUpdate", {
+                            bookingId: bookingId,
+                            newPrice: newPrice.toString(),
+                            totalMinutes: totalMinutes,
+                            addedAmount: fallbackCharge,
+                            reason: "no_location_update",
+                            minutesWithoutUpdate: minutesSinceLastUpdate,
+                            timestamp: currentTime.toISOString()
+                          });
+                        });
+                      }
+                    }
+                  } else {
+                    console.log(`✅ Recent location update (${Math.round(secondsSinceLastUpdate)}s ago) - No fallback charge`);
+                  }
+
+                } catch (error) {
+                  console.error(`Error in price interval for booking ${bookingId}:`, error);
+                }
+              }, 30000); // Check every 30 seconds instead of 60 for quicker detection
+
+              // Store the interval ID and also store lastUpdateTime tracking separately
+              global.priceIntervals[bookingId] = intervalId;
+
+              // Also store a reference to track last location update time separately
+              if (!global.lastLocationUpdateTimes) {
+                global.lastLocationUpdateTimes = {};
+              }
+              global.lastLocationUpdateTimes[bookingId] = new Date();
+
+            }
+          } catch (error) {
+            console.error('Error starting real-time pricing:', error);
+          }
+        };
+
+        const stopRealTimePricing = async (bookingId) => {
+          try {
+            if (global.priceIntervals && global.priceIntervals[bookingId]) {
+              clearInterval(global.priceIntervals[bookingId]);
+              delete global.priceIntervals[bookingId];
+              console.log(`Stopped real-time pricing for booking: ${bookingId}`);
+            }
+          } catch (error) {
+            console.error('Error stopping real-time pricing:', error);
+          }
+        };
+
+        // ================= STATUS FLOW =================
+        switch (status) {
+
+          case "1": // DRIVER ARRIVED
+            if (currentStatus !== "0") return;
+            await booking.update({ status: "1" });
+            await emitToBoth(
+              getUserMsg("Driver arrived", "وصل السائق", "Le conducteur est arrivé"),
+              getDriverMsg("Driver arrived", "وصل السائق", "Le conducteur est arrivé"),
+              "1"
+            );
+            if (user.deviceToken) {
+              helper.sendNotification_android(user.deviceToken, {
+                message: getUserMsg("Your driver has arrived.", "وصل سائقك.", "Votre conducteur est arrivé."),
+                type: 7,
+                senderId: driverId,
+                bookingId: booking.id
+              });
+            }
+            break;
+
+          case "2": // START RIDE
+            await booking.update({
+              status: "2",
+              lastUpdateTime: new Date() // ← Set lastUpdateTime at ride start so per-minute calc is accurate
+            });
+            if (booking.rideOpen == 1) {
+              await startRealTimePricing(bookingId);
+            }
+            await emitToBoth(
+              getUserMsg("Ride has started", "تم بدء الرحلة", "Le trajet a commencé"),
+              getDriverMsg("Ride has started", "تم بدء الرحلة", "Le trajet a commencé"),
+              "2",
+              true
+            );
+            if (user.deviceToken) {
+              helper.sendNotification_android(user.deviceToken, {
+                message: getUserMsg("Your ride has started.", "بدأت رحلتك.", "Votre trajet a commencé."),
+                type: 8,
+                senderId: driverId,
+                bookingId: booking.id
+              });
+            }
+            break;
+
+          case "3": // FINISHED - COMMISSION CUT HOGA YAHAN
+            await stopRealTimePricing(bookingId);
+
+            const finalBooking = await db.bookings.findOne({
+              where: { id: bookingId },
+              raw: true
+            });
+
+            // Round final price to nearest 5
+            let finalPrice = parseFloat(finalBooking.bookingPrice);
+            let roundedFinalPrice = roundToNearest5(finalPrice);
+
+            console.log("========== RIDE COMPLETED - COMMISSION PROCESSING ==========");
+            console.log(`Booking ID: ${bookingId}`);
+            console.log(`Final price: ${finalPrice} → ${roundedFinalPrice} MRU`);
+
+            // ===== GET COMMISSION PERCENTAGE FROM ADMIN =====
+            const adminUser = await db.users.findOne({
+              where: { role: '0' },
+              attributes: ['id', 'totalAmount', 'adminCommission'],
+              raw: true
+            });
+
+            if (!adminUser) {
+              console.log("❌ Admin user not found!");
+              return socket.emit("rideStatusUpdate", {
+                success: false,
+                message: "Admin configuration not found."
+              });
+            }
+
+            let commissionPercent = parseFloat(adminUser.adminCommission) || 15;
+            console.log(`Admin commission percent from DB: ${commissionPercent}%`);
+
+            // ===== GET DRIVER DETAILS =====
+            const driverDetails = await db.users.findOne({
+              where: { id: driverId, role: "2" },
+              attributes: ['id', 'totalAmount'],
+              raw: true
+            });
+
+            if (!driverDetails) {
+              console.log("❌ Driver not found!");
+              return socket.emit("rideStatusUpdate", {
+                success: false,
+                message: "Driver not found."
+              });
+            }
+
+            const commissionAmount = (roundedFinalPrice * commissionPercent) / 100;
+            const driverBalance = parseFloat(driverDetails.totalAmount) || 0;
+            const newDriverBalance = driverBalance - commissionAmount;
+
+            console.log(`Booking price: ${roundedFinalPrice} MRU`);
+            console.log(`Commission calculation: ${roundedFinalPrice} × ${commissionPercent}% = ${commissionAmount} MRU`);
+            console.log(`Driver balance before deduction: ${driverBalance} MRU`);
+            console.log(`Driver balance after deduction: ${newDriverBalance} MRU`);
+
+            const driverUpdate = await db.users.update(
+              { totalAmount: newDriverBalance.toFixed(2).toString() },
+              { where: { id: driverId, role: "2" } }
+            );
+
+            console.log(`Driver update result: ${driverUpdate[0]} row(s) updated`);
+
+            const adminBalance = parseFloat(adminUser.totalAmount) || 0;
+            const newAdminBalance = adminBalance + commissionAmount;
+
+            const adminUpdate = await db.users.update(
+              { totalAmount: newAdminBalance.toFixed(2).toString() },
+              { where: { id: adminUser.id, role: '0' } }
+            );
+
+            console.log(`Admin update result: ${adminUpdate[0]} row(s) updated`);
+            console.log(`Admin balance: ${adminBalance} → ${newAdminBalance} MRU (added ${commissionAmount} MRU)`);
+
+            // ===== CREATE TRANSACTION RECORDS =====
+            try {
+              await db.transactions.create({
+                userId: adminUser.id,
+                bookingId: bookingId,
+                amount: commissionAmount.toString(),
+                type: 'commission_earning',
+                description: `Commission earned from ride #${bookingId} (${commissionPercent}% of booking price)`,
+                status: 'completed'
+              });
+              console.log("Admin transaction created successfully");
+            } catch (txError) {
+              console.log("Admin transaction error:", txError.message);
+            }
+
+            try {
+              await db.transactions.create({
+                userId: driverId,
+                bookingId: bookingId,
+                amount: commissionAmount.toString(),
+                type: 'commission_deduction',
+                description: `Admin commission ${commissionPercent}% deducted for ride #${bookingId}`,
+                status: 'completed'
+              });
+              console.log("Driver transaction created successfully");
+            } catch (txError) {
+              console.log("Driver transaction error:", txError.message);
+            }
+
+            await db.bookings.update(
+              {
+                bookingPrice: roundedFinalPrice.toString(),
+                status: "3",
+                adminAmountCut: commissionAmount.toString()
+              },
+              { where: { id: bookingId } }
+            );
+
+            console.log("========== COMMISSION PROCESSING COMPLETE ==========");
+
+            await emitToBoth(
+              getUserMsg(`Ride finished successfully.`,
+                `تم الانتهاء من الرحلة بنجاح. السعر النهائي`,
+                `Trajet terminé avec succès. Prix final`),
+              getDriverMsg(`Ride finished successfully. `,
+                `تم الانتهاء من الرحلة بنجاح. السعر النهائي`,
+                `Trajet terminé avec succès. Prix final`),
+              "3"
+            );
+
+            if (user.deviceToken) {
+              helper.sendNotification_android(user.deviceToken, {
+                message: getUserMsg(
+                  `Your ride has been completed. Final price: ${roundedFinalPrice} MRU`,
+                  `تم إكمال رحلتك. السعر النهائي: ${roundedFinalPrice} MRU`,
+                  `Votre trajet est terminé. Prix final: ${roundedFinalPrice} MRU`
+                ),
+                type: 9,
+                senderId: driverId,
+                bookingId: booking.id
+              });
+            }
+            break;
+
+          case "4": // CANCELLED
+            await stopRealTimePricing(bookingId);
+            if (currentStatus !== "2") return;
+            await booking.update({ status: "4" });
+            await emitToBoth(
+              getUserMsg("Ride cancelled successfully", "تم إلغاء الرحلة بنجاح", "Trajet annulé avec succès"),
+              getDriverMsg("Ride cancelled successfully", "تم إلغاء الرحلة بنجاح", "Trajet annulé avec succès"),
+              "4"
+            );
+            break;
+
+          case "0": // ON THE WAY
+            if (currentStatus >= "2") return;
+            await booking.update({ status: "0" });
+            await emitToBoth(
+              getUserMsg("Driver on the way", "السائق في الطريق", "Le conducteur est en route"),
+              getDriverMsg("Driver on the way", "السائق في الطريق", "Le conducteur est en route"),
+              "0"
+            );
+            break;
+        }
+
+      } catch (error) {
+        console.error("rideStatusUpdate error:", error);
+        return socket.emit("rideStatusUpdate", {
+          success: false,
+          message: "Something went wrong while updating ride status.",
+          error: error.message
+        });
+      }
+    });
+
+
+    // socket.on("rideStatusUpdate", async (data) => {
     //   try {
     //     let { bookingId, status, driverId } = data;
 
@@ -1022,10 +1567,10 @@ module.exports = function (io) {
 
     //               const basePrice = parseFloat(currentBooking.basePrice || 100);
     //               const currentPrice = parseFloat(currentBooking.bookingPrice || basePrice);
-    //               const pricePerMin = 1;
+    //               const pricePerMin = 5;
 
     //               let newPrice = currentPrice + pricePerMin;
-    //               const totalMinutes = (parseInt(currentBooking.totalMinutes) || 0) + 1;
+    //               const totalMinutes = (parseInt(currentBooking.totalMinutes) || 0) + 5;
 
     //               await db.bookings.update(
     //                 {
@@ -1044,7 +1589,7 @@ module.exports = function (io) {
     //                     bookingId: bookingId,
     //                     newPrice: newPrice.toString(),
     //                     totalMinutes: totalMinutes,
-    //                     addedAmount: 1,
+    //                     addedAmount: 5,
     //                     timestamp: new Date().toISOString()
     //                   });
     //                 });
@@ -1056,7 +1601,7 @@ module.exports = function (io) {
     //                     bookingId: bookingId,
     //                     newPrice: newPrice.toString(),
     //                     totalMinutes: totalMinutes,
-    //                     addedAmount: 1,
+    //                     addedAmount: 5,
     //                     timestamp: new Date().toISOString()
     //                   });
     //                 });
@@ -1252,7 +1797,15 @@ module.exports = function (io) {
     //           },
     //           { where: { id: bookingId } }
     //         );
-
+    //         // ===== UPDATE BOOKING WITH adminAmountCut =====
+    //         await db.bookings.update(
+    //           {
+    //             bookingPrice: roundedFinalPrice.toString(),
+    //             status: "3",
+    //             adminAmountCut: commissionAmount.toString()  // ← Yahan commission amount save ho jayega
+    //           },
+    //           { where: { id: bookingId } }
+    //         );
     //         console.log("========== COMMISSION PROCESSING COMPLETE ==========");
 
     //         // Send notifications
@@ -1311,496 +1864,6 @@ module.exports = function (io) {
     //     });
     //   }
     // });
-
-    socket.on("rideStatusUpdate", async (data) => {
-      try {
-        let { bookingId, status, driverId } = data;
-
-        if (!bookingId || !status) {
-          return socket.emit("rideStatusUpdate", {
-            success: false,
-            message: "Booking ID and status are required."
-          });
-        }
-
-        // If driverId is null or empty, fetch it from booking
-        if (!driverId) {
-          console.log("driverId is null/empty, fetching from booking...");
-          const bookingInfo = await db.bookings.findOne({
-            where: { id: bookingId },
-            attributes: ['driverId'],
-            raw: true
-          });
-
-          if (!bookingInfo || !bookingInfo.driverId) {
-            return socket.emit("rideStatusUpdate", {
-              success: false,
-              message: "Booking not found or no driver assigned."
-            });
-          }
-
-          driverId = bookingInfo.driverId;
-          console.log(`Fetched driverId from booking: ${driverId}`);
-        }
-
-        console.log(bookingId, driverId, "bookingIdbookingIdbookingId>>>");
-
-        if (!['0', '1', '2', '3', '4'].includes(status)) {
-          return socket.emit("rideStatusUpdate", {
-            success: false,
-            message: "Invalid status value."
-          });
-        }
-
-        const booking = await db.bookings.findOne({
-          where: { id: bookingId, driverId },
-          include: [{
-            model: db.users,
-            as: 'userbook',
-            attributes: ['id', 'rideOtp', 'socketId', 'deviceToken', 'status', 'block', 'suspend', 'languagee_type']
-          }]
-        });
-
-        if (!booking) {
-          return socket.emit("rideStatusUpdate", {
-            success: false,
-            message: "Booking not found",
-            code: 404
-          });
-        }
-
-        const currentStatus = booking.status;
-
-        const driver = await db.users.findOne({
-          where: { id: driverId },
-          attributes: [
-            'id',
-            'deviceToken',
-            'status',
-            'block',
-            'suspend',
-            'languagee_type'
-          ],
-          raw: true
-        });
-
-        if (!driver) {
-          return socket.emit("rideStatusUpdate", {
-            success: false,
-            message: "Driver not found."
-          });
-        }
-
-        if (driver.status === "0")
-          return socket.emit("rideStatusUpdate", { success: false, message: "Driver deactivated" });
-        if (driver.block === "1")
-          return socket.emit("rideStatusUpdate", { success: false, message: "Driver blocked" });
-        if (driver.suspend === "1")
-          return socket.emit("rideStatusUpdate", { success: false, message: "Driver suspended" });
-
-        const user = booking.userbook;
-
-        if (!user) {
-          return socket.emit("rideStatusUpdate", {
-            success: false,
-            message: "User not found"
-          });
-        }
-
-        if (user.status === "0")
-          return socket.emit("rideStatusUpdate", { success: false, message: "User deactivated" });
-        if (user.block === "1")
-          return socket.emit("rideStatusUpdate", { success: false, message: "User blocked" });
-        if (user.suspend === "1")
-          return socket.emit("rideStatusUpdate", { success: false, message: "User suspended" });
-
-        // ================= LANGUAGE HELPERS =================
-        const getUserMsg = (en, ar, fr) =>
-          user.languagee_type === 1 ? ar : user.languagee_type === 2 ? fr : en;
-
-        const getDriverMsg = (en, ar, fr) =>
-          driver.languagee_type === 1 ? ar : driver.languagee_type === 2 ? fr : en;
-
-        // ================= ROUND TO NEAREST 5 HELPER =================
-        const roundToNearest5 = (num) => {
-          return Math.round(parseFloat(num) / 5) * 5;
-        };
-
-        // ================= EMIT FUNCTION =================
-        const emitToBoth = async (
-          userMsg,
-          driverMsg,
-          statusData,
-          otpVerified = false
-        ) => {
-
-          await db.notifications.create({
-            sender_id: driverId,
-            receiver_id: user.id,
-            bookingId: booking.id,
-            type: Number(statusData),
-            message: userMsg,
-            is_read: 0,
-            status: 0
-          });
-
-          if (onlineUsers[user.id]) {
-            onlineUsers[user.id].forEach(sid => {
-              io.to(sid).emit("rideStatusUpdate", {
-                success: true,
-                message: userMsg,
-                bookingId: booking.id,
-                status: statusData,
-                otpVerified: true
-              });
-            });
-          }
-
-          if (onlineUsers[driverId]) {
-            onlineUsers[driverId].forEach(sid => {
-              io.to(sid).emit("rideStatusUpdate", {
-                success: true,
-                message: driverMsg,
-                bookingId: booking.id,
-                status: statusData,
-                otpVerified: true
-              });
-            });
-          }
-        };
-
-        // ================= REAL-TIME PRICING FUNCTIONS =================
-        const startRealTimePricing = async (bookingId) => {
-          try {
-            const rideBooking = await db.bookings.findOne({
-              where: { id: bookingId },
-              raw: true
-            });
-
-            if (rideBooking && rideBooking.rideOpen == 1) {
-              console.log(`Starting real-time pricing for open ride: ${bookingId}`);
-
-              if (!global.priceIntervals) {
-                global.priceIntervals = {};
-              }
-
-              if (global.priceIntervals[bookingId]) {
-                clearInterval(global.priceIntervals[bookingId]);
-              }
-
-              const intervalId = setInterval(async () => {
-                try {
-                  const currentBooking = await db.bookings.findOne({
-                    where: { id: bookingId },
-                    raw: true
-                  });
-
-                  if (!currentBooking || currentBooking.rideOpen != 1) {
-                    console.log(`Booking ${bookingId} not found or rideOpen changed, stopping pricing`);
-                    clearInterval(global.priceIntervals[bookingId]);
-                    delete global.priceIntervals[bookingId];
-                    return;
-                  }
-
-                  const basePrice = parseFloat(currentBooking.basePrice || 100);
-                  const currentPrice = parseFloat(currentBooking.bookingPrice || basePrice);
-                  const pricePerMin = 5;
-
-                  let newPrice = currentPrice + pricePerMin;
-                  const totalMinutes = (parseInt(currentBooking.totalMinutes) || 0) + 5;
-
-                  await db.bookings.update(
-                    {
-                      bookingPrice: newPrice.toString(),
-                      totalMinutes: totalMinutes.toString(),
-                      lastPriceUpdate: new Date().toISOString()
-                    },
-                    { where: { id: bookingId } }
-                  );
-
-                  console.log(`Price updated for booking ${bookingId}: +1 MRU, New price: ${newPrice} MRU`);
-
-                  if (currentBooking.driverId && onlineUsers[currentBooking.driverId]) {
-                    onlineUsers[currentBooking.driverId].forEach(sockId => {
-                      io.to(sockId).emit("priceUpdate", {
-                        bookingId: bookingId,
-                        newPrice: newPrice.toString(),
-                        totalMinutes: totalMinutes,
-                        addedAmount: 5,
-                        timestamp: new Date().toISOString()
-                      });
-                    });
-                  }
-
-                  if (onlineUsers[currentBooking.userId]) {
-                    onlineUsers[currentBooking.userId].forEach(sockId => {
-                      io.to(sockId).emit("priceUpdate", {
-                        bookingId: bookingId,
-                        newPrice: newPrice.toString(),
-                        totalMinutes: totalMinutes,
-                        addedAmount: 5,
-                        timestamp: new Date().toISOString()
-                      });
-                    });
-                  }
-
-                } catch (error) {
-                  console.error(`Error in price interval for booking ${bookingId}:`, error);
-                }
-              }, 60000);
-
-              global.priceIntervals[bookingId] = intervalId;
-            }
-          } catch (error) {
-            console.error('Error starting real-time pricing:', error);
-          }
-        };
-
-        const stopRealTimePricing = async (bookingId) => {
-          try {
-            if (global.priceIntervals && global.priceIntervals[bookingId]) {
-              clearInterval(global.priceIntervals[bookingId]);
-              delete global.priceIntervals[bookingId];
-              console.log(`Stopped real-time pricing for booking: ${bookingId}`);
-            }
-          } catch (error) {
-            console.error('Error stopping real-time pricing:', error);
-          }
-        };
-
-        // ================= STATUS FLOW =================
-        switch (status) {
-
-          case "1": // DRIVER ARRIVED
-            if (currentStatus !== "0") return;
-            await booking.update({ status: "1" });
-            await emitToBoth(
-              getUserMsg("Driver arrived", "وصل السائق", "Le conducteur est arrivé"),
-              getDriverMsg("Driver arrived", "وصل السائق", "Le conducteur est arrivé"),
-              "1"
-            );
-            if (user.deviceToken) {
-              helper.sendNotification_android(user.deviceToken, {
-                message: getUserMsg("Your driver has arrived.", "وصل سائقك.", "Votre conducteur est arrivé."),
-                type: 7,
-                senderId: driverId,
-                bookingId: booking.id
-              });
-            }
-            break;
-
-          case "2": // START RIDE
-            await booking.update({ status: "2" });
-            if (booking.rideOpen == 1) {
-              await startRealTimePricing(bookingId);
-            }
-            await emitToBoth(
-              getUserMsg("Ride has started", "تم بدء الرحلة", "Le trajet a commencé"),
-              getDriverMsg("Ride has started", "تم بدء الرحلة", "Le trajet a commencé"),
-              "2",
-              true
-            );
-            if (user.deviceToken) {
-              helper.sendNotification_android(user.deviceToken, {
-                message: getUserMsg("Your ride has started.", "بدأت رحلتك.", "Votre trajet a commencé."),
-                type: 8,
-                senderId: driverId,
-                bookingId: booking.id
-              });
-            }
-            break;
-
-          case "3": // FINISHED - COMMISSION CUT HOGA YAHAN
-            await stopRealTimePricing(bookingId);
-
-            const finalBooking = await db.bookings.findOne({
-              where: { id: bookingId },
-              raw: true
-            });
-
-            // Round final price to nearest 5
-            let finalPrice = parseFloat(finalBooking.bookingPrice);
-            let roundedFinalPrice = roundToNearest5(finalPrice);
-
-            console.log("========== RIDE COMPLETED - COMMISSION PROCESSING ==========");
-            console.log(`Booking ID: ${bookingId}`);
-            console.log(`Final price: ${finalPrice} → ${roundedFinalPrice} MRU`);
-
-            // ===== GET COMMISSION PERCENTAGE FROM ADMIN =====
-            const adminUser = await db.users.findOne({
-              where: { role: '0' },
-              attributes: ['id', 'totalAmount', 'adminCommission'],
-              raw: true
-            });
-
-            if (!adminUser) {
-              console.log("❌ Admin user not found!");
-              return socket.emit("rideStatusUpdate", {
-                success: false,
-                message: "Admin configuration not found."
-              });
-            }
-
-            // Admin ka commission percent
-            let commissionPercent = parseFloat(adminUser.adminCommission) || 15; // Default 15% 
-            console.log(`Admin commission percent from DB: ${commissionPercent}%`);
-
-            // ===== GET DRIVER DETAILS =====
-            const driverDetails = await db.users.findOne({
-              where: { id: driverId, role: "2" },
-              attributes: ['id', 'totalAmount'],
-              raw: true
-            });
-
-            if (!driverDetails) {
-              console.log("❌ Driver not found!");
-              return socket.emit("rideStatusUpdate", {
-                success: false,
-                message: "Driver not found."
-              });
-            }
-
-            //  Commission calculate karo BOOKING PRICE se
-            const commissionAmount = (roundedFinalPrice * commissionPercent) / 100;
-
-            // Driver ka current balance
-            const driverBalance = parseFloat(driverDetails.totalAmount) || 0;
-
-            // Driver ke account se commission CUT karo (subtract)
-            const newDriverBalance = driverBalance - commissionAmount;
-
-            console.log(`Booking price: ${roundedFinalPrice} MRU`);
-            console.log(`Commission calculation: ${roundedFinalPrice} × ${commissionPercent}% = ${commissionAmount} MRU`);
-            console.log(`Driver balance before deduction: ${driverBalance} MRU`);
-            console.log(`Driver balance after deduction: ${newDriverBalance} MRU`);
-
-            // ===== UPDATE DRIVER'S totalAmount (SUBTRACT COMMISSION) =====
-            const driverUpdate = await db.users.update(
-              { totalAmount: newDriverBalance.toFixed(2).toString() },
-              { where: { id: driverId, role: "2" } }
-            );
-
-            console.log(`Driver update result: ${driverUpdate[0]} row(s) updated`);
-
-            // ===== UPDATE ADMIN'S totalAmount (ADD COMMISSION) =====
-            const adminBalance = parseFloat(adminUser.totalAmount) || 0;
-            const newAdminBalance = adminBalance + commissionAmount;
-
-            const adminUpdate = await db.users.update(
-              { totalAmount: newAdminBalance.toFixed(2).toString() },
-              { where: { id: adminUser.id, role: '0' } }
-            );
-
-            console.log(`Admin update result: ${adminUpdate[0]} row(s) updated`);
-            console.log(`Admin balance: ${adminBalance} → ${newAdminBalance} MRU (added ${commissionAmount} MRU)`);
-
-            // ===== CREATE TRANSACTION RECORDS =====
-
-            // Admin transaction (commission earning)
-            try {
-              await db.transactions.create({
-                userId: adminUser.id,
-                bookingId: bookingId,
-                amount: commissionAmount.toString(),
-                type: 'commission_earning',
-                description: `Commission earned from ride #${bookingId} (${commissionPercent}% of booking price)`,
-                status: 'completed'
-              });
-              console.log("Admin transaction created successfully");
-            } catch (txError) {
-              console.log("Admin transaction error:", txError.message);
-            }
-
-            // Driver transaction (commission deduction)
-            try {
-              await db.transactions.create({
-                userId: driverId,
-                bookingId: bookingId,
-                amount: commissionAmount.toString(),
-                type: 'commission_deduction',
-                description: `Admin commission ${commissionPercent}% deducted for ride #${bookingId}`,
-                status: 'completed'
-              });
-              console.log("Driver transaction created successfully");
-            } catch (txError) {
-              console.log("Driver transaction error:", txError.message);
-            }
-
-            // Update booking with rounded price and status
-            await db.bookings.update(
-              {
-                bookingPrice: roundedFinalPrice.toString(),
-                status: "3"
-              },
-              { where: { id: bookingId } }
-            );
-            // ===== UPDATE BOOKING WITH adminAmountCut =====
-            await db.bookings.update(
-              {
-                bookingPrice: roundedFinalPrice.toString(),
-                status: "3",
-                adminAmountCut: commissionAmount.toString()  // ← Yahan commission amount save ho jayega
-              },
-              { where: { id: bookingId } }
-            );
-            console.log("========== COMMISSION PROCESSING COMPLETE ==========");
-
-            // Send notifications
-            await emitToBoth(
-              getUserMsg(`Ride finished successfully.`,
-                `تم الانتهاء من الرحلة بنجاح. السعر النهائي`,
-                `Trajet terminé avec succès. Prix final`),
-              getDriverMsg(`Ride finished successfully. `,
-                `تم الانتهاء من الرحلة بنجاح. السعر النهائي`,
-                `Trajet terminé avec succès. Prix final`),
-              "3"
-            );
-
-            if (user.deviceToken) {
-              helper.sendNotification_android(user.deviceToken, {
-                message: getUserMsg(
-                  `Your ride has been completed. Final price: ${roundedFinalPrice} MRU`,
-                  `تم إكمال رحلتك. السعر النهائي: ${roundedFinalPrice} MRU`,
-                  `Votre trajet est terminé. Prix final: ${roundedFinalPrice} MRU`
-                ),
-                type: 9,
-                senderId: driverId,
-                bookingId: booking.id
-              });
-            }
-            break;
-
-          case "4": // CANCELLED
-            await stopRealTimePricing(bookingId);
-            if (currentStatus !== "2") return;
-            await booking.update({ status: "4" });
-            await emitToBoth(
-              getUserMsg("Ride cancelled successfully", "تم إلغاء الرحلة بنجاح", "Trajet annulé avec succès"),
-              getDriverMsg("Ride cancelled successfully", "تم إلغاء الرحلة بنجاح", "Trajet annulé avec succès"),
-              "4"
-            );
-            break;
-
-          case "0": // ON THE WAY
-            if (currentStatus >= "2") return;
-            await booking.update({ status: "0" });
-            await emitToBoth(
-              getUserMsg("Driver on the way", "السائق في الطريق", "Le conducteur est en route"),
-              getDriverMsg("Driver on the way", "السائق في الطريق", "Le conducteur est en route"),
-              "0"
-            );
-            break;
-        }
-
-      } catch (error) {
-        console.error("rideStatusUpdate error:", error);
-        return socket.emit("rideStatusUpdate", {
-          success: false,
-          message: "Something went wrong while updating ride status.",
-          error: error.message
-        });
-      }
-    });
 
     socket.on("bookingHistory", async (data) => {
       try {
