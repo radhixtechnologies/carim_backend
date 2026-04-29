@@ -222,11 +222,13 @@ module.exports = function(sequelize, DataTypes) {
     },
     priceStatus: {
       type: DataTypes.INTEGER,
-      allowNull: false
+      allowNull: false,
+      defaultValue: 0
     },
     priceRushHour: {
       type: DataTypes.STRING(255),
-      allowNull: false
+      allowNull: true,
+      defaultValue: ""
     },
     parkingCharge: {
       type: DataTypes.STRING(255),
