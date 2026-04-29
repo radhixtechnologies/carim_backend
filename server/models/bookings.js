@@ -120,11 +120,13 @@ module.exports = function(sequelize, DataTypes) {
     },
     lastParkingMinutes: {
       type: DataTypes.STRING(255),
-      allowNull: false
+      allowNull: false,
+      defaultValue: ""
     },
     totalParkingCharge: {
       type: DataTypes.STRING(255),
-      allowNull: false
+      allowNull: false,
+      defaultValue: ""
     },
     lastUpdateTime: {
       type: DataTypes.DATE,
@@ -132,23 +134,28 @@ module.exports = function(sequelize, DataTypes) {
     },
     callerName: {
       type: DataTypes.STRING(255),
-      allowNull: false
+      allowNull: false,
+      defaultValue: ""
     },
     callerCountryCode: {
       type: DataTypes.STRING(255),
-      allowNull: false
+      allowNull: false,
+      defaultValue: ""
     },
     callerPhone: {
       type: DataTypes.STRING(255),
-      allowNull: false
+      allowNull: false,
+      defaultValue: ""
     },
     adminAmountCut: {
       type: DataTypes.STRING(255),
-      allowNull: false
+      allowNull: false,
+      defaultValue: ""
     },
     rideDistance: {
       type: DataTypes.STRING(255),
-      allowNull: false
+      allowNull: false,
+      defaultValue: ""
     }
   }, {
     sequelize,
