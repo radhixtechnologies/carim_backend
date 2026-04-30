@@ -2,7 +2,7 @@ let db = require("../models");
 const Sequelize = require("sequelize");
 const Op = Sequelize.Op;
 const helper = require('../helper/helper');
-
+const moment = require("moment")
 
 global.onlineUsers = {};
 
@@ -1400,9 +1400,10 @@ module.exports = function (io) {
             break;
 
           case "2": // START RIDE
+            rideStartTime = moment().format("YYYY-MM-DD HH:mm");
             await booking.update({
               status: "2",
-              rideStartTime: req.body.rideStartTime
+              rideStartTime: rideStartTime,
               // lastUpdateTime: new Date() // ← Set lastUpdateTime at ride start so per-minute calc is accurate
             });
             if (booking.rideOpen == 1) {
