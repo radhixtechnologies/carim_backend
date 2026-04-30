@@ -851,242 +851,248 @@ module.exports = function (io) {
         });
       }
     });
-    socket.on("updateLocation", async (data) => {
-      try {
-        const { userId, latitude, longitude, location, startParkTime, endParkTime } = data;
+socket.on("updateLocation", async (data) => {
+  try {
+    const { userId, latitude, longitude, location, startParkTime, endParkTime } = data;
 
-        if (!userId || latitude === undefined || longitude === undefined) {
-          return socket.emit("updateLocation", {
-            success: false,
-            message: "User ID, latitude, and longitude are required"
-          });
-        }
+    if (!userId || latitude === undefined || longitude === undefined) {
+      return socket.emit("updateLocation", {
+        success: false,
+        message: "User ID, latitude, and longitude are required"
+      });
+    }
 
-        // ---------------- DRIVER CHECK ----------------
-        const driver = await db.users.findOne({
-          where: { id: userId, role: '2' }
-        });
+    // ---------------- DRIVER CHECK ----------------
+    const driver = await db.users.findOne({
+      where: { id: userId, role: '2' }
+    });
 
-        if (!driver) {
-          return socket.emit("updateLocation", {
-            success: false,
-            message: "Driver not found"
-          });
-        }
+    if (!driver) {
+      return socket.emit("updateLocation", {
+        success: false,
+        message: "Driver not found"
+      });
+    }
 
-        // ---------------- UPDATE DRIVER LOCATION ----------------
-        await db.users.update({
-          latitude: latitude.toString(),
-          longitude: longitude.toString(),
-          location: location || null
-        }, {
-          where: { id: userId }
-        });
+    // ---------------- UPDATE DRIVER LOCATION ----------------
+    await db.users.update({
+      latitude: latitude.toString(),
+      longitude: longitude.toString(),
+      location: location || null
+    }, {
+      where: { id: userId }
+    });
 
-        // OPEN RIDE LOGIC (rideOpen = 1 ONLY)
-        const booking = await db.bookings.findOne({
-          where: {
-            driverId: userId,
-            rideOpen: 1,
-            status: '2', // ride started
-            request: "1"
-          }
-        });
-
-        if (booking) {
-          const currentTime = new Date();
-
-          // ========== 1. START PARKING LOGIC ==========
-          if (startParkTime !== undefined && startParkTime !== "") {
-            await booking.update({
-              startParkTime: startParkTime
-            });
-            console.log(`🅿️ Parking started at: ${startParkTime}`);
-          }
-
-          // ========== 2. CALCULATE PARKING CHARGE (if parking active) ==========
-          let parkingCharge = parseFloat(booking.totalParkingCharge || 0);
-          const adminData = await db.users.findOne({
-            where: { role: '0' },
-            attributes: ['parkingCharge', 'rideAmount'],
-            raw: true
-          });
-
-          const parkingRatePerMinute = parseFloat(adminData?.parkingCharge) || 5;
-          const pricePerKm = adminData?.rideAmount ? parseFloat(adminData.rideAmount) : 10;
-
-          if (booking.startParkTime && booking.startParkTime !== "") {
-            const startPark = new Date(booking.startParkTime);
-
-            if (!isNaN(startPark) && startPark <= currentTime) {
-              const totalParkMinutes = Math.floor((currentTime - startPark) / (1000 * 60));
-              const lastSavedParkMinutes = parseFloat(booking.lastParkingMinutes || 0);
-              const newParkMinutesAdded = totalParkMinutes - lastSavedParkMinutes;
-
-              if (newParkMinutesAdded > 0 && parkingRatePerMinute > 0) {
-                const parkingChargeToAdd = newParkMinutesAdded * parkingRatePerMinute;
-                const newTotalParkingCharge = parkingCharge + parkingChargeToAdd;
-
-                await booking.update({
-                  lastParkingMinutes: totalParkMinutes.toString(),
-                  totalParkingCharge: newTotalParkingCharge.toString()
-                });
-
-                parkingCharge = newTotalParkingCharge;
-                console.log(`🅿️ Parking: +${newParkMinutesAdded} min × ₹${parkingRatePerMinute} = +₹${parkingChargeToAdd}`);
-              }
-            }
-          }
-
-          // ========== 3. END PARKING LOGIC ==========
-          if (endParkTime !== undefined && endParkTime !== "") {
-            await booking.update({
-              endParkTime: endParkTime,
-              startParkTime: ""
-            });
-            console.log(`🅿️ Parking ended at: ${endParkTime}`);
-          }
-
-          // ========== 4. DISTANCE CALCULATION (same as old code) ==========
-          const startLat = booking.lastLatitude
-            ? parseFloat(booking.lastLatitude)
-            : parseFloat(booking.pickupLatitude);
-
-          const startLng = booking.lastLongitude
-            ? parseFloat(booking.lastLongitude)
-            : parseFloat(booking.pickupLongitude);
-
-          const currLat = parseFloat(latitude);
-          const currLng = parseFloat(longitude);
-
-          if (
-            !isNaN(startLat) &&
-            !isNaN(startLng) &&
-            !isNaN(currLat) &&
-            !isNaN(currLng)
-          ) {
-
-            const toRad = v => v * Math.PI / 180;
-            const calculateDistance = (a, b, c, d) => {
-              const R = 6371;
-              const dLat = toRad(c - a);
-              const dLon = toRad(d - b);
-              const x =
-                Math.sin(dLat / 2) ** 2 +
-                Math.cos(toRad(a)) * Math.cos(toRad(c)) *
-                Math.sin(dLon / 2) ** 2;
-              return R * (2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x)));
-            };
-
-            const segmentDistanceKm = calculateDistance(
-              startLat,
-              startLng,
-              currLat,
-              currLng
-            );
-
-            // GPS noise ignore (only update if distance is between 0 and 30km)
-            if (segmentDistanceKm > 0 && segmentDistanceKm <= 30) {
-
-              const BASE_PRICE = 100; // Fixed base price in MRU
-              const FREE_KM = 3; // First 3 kilometers free
-
-              if (!isNaN(pricePerKm) && pricePerKm > 0) {
-
-                // Calculate total distance travelled so far
-                const totalDistanceKm =
-                  parseFloat(booking.travelledDistance || 0) + segmentDistanceKm;
-
-                // Calculate extra kilometers beyond free km
-                const extraKm = Math.max(0, totalDistanceKm - FREE_KM);
-
-                // ========== 5. PRICE CALCULATION (Distance + Parking) ==========
-                const distanceCharge = Math.round(extraKm * pricePerKm);
-
-                // Total price = Base + Distance Charge + Parking Charge
-                const newBookingPrice = Math.round(
-                  BASE_PRICE + distanceCharge + parkingCharge
-                ).toString();
-
-                // ---------------- UPDATE BOOKING ----------------
-                await booking.update({
-                  dropLatitude: currLat.toString(),
-                  dropLongitude: currLng.toString(),
-                  dropLocation: location || booking.dropLocation,
-                  travelledDistance: totalDistanceKm.toString(),
-                  bookingPrice: newBookingPrice,
-                  lastLatitude: currLat.toString(),
-                  lastLongitude: currLng.toString(),
-                  lastUpdateTime: currentTime
-                });
-
-                console.log(`========== RIDE UPDATE ==========`);
-                console.log(`📍 Distance: +${segmentDistanceKm.toFixed(3)}km (Total: ${totalDistanceKm.toFixed(2)}km)`);
-                console.log(`📊 Extra km: ${extraKm.toFixed(2)}km × ₹${pricePerKm} = ₹${distanceCharge}`);
-                console.log(`🅿️ Parking charge: ₹${parkingCharge}`);
-                console.log(`💰 Total price: ₹${newBookingPrice}`);
-                console.log(`==================================`);
-
-                // ---------------- SOCKET UPDATE TO USER ----------------
-                if (global.onlineUsers && onlineUsers[booking.userId]) {
-                  onlineUsers[booking.userId].forEach(sockId => {
-                    io.to(sockId).emit("rideStatusUpdate", {
-                      bookingId: booking.id,
-                      dropLatitude: currLat.toString(),
-                      dropLongitude: currLng.toString(),
-                      bookingPrice: newBookingPrice,
-                      rideDistanceKm: totalDistanceKm.toFixed(2),
-                      totalParkingCharge: parkingCharge,
-                      priceBreakdown: {
-                        basePrice: BASE_PRICE,
-                        freeKm: FREE_KM,
-                        totalDistanceKm: totalDistanceKm.toFixed(2),
-                        extraKm: extraKm.toFixed(2),
-                        pricePerKm: pricePerKm,
-                        distanceCharge: distanceCharge,
-                        parkingCharge: parkingCharge,
-                        total: newBookingPrice
-                      }
-                    });
-                  });
-                }
-              }
-            }
-          }
-        }
-
-        // ---------------- DRIVER RESPONSE ----------------
-        const updatedDriver = await db.users.findOne({
-          where: { id: userId }
-        });
-
-        socket.emit("updateLocation", {
-          success: true,
-          message: "Location updated successfully",
-          data: {
-            driverId: updatedDriver.id,
-            latitude: updatedDriver.latitude,
-            longitude: updatedDriver.longitude,
-            location: updatedDriver.location
-          }
-        });
-
-        socket.broadcast.emit("updateLocation", {
-          driverId: updatedDriver.id,
-          latitude: updatedDriver.latitude,
-          longitude: updatedDriver.longitude,
-          location: updatedDriver.location
-        });
-
-      } catch (error) {
-        console.error("Error updating location:", error);
-        socket.emit("updateLocation", {
-          success: false,
-          message: "Something went wrong while updating location",
-          error: error.message
-        });
+    // OPEN RIDE LOGIC (rideOpen = 1 ONLY)
+    const booking = await db.bookings.findOne({
+      where: {
+        driverId: userId,
+        rideOpen: 1,
+        status: '2', // ride started
+        request: "1"
       }
     });
+
+    if (booking) {
+      const currentTime = new Date();
+
+      // ========== 1. START PARKING LOGIC ==========
+      if (startParkTime !== undefined && startParkTime !== "") {
+        await booking.update({
+          startParkTime: startParkTime
+        });
+        console.log(`🅿️ Parking started at: ${startParkTime}`);
+      }
+
+      // ========== 2. CALCULATE PARKING CHARGE (if parking active) ==========
+      let parkingCharge = parseFloat(booking.totalParkingCharge || 0);
+      const adminData = await db.users.findOne({
+        where: { role: '0' },
+        attributes: ['parkingCharge', 'rideAmount'],
+        raw: true
+      });
+
+      const parkingRatePerMinute = parseFloat(adminData?.parkingCharge) || 5;
+      const pricePerKm = adminData?.rideAmount ? parseFloat(adminData.rideAmount) : 10;
+
+      if (booking.startParkTime && booking.startParkTime !== "") {
+        const startPark = new Date(booking.startParkTime);
+
+        if (!isNaN(startPark) && startPark <= currentTime) {
+          const totalParkMinutes = Math.floor((currentTime - startPark) / (1000 * 60));
+          const lastSavedParkMinutes = parseFloat(booking.lastParkingMinutes || 0);
+          const newParkMinutesAdded = totalParkMinutes - lastSavedParkMinutes;
+
+          if (newParkMinutesAdded > 0 && parkingRatePerMinute > 0) {
+            const parkingChargeToAdd = newParkMinutesAdded * parkingRatePerMinute;
+            const newTotalParkingCharge = parkingCharge + parkingChargeToAdd;
+
+            await booking.update({
+              lastParkingMinutes: totalParkMinutes.toString(),
+              totalParkingCharge: newTotalParkingCharge.toString()
+            });
+
+            parkingCharge = newTotalParkingCharge;
+            console.log(`🅿️ Parking: +${newParkMinutesAdded} min × ₹${parkingRatePerMinute} = +₹${parkingChargeToAdd}`);
+          }
+        }
+      }
+
+      // ========== 3. END PARKING LOGIC ==========
+      if (endParkTime !== undefined && endParkTime !== "") {
+        await booking.update({
+          endParkTime: endParkTime,
+          startParkTime: ""
+        });
+        console.log(`🅿️ Parking ended at: ${endParkTime}`);
+      }
+
+      // ========== 4. DISTANCE CALCULATION WITH EXISTING PRICE ==========
+      const startLat = booking.lastLatitude
+        ? parseFloat(booking.lastLatitude)
+        : parseFloat(booking.pickupLatitude);
+
+      const startLng = booking.lastLongitude
+        ? parseFloat(booking.lastLongitude)
+        : parseFloat(booking.pickupLongitude);
+
+      const currLat = parseFloat(latitude);
+      const currLng = parseFloat(longitude);
+
+      if (
+        !isNaN(startLat) &&
+        !isNaN(startLng) &&
+        !isNaN(currLat) &&
+        !isNaN(currLng)
+      ) {
+
+        const toRad = v => v * Math.PI / 180;
+        const calculateDistance = (a, b, c, d) => {
+          const R = 6371;
+          const dLat = toRad(c - a);
+          const dLon = toRad(d - b);
+          const x =
+            Math.sin(dLat / 2) ** 2 +
+            Math.cos(toRad(a)) * Math.cos(toRad(c)) *
+            Math.sin(dLon / 2) ** 2;
+          return R * (2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x)));
+        };
+
+        const segmentDistanceKm = calculateDistance(
+          startLat,
+          startLng,
+          currLat,
+          currLng
+        );
+
+        // GPS noise ignore (only update if distance is between 0 and 30km)
+        if (segmentDistanceKm > 0 && segmentDistanceKm <= 30) {
+
+          const BASE_PRICE = 100; // Fixed base price in MRU
+          const FREE_KM = 3; // First 3 kilometers free
+
+          if (!isNaN(pricePerKm) && pricePerKm > 0) {
+
+            // Calculate total distance travelled so far
+            const totalDistanceKm =
+              parseFloat(booking.travelledDistance || 0) + segmentDistanceKm;
+
+            // Calculate extra kilometers beyond free km
+            const extraKm = Math.max(0, totalDistanceKm - FREE_KM);
+
+            // ========== 5. PRICE CALCULATION - PRESERVE EXISTING PRICE ==========
+            const distanceCharge = Math.round(extraKm * pricePerKm);
+            
+            // Calculate what the new price SHOULD be based on distance
+            const calculatedPrice = Math.round(BASE_PRICE + distanceCharge + parkingCharge);
+            
+            // Get existing price from booking
+            const existingPrice = parseFloat(booking.bookingPrice || 100);
+            
+            // ONLY UPDATE PRICE IF CALCULATED PRICE IS HIGHER THAN EXISTING PRICE
+            // This prevents price from going back to 100
+            const newBookingPrice = Math.max(existingPrice, calculatedPrice).toString();
+
+            console.log(`========== RIDE UPDATE ==========`);
+            console.log(`📍 Distance: +${segmentDistanceKm.toFixed(3)}km (Total: ${totalDistanceKm.toFixed(2)}km)`);
+            console.log(`📊 Extra km: ${extraKm.toFixed(2)}km × ₹${pricePerKm} = ₹${distanceCharge}`);
+            console.log(`🅿️ Parking charge: ₹${parkingCharge}`);
+            console.log(`💰 Existing price: ₹${existingPrice}`);
+            console.log(`💰 Calculated price: ₹${calculatedPrice}`);
+            console.log(`💰 Final price (max): ₹${newBookingPrice}`);
+            console.log(`==================================`);
+
+            // ---------------- UPDATE BOOKING ----------------
+            await booking.update({
+              dropLatitude: currLat.toString(),
+              dropLongitude: currLng.toString(),
+              dropLocation: location || booking.dropLocation,
+              travelledDistance: totalDistanceKm.toString(),
+              bookingPrice: newBookingPrice,
+              lastLatitude: currLat.toString(),
+              lastLongitude: currLng.toString()
+            });
+
+            // ---------------- SOCKET UPDATE TO USER ----------------
+            if (global.onlineUsers && onlineUsers[booking.userId]) {
+              onlineUsers[booking.userId].forEach(sockId => {
+                io.to(sockId).emit("rideStatusUpdate", {
+                  bookingId: booking.id,
+                  dropLatitude: currLat.toString(),
+                  dropLongitude: currLng.toString(),
+                  bookingPrice: newBookingPrice,
+                  rideDistanceKm: totalDistanceKm.toFixed(2),
+                  totalParkingCharge: parkingCharge,
+                  priceBreakdown: {
+                    basePrice: BASE_PRICE,
+                    freeKm: FREE_KM,
+                    totalDistanceKm: totalDistanceKm.toFixed(2),
+                    extraKm: extraKm.toFixed(2),
+                    pricePerKm: pricePerKm,
+                    distanceCharge: distanceCharge,
+                    parkingCharge: parkingCharge,
+                    total: newBookingPrice
+                  }
+                });
+              });
+            }
+          }
+        }
+      }
+    }
+
+    // ---------------- DRIVER RESPONSE ----------------
+    const updatedDriver = await db.users.findOne({
+      where: { id: userId }
+    });
+
+    socket.emit("updateLocation", {
+      success: true,
+      message: "Location updated successfully",
+      data: {
+        driverId: updatedDriver.id,
+        latitude: updatedDriver.latitude,
+        longitude: updatedDriver.longitude,
+        location: updatedDriver.location
+      }
+    });
+
+    socket.broadcast.emit("updateLocation", {
+      driverId: updatedDriver.id,
+      latitude: updatedDriver.latitude,
+      longitude: updatedDriver.longitude,
+      location: updatedDriver.location
+    });
+
+  } catch (error) {
+    console.error("Error updating location:", error);
+    socket.emit("updateLocation", {
+      success: false,
+      message: "Something went wrong while updating location",
+      error: error.message
+    });
+  }
+});
 
 
 
@@ -1399,7 +1405,7 @@ module.exports = function (io) {
           case "2": // START RIDE
             await booking.update({
               status: "2",
-              lastUpdateTime: new Date() // ← Set lastUpdateTime at ride start so per-minute calc is accurate
+              // lastUpdateTime: new Date() // ← Set lastUpdateTime at ride start so per-minute calc is accurate
             });
             if (booking.rideOpen == 1) {
               await startRealTimePricing(bookingId);
