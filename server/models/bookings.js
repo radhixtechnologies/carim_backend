@@ -169,7 +169,7 @@ module.exports = function (sequelize, DataTypes) {
     },
     rideStartTime: {
       type: DataTypes.STRING(255),
-      allowNull: false,
+      allowNull: true,
       defaultValue: ""
     },
     lastPerMinuteCalculation: {

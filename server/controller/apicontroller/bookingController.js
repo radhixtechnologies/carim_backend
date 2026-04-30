@@ -1141,7 +1141,6 @@ module.exports = {
                     totalMinutes: totalMinutes.toString(),
                     totalDistance: totalDistance.toString(),
                     lastPriceUpdate: new Date().toISOString(),
-                    rideStartTime: rideOpen == 1 ? new Date().toISOString() : null,
                     freeKm: FREE_KM.toString()
                 });
 
@@ -1747,7 +1746,6 @@ module.exports = {
                     totalMinutes: totalMinutes.toString(),
                     totalDistance: totalDistance.toString(),
                     lastPriceUpdate: new Date().toISOString(),
-                    rideStartTime: rideOpen == 1 ? new Date().toISOString() : null,
                     freeKm: FREE_KM.toString()
                 });
 
@@ -2362,7 +2360,6 @@ module.exports = {
                     totalMinutes: totalMinutes.toString(),
                     totalDistance: totalDistance.toString(),
                     lastPriceUpdate: new Date().toISOString(),
-                    rideStartTime: rideOpen == 1 ? new Date().toISOString() : null,
                     freeKm: FREE_KM.toString()
                 });
 
