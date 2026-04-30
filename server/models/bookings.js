@@ -1,5 +1,5 @@
 const Sequelize = require('sequelize');
-module.exports = function(sequelize, DataTypes) {
+module.exports = function (sequelize, DataTypes) {
   return sequelize.define('bookings', {
     id: {
       autoIncrement: true,
@@ -21,13 +21,13 @@ module.exports = function(sequelize, DataTypes) {
       defaultValue: ""
     },
     status: {
-      type: DataTypes.ENUM('0','1','2','3','4','5','6'),
+      type: DataTypes.ENUM('0', '1', '2', '3', '4', '5', '6'),
       allowNull: false,
       defaultValue: "0",
       comment: "0=>driver on the way,1=>arrived,2=>ride started,3=> completed,4=>cancel"
     },
     request: {
-      type: DataTypes.ENUM('0','1','2'),
+      type: DataTypes.ENUM('0', '1', '2'),
       allowNull: false,
       defaultValue: "0"
     },
@@ -72,7 +72,7 @@ module.exports = function(sequelize, DataTypes) {
       defaultValue: ""
     },
     rideType: {
-      type: DataTypes.ENUM('0','1'),
+      type: DataTypes.ENUM('0', '1'),
       allowNull: false,
       defaultValue: "0",
       comment: "0=>single ride,1=>pool ride"
@@ -83,7 +83,7 @@ module.exports = function(sequelize, DataTypes) {
       defaultValue: ""
     },
     paymentMethod: {
-      type: DataTypes.ENUM('0','1'),
+      type: DataTypes.ENUM('0', '1'),
       allowNull: false,
       defaultValue: "0",
       comment: "0=>cash,1=>online"
@@ -166,6 +166,25 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.STRING(255),
       allowNull: false,
       defaultValue: ""
+    },
+    rideStartTime: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      defaultValue: ""
+    },
+    lastPerMinuteCalculation: {
+      type: DataTypes.DATE,
+      allowNull: true
+    },
+    totalPerMinuteCharge: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      defaultValue: "0"
+    },
+    parkingActive: {
+      type: DataTypes.ENUM('0', '1'),
+      allowNull: false,
+      defaultValue: "0"
     }
   }, {
     sequelize,

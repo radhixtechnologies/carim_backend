@@ -4352,7 +4352,8 @@ module.exports = {
                 callerCountryCode: booking.callerCountryCode || "",
                 callerPhone: booking.callerPhone || "",
                 callerName: booking.callerName || "",
-                rideDistance: booking.rideDistance
+                rideDistance: booking.rideDistance,
+                 parkingActive: booking.parkingActive
                 // rideDistanceKm
             });
 
