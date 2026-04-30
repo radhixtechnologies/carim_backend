@@ -132,6 +132,16 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.DATE,
       allowNull: true
     },
+    startParkTime: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      defaultValue: ""
+    },
+    endParkTime: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      defaultValue: ""
+    },
     callerName: {
       type: DataTypes.STRING(255),
       allowNull: false,
