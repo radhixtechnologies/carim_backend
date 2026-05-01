@@ -7,6 +7,221 @@ const moment = require("moment")
 global.onlineUsers = {};
 
 module.exports = function (io) {
+
+  // ======== AUTO LOCATION UPDATE EVERY 10 SECONDS (status=2 & rideOpen=1) ========
+  const startAutoLocationUpdate = (bookingId) => {
+    if (!global.autoLocationIntervals) global.autoLocationIntervals = {};
+
+    // Clear existing interval for this booking if any
+    if (global.autoLocationIntervals[bookingId]) {
+      clearInterval(global.autoLocationIntervals[bookingId]);
+      delete global.autoLocationIntervals[bookingId];
+    }
+
+    console.log(`🚀 Starting auto location update every 10s for booking: ${bookingId}`);
+
+    const intervalId = setInterval(async () => {
+      try {
+        // Fetch fresh booking data
+        const currentBooking = await db.bookings.findOne({
+          where: { id: bookingId }
+        });
+
+        // Stop if ride ended or rideOpen is no longer 1
+        if (!currentBooking || currentBooking.status !== '2' || currentBooking.rideOpen != 1) {
+          console.log(`🛑 Auto location update stopped for booking ${bookingId} (status=${currentBooking?.status}, rideOpen=${currentBooking?.rideOpen})`);
+          clearInterval(global.autoLocationIntervals[bookingId]);
+          delete global.autoLocationIntervals[bookingId];
+          return;
+        }
+
+        // Fetch driver's latest location from DB
+        const driverUser = await db.users.findOne({
+          where: { id: currentBooking.driverId },
+          attributes: ['id', 'latitude', 'longitude', 'location'],
+          raw: true
+        });
+
+        if (!driverUser || !driverUser.latitude || !driverUser.longitude) {
+          console.log(`⚠️ No driver location available for booking ${bookingId}`);
+          return;
+        }
+
+        const currLat = parseFloat(driverUser.latitude);
+        const currLng = parseFloat(driverUser.longitude);
+
+        if (isNaN(currLat) || isNaN(currLng)) return;
+
+        // Get admin settings
+        const adminData = await db.users.findOne({
+          where: { role: '0' },
+          attributes: ['parkingCharge', 'rideAmount'],
+          raw: true
+        });
+
+        const PER_MINUTE_CHARGE_RATE = 5;
+        const parkingRatePerMinute = parseFloat(adminData?.parkingCharge) || 5;
+        const pricePerKm = adminData?.rideAmount ? parseFloat(adminData.rideAmount) : 10;
+
+        const currentTime = new Date();
+
+        // ===== PER-MINUTE CHARGE =====
+        let totalPerMinuteCharge = 0;
+        let minutesPassed = 0;
+        let timeElapsedSeconds = 0;
+
+        if (currentBooking.rideStartTime && currentBooking.rideStartTime !== "0") {
+          const rideStartTime = new Date(currentBooking.rideStartTime);
+          timeElapsedSeconds = Math.floor((currentTime - rideStartTime) / 1000);
+          minutesPassed = Math.floor(timeElapsedSeconds / 120);
+          totalPerMinuteCharge = minutesPassed * PER_MINUTE_CHARGE_RATE;
+        }
+
+        // ===== PARKING CHARGE =====
+        let totalParkingCharge = parseFloat(currentBooking.totalParkingCharge || 0);
+
+        if (currentBooking.parkingActive === "1" && currentBooking.startParkTime && currentBooking.startParkTime !== "") {
+          const parkStartTime = new Date(currentBooking.startParkTime);
+          const parkTimeDiffSeconds = Math.floor((currentTime - parkStartTime) / 1000);
+          const totalParkMinutesThisSession = Math.floor(parkTimeDiffSeconds / 60);
+
+          if (totalParkMinutesThisSession > 5) {
+            const chargeableMinutes = totalParkMinutesThisSession - 5;
+            const previousChargeableMinutes = parseFloat(currentBooking.lastParkingMinutes || 0);
+
+            if (chargeableMinutes > previousChargeableMinutes) {
+              const additionalParkMinutes = chargeableMinutes - previousChargeableMinutes;
+              const additionalParkedCharge = additionalParkMinutes * parkingRatePerMinute;
+              totalParkingCharge += additionalParkedCharge;
+
+              await db.bookings.update(
+                {
+                  totalParkingCharge: totalParkingCharge.toString(),
+                  lastParkingMinutes: chargeableMinutes.toString()
+                },
+                { where: { id: bookingId } }
+              );
+            }
+          }
+        }
+
+        // ===== DISTANCE CALCULATION =====
+        const startLat = currentBooking.lastLatitude && currentBooking.lastLatitude !== ""
+          ? parseFloat(currentBooking.lastLatitude)
+          : parseFloat(currentBooking.pickupLatitude);
+
+        const startLng = currentBooking.lastLongitude && currentBooking.lastLongitude !== ""
+          ? parseFloat(currentBooking.lastLongitude)
+          : parseFloat(currentBooking.pickupLongitude);
+
+        let totalDistanceKm = parseFloat(currentBooking.travelledDistance || 0);
+
+        if (!isNaN(startLat) && !isNaN(startLng)) {
+          const toRad = v => v * Math.PI / 180;
+          const calcDist = (a, b, c, d) => {
+            const R = 6371;
+            const dLat = toRad(c - a);
+            const dLon = toRad(d - b);
+            const x = Math.sin(dLat / 2) ** 2 +
+              Math.cos(toRad(a)) * Math.cos(toRad(c)) *
+              Math.sin(dLon / 2) ** 2;
+            return R * (2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x)));
+          };
+
+          const segmentKm = calcDist(startLat, startLng, currLat, currLng);
+
+          if (segmentKm > 0.005 && segmentKm <= 30) {
+            totalDistanceKm += segmentKm;
+
+            await db.bookings.update(
+              {
+                travelledDistance: totalDistanceKm.toString(),
+                lastLatitude: currLat.toString(),
+                lastLongitude: currLng.toString()
+              },
+              { where: { id: bookingId } }
+            );
+
+            console.log(`📍 [Auto] Distance added: +${segmentKm.toFixed(3)}km → Total: ${totalDistanceKm.toFixed(2)}km`);
+          }
+        }
+
+        // ===== CALCULATE TOTAL PRICE =====
+        const BASE_PRICE = 100;
+        const FREE_KM = 3;
+        const extraKm = Math.max(0, totalDistanceKm - FREE_KM);
+        const distanceCharge = Math.round(extraKm * pricePerKm);
+        const calculatedPrice = Math.round(BASE_PRICE + distanceCharge + totalPerMinuteCharge + totalParkingCharge);
+
+        // ===== UPDATE BOOKING =====
+        await db.bookings.update(
+          {
+            dropLatitude: currLat.toString(),
+            dropLongitude: currLng.toString(),
+            dropLocation: driverUser.location || currentBooking.dropLocation,
+            bookingPrice: calculatedPrice.toString(),
+            totalPerMinuteCharge: totalPerMinuteCharge.toString(),
+            totalParkingCharge: totalParkingCharge.toString(),
+            lastUpdateTime: currentTime
+          },
+          { where: { id: bookingId } }
+        );
+
+        console.log(`💰 [Auto 10s] Booking ${bookingId} | Base:${BASE_PRICE} + Dist:${distanceCharge} + PerMin:${totalPerMinuteCharge} + Park:${totalParkingCharge} = ${calculatedPrice} MRU`);
+
+        const emitPayload = {
+          success: true,
+          bookingId: bookingId,
+          bookingPrice: calculatedPrice.toString(),
+          rideDistanceKm: totalDistanceKm.toFixed(2),
+          rideOpen: 1,
+          totalPerMinuteCharge: totalPerMinuteCharge,
+          totalParkingCharge: totalParkingCharge,
+          totalMinutesSinceRideStart: minutesPassed,
+          timeElapsedSeconds: timeElapsedSeconds,
+          priceBreakdown: {
+            basePrice: BASE_PRICE,
+            freeKm: FREE_KM,
+            totalDistanceKm: totalDistanceKm.toFixed(2),
+            extraKm: extraKm.toFixed(2),
+            pricePerKm: pricePerKm,
+            distanceCharge: distanceCharge,
+            perMinuteCharge: totalPerMinuteCharge,
+            parkingCharge: totalParkingCharge,
+            total: calculatedPrice
+          }
+        };
+
+        // Emit to user
+        if (global.onlineUsers && onlineUsers[currentBooking.userId]) {
+          onlineUsers[currentBooking.userId].forEach(sockId => {
+            io.to(sockId).emit("rideStatusUpdate", emitPayload);
+          });
+        }
+
+        // Emit to driver
+        if (global.onlineUsers && onlineUsers[currentBooking.driverId]) {
+          onlineUsers[currentBooking.driverId].forEach(sockId => {
+            io.to(sockId).emit("rideStatusUpdate", emitPayload);
+          });
+        }
+
+      } catch (err) {
+        console.error(`❌ Auto location interval error for booking ${bookingId}:`, err.message);
+      }
+    }, 10000); // Every 10 seconds
+
+    global.autoLocationIntervals[bookingId] = intervalId;
+  };
+
+  const stopAutoLocationUpdate = (bookingId) => {
+    if (global.autoLocationIntervals && global.autoLocationIntervals[bookingId]) {
+      clearInterval(global.autoLocationIntervals[bookingId]);
+      delete global.autoLocationIntervals[bookingId];
+      console.log(`🛑 Stopped auto location update for booking: ${bookingId}`);
+    }
+  };
+
   io.on("connection", function (socket) {
 
 
@@ -55,6 +270,24 @@ module.exports = function (io) {
           message: "Connected successfully",
           socketId: socket.id,
         });
+
+        // ===== RESTART AUTO LOCATION IF ACTIVE OPEN RIDE =====
+        const activeBookings = await db.bookings.findAll({
+          where: {
+            [Op.or]: [{ driverId: userId }, { userId: userId }],
+            status: '2',
+            rideOpen: 1
+          },
+          raw: true
+        });
+
+        if (activeBookings && activeBookings.length > 0) {
+          activeBookings.forEach(b => {
+            if (!global.autoLocationIntervals || !global.autoLocationIntervals[b.id]) {
+              startAutoLocationUpdate(b.id);
+            }
+          });
+        }
 
         // Proper disconnect cleanup
         socket.on("disconnect", async () => {
@@ -1595,6 +1828,7 @@ module.exports = function (io) {
           }
         };
 
+
         // ================= STATUS FLOW =================
         switch (status) {
 
@@ -1623,8 +1857,8 @@ module.exports = function (io) {
               rideStartTime: rideStartTime,
               lastPerMinuteCalculation: new Date(),
               totalPerMinuteCharge: "0",
-              totalParkingCharge: "0"
-              // lastUpdateTime: new Date() // ← Set lastUpdateTime at ride start so per-minute calc is accurate
+              totalParkingCharge: "0",
+              lastUpdateTime: new Date() // Set lastUpdateTime at ride start for accurate pricing
             });
 
             await emitToBoth(
@@ -1633,6 +1867,13 @@ module.exports = function (io) {
               "2",
               true
             );
+
+            // ✅ Start auto location + price update every 10 seconds
+            if (booking.rideOpen == 1) {
+              startAutoLocationUpdate(bookingId);
+              console.log(`✅ Auto location update started for booking ${bookingId} (status=2, rideOpen=1)`);
+            }
+
             if (user.deviceToken) {
               helper.sendNotification_android(user.deviceToken, {
                 message: getUserMsg("Your ride has started.", "بدأت رحلتك.", "Votre trajet a commencé."),
@@ -1645,6 +1886,7 @@ module.exports = function (io) {
 
           case "3": // FINISHED - COMMISSION CUT HOGA YAHAN
             await stopRealTimePricing(bookingId);
+            stopAutoLocationUpdate(bookingId);
 
             const finalBooking = await db.bookings.findOne({
               where: { id: bookingId },
@@ -1785,6 +2027,7 @@ module.exports = function (io) {
 
           case "4": // CANCELLED
             await stopRealTimePricing(bookingId);
+            stopAutoLocationUpdate(bookingId);
             if (currentStatus !== "2") return;
             await booking.update({ status: "4" });
             await emitToBoth(
