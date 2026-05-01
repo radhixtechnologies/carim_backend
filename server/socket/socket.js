@@ -1226,7 +1226,7 @@ module.exports = function (io) {
           if (booking.rideOpen == 1 && booking.rideStartTime && booking.rideStartTime !== "0") {
             const rideStartTime = new Date(booking.rideStartTime);
             timeElapsedSeconds = Math.floor((currentTime - rideStartTime) / 1000);
-            minutesPassed = Math.floor(timeElapsedSeconds / 60);
+            minutesPassed = Math.floor(timeElapsedSeconds / 120);
 
             // rideOpen = 1: Base + Distance + Per Minute + Parking
             calculatedPrice = Math.round(BASE_PRICE + distanceCharge + totalPerMinuteCharge + totalParkingCharge);
