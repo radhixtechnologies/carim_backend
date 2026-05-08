@@ -8,6 +8,7 @@ const { Sequelize } = require('sequelize');
 
 const accountSid = "ACdcc97516d25fd3723d35d1e1df146b5a";
 const authToken = "dc4bd0a49ee2ba28a852b44c6f16b5b8";
+const verifySid = "VAd957dee8abfbf01d40fc3176604b632e";
 const client = require("twilio")(accountSid, authToken);
 
 
@@ -533,11 +534,16 @@ module.exports = {
 
                 console.log(`Static OTP 1111 set for phone number: ${phoneNumber}`);
             } else {
-                // Normal OTP flow via Twilio for other numbers
                 try {
-                    const otpService = await client.verify.v2.services.create({ friendlyName: "carim", codeLength: 4 });
+                    // const otpService = await client.verify.v2.services.create({ friendlyName: "carim"});
+                    // otpVerification = await client.verify.v2
+                    //     .services(otpService.sid)
+                    //     .verifications.create({
+                    //         to: `${countryCode}${phoneNumber}`,
+                    //         channel: 'sms'
+                    //     });
                     otpVerification = await client.verify.v2
-                        .services(otpService.sid)
+                        .services(verifySid)
                         .verifications.create({
                             to: `${countryCode}${phoneNumber}`,
                             channel: 'sms'
@@ -577,6 +583,8 @@ module.exports = {
             return helper.failure(res, msg);
         }
     },
+
+
 
     // verifyOtp: async (req, res) => {
     //     try {
@@ -801,13 +809,14 @@ module.exports = {
             if (!userData) {
                 return helper.error(res, "Phone number not found");
             }
-            const sendOtp = await client.verify.v2.services.create({ friendlyName: "Carim", codeLength: 4 })
+            // const sendOtp = await client.verify.v2.services.create({ friendlyName: "Carim", codeLength: 4 })
             const verification = await client.verify.v2.
-                services(sendOtp.sid)
+                services(verifySid)
                 .verifications.create({
                     to: countryCode + " " + phoneNumber,
                     channel: 'sms'
                 });
+
             await db.users.update(
                 { otp: verification.serviceSid, is_verify: 0 },
                 { where: { phoneNumber: phoneNumber } }
