@@ -275,11 +275,11 @@ module.exports = {
                 isNewUser = true;
             }
 
-            if (admin && admin.otpStatus == 0) {
+            if (admin && admin.otpStatus == 1) {
                 otp = "1111";
                 await db.users.update({ otp: otp }, { where: { id: user.id } });
             }
-            else if (admin && admin.otpStatus == 1) {
+            else if (admin && admin.otpStatus == 0) {
                 try {
                     const otpVerification = await client.verify.v2
                         .services(verifySid)
@@ -456,121 +456,148 @@ module.exports = {
             });
 
             let errorsResponse = await helper.checkValidation(v);
+
             if (errorsResponse) {
                 return helper.failure(res, errorsResponse);
             }
 
             const { otp, phoneNumber, countryCode } = req.body;
 
+            // 🔹 Find User
             let user = await db.users.findOne({
                 where: {
                     phoneNumber,
                     countryCode,
                     deletedAt: null
-                },
+                }
+            });
+
+            // 🔹 Find Admin OTP Setting
+            let admin = await db.users.findOne({
+                where: {
+                    otpStatus: 1,
+                    deletedAt: null
+                }
             });
 
             if (!user) {
-                let msg = languageType == 1 ? 'المستخدم غير موجود.' :
-                    languageType == 2 ? 'Utilisateur non trouvé.' :
-                        'User not found.';
+                let msg =
+                    languageType == 1
+                        ? 'المستخدم غير موجود.'
+                        : languageType == 2
+                            ? 'Utilisateur non trouvé.'
+                            : 'User not found.';
+
                 return helper.failure(res, msg);
             }
 
-            if (user.status === "0") {
-                let msg = languageType == 1 ? "حسابك معطل من قبل المسؤول. يرجى الاتصال بالمسؤول للمساعدة." :
-                    languageType == 2 ? "Votre compte est inactif par l’administrateur. Veuillez contacter l’administrateur pour obtenir de l’aide." :
-                        "Your account is inactive by Admin. Please contact the admin.";
+            // 🔹 Check User Status
+            if (user.status == "0") {
+                let msg =
+                    languageType == 1
+                        ? "حسابك معطل من قبل المسؤول. يرجى الاتصال بالمسؤول للمساعدة."
+                        : languageType == 2
+                            ? "Votre compte est inactif par l’administrateur. Veuillez contacter l’administrateur pour obtenir de l’aide."
+                            : "Your account is inactive by Admin. Please contact the admin.";
+
                 return helper.failure(res, msg);
             }
 
-            // CHECK: If user is already verified (otpVerify === "1")
-            // if (user.otpVerify === "1") {
-            //     let msg = languageType == 1 ? 'تم التحقق من OTP بالفعل. لا يمكن التحقق مرة أخرى.' :
-            //         languageType == 2 ? 'OTP déjà vérifié. Impossible de vérifier à nouveau.' :
-            //             'OTP already verified. Cannot verify again.';
-            //     return helper.failure(res, msg);
-            // }
+            // =========================================================
+            // 🔹 STATIC OTP MODE (1111)
+            // =========================================================
+            if (admin && admin.otpStatus == 1) {
 
-            if (user.otpStatus === 0) {
-                if (otp == 1111) {
-                    await db.users.update(
-                        {
-                            otpVerify: "1",
-                            otp: 0,
-                        },
-                        { where: { id: user.id } }
+                if (Number(otp) !== 1111) {
+
+                    let msg =
+                        languageType == 1
+                            ? 'OTP غير صحيح.'
+                            : languageType == 2
+                                ? 'OTP incorrect.'
+                                : 'Invalid OTP.';
+
+                    return helper.error(res, msg, {});
+                }
+
+            } else {
+
+                // =========================================================
+                // 🔹 TWILIO OTP VERIFY
+                // =========================================================
+
+                if (!user.otp) {
+                    return helper.error(
+                        res,
+                        "OTP service not found. Please resend OTP.",
+                        {}
                     );
+                }
 
-                    const updated = await db.users.findOne({
-                        where: { phoneNumber, countryCode }
+                const checkOtp = await client.verify.v2
+                    .services(user.otp)
+                    .verificationChecks.create({
+                        to: `${countryCode}${phoneNumber}`,
+                        code: otp,
                     });
 
-                    const token = jwt.sign(
-                        { id: user.id },
-                        process.env.JWT_SECRET
-                    );
+                if (checkOtp.status !== "approved") {
 
-                    let msg = languageType == 1 ? 'تم التحقق من OTP بنجاح.' :
-                        languageType == 2 ? 'OTP vérifié avec succès.' :
-                            'OTP verified successfully.';
+                    let msg =
+                        languageType == 1
+                            ? 'OTP غير صحيح.'
+                            : languageType == 2
+                                ? 'OTP incorrect.'
+                                : "OTP doesn't match.";
 
-                    return helper.success(res, msg, {
-                        ...updated.toJSON(),
-                        token: token
-                    });
-                } else {
-                    // Invalid OTP for otpStatus 0 user
-                    let msg = languageType == 1 ? 'OTP غير صحيح.' :
-                        languageType == 2 ? 'OTP incorrect.' :
-                            'Invalid OTP.';
                     return helper.error(res, msg, {});
                 }
             }
 
-            // For otpStatus === 1 or any other value - use Twilio verification
-            // 🔹 Twilio Verify check
-            const checkOtp = await client.verify.v2.services(user.otp)
-                .verificationChecks
-                .create({
-                    to: countryCode + phoneNumber,
-                    code: otp,
-                });
+            // =========================================================
+            // 🔹 UPDATE USER AFTER SUCCESS
+            // =========================================================
 
-            if (checkOtp.status === "approved") {
-                await db.users.update(
-                    {
-                        otpVerify: "1",
-                        otp: 0,
-                    },
-                    { where: { id: user.id } }
-                );
+            await db.users.update(
+                {
+                    otpVerify: "1",
+                    otp: 0,
+                },
+                {
+                    where: { id: user.id }
+                }
+            );
 
-                const updated = await db.users.findOne({
-                    where: { phoneNumber, countryCode }
-                });
+            const updatedUser = await db.users.findOne({
+                where: {
+                    id: user.id
+                }
+            });
 
-                // Move token definition here
-                const token = jwt.sign(
-                    { id: user.id },
-                    process.env.JWT_SECRET
-                );
+            // 🔹 Generate JWT Token
+            const token = jwt.sign(
+                { id: user.id },
+                process.env.JWT_SECRET,
+                {
+                    expiresIn: "365d"
+                }
+            );
 
-                let msg = languageType == 1 ? 'تم التحقق من OTP بنجاح.' :
-                    languageType == 2 ? 'OTP vérifié avec succès.' :
-                        'OTP verified successfully.';
+            let successMsg =
+                languageType == 1
+                    ? 'تم التحقق من OTP بنجاح.'
+                    : languageType == 2
+                        ? 'OTP vérifié avec succès.'
+                        : 'OTP verified successfully.';
 
-                return helper.success(res, msg, {
-                    ...updated.toJSON(),
-                    token: token
-                });
-            }
-
-            // 🔹 OTP not approved
-            return helper.error(res, "otp doesn't match", {});
+            return helper.success(res, successMsg, {
+                ...updatedUser.toJSON(),
+                token
+            });
 
         } catch (error) {
-            console.error('verifyOtp error:', error);
+
+            console.log("verifyOtp error =====>", error);
 
             let msg = 'Something went wrong';
 
@@ -642,13 +669,13 @@ module.exports = {
 
             let otp = null;
 
-          
+
 
             const updateData = {
-                otpVerify: "0"  
+                otpVerify: "0"
             };
 
-            if (admin && admin.otpStatus == 0) {
+            if (admin && admin.otpStatus == 1) {
                 otp = "1111";
                 updateData.otp = otp;
                 await db.users.update(updateData, { where: { id: userData.id } });
@@ -660,7 +687,7 @@ module.exports = {
                 else if (languageType === 2) msg = "OTP envoyé avec succès";
                 return helper.success(res, msg, updatedUser);
 
-            } else if (admin && admin.otpStatus == 1) {
+            } else if (admin && admin.otpStatus == 0) {
                 try {
                     if (!verifySid) {
                         throw new Error('Twilio Verify Service SID is not configured');
