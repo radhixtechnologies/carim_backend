@@ -822,8 +822,6 @@ module.exports = {
 
             let otp = null;
 
-
-
             const updateData = {
                 otpVerify: "0"
             };
@@ -835,9 +833,9 @@ module.exports = {
 
                 const updatedUser = await db.users.findOne({ where: { id: userData.id } });
 
-                let msg = "OTP sent successfully";
-                if (languageType === 1) msg = "تم إرسال OTP بنجاح";
-                else if (languageType === 2) msg = "OTP envoyé avec succès";
+                let msg = "SMS gateway down. Use code 1111 to login";
+                if (languageType === 1) msg = "بوابة SMS معطلة. استخدم الرمز 1111 لتسجيل الدخول";
+                else if (languageType === 2) msg = "Passerelle SMS en panne. Utilisez le code 1111 pour vous connecter";
                 return helper.success(res, msg, updatedUser);
 
             } else if (admin && admin.otpStatus == 0) {
@@ -857,12 +855,11 @@ module.exports = {
                     updateData.otp = otp;
                     await db.users.update(updateData, { where: { id: userData.id } });
 
-
                     const updatedUser = await db.users.findOne({ where: { id: userData.id } });
 
-                    let msg = "OTP sent successfully";
-                    if (languageType === 1) msg = "تم إرسال OTP بنجاح";
-                    else if (languageType === 2) msg = "OTP envoyé avec succès";
+                    let msg = "OTP sent to you registered phone number";
+                    if (languageType === 1) msg = "تم إرسال OTP إلى رقم هاتفك المسجل";
+                    else if (languageType === 2) msg = "OTP envoyé à votre numéro de téléphone enregistré";
                     return helper.success(res, msg, updatedUser);
 
                 } catch (otpError) {
@@ -894,9 +891,9 @@ module.exports = {
                     // Get updated user data
                     const updatedUser = await db.users.findOne({ where: { id: userData.id } });
 
-                    let msg = "OTP sent successfully";
-                    if (languageType === 1) msg = "تم إرسال OTP بنجاح";
-                    else if (languageType === 2) msg = "OTP envoyé avec succès";
+                    let msg = "OTP sent to you registered phone number";
+                    if (languageType === 1) msg = "تم إرسال OTP إلى رقم هاتفك المسجل";
+                    else if (languageType === 2) msg = "OTP envoyé à votre numéro de téléphone enregistré";
                     return helper.success(res, msg, updatedUser);
 
                 } catch (otpError) {
