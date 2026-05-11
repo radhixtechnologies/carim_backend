@@ -579,8 +579,44 @@ module.exports = {
     },
 
 
+    // resendOTP1: async (req, res) => {
+    //     try {
+    //         const v = new Validator(req.body, {
+    //             phoneNumber: "required|string",
+    //             countryCode: "required|string",
+    //         });
+
+    //         const errorResponse = await helper.checkValidation(v);
+    //         if (errorResponse) {
+    //             return helper.error(res, errorResponse);
+    //         }
+    //         const { phoneNumber, countryCode } = req.body;
+    //         const userData = await db.users.findOne({ where: { phoneNumber, countryCode } });
+
+    //         if (!userData) {
+    //             return helper.error(res, "Phone number not found");
+    //         }
+    //         // const sendOtp = await client.verify.v2.services.create({ friendlyName: "Carim", codeLength: 4 })
+    //         const verification = await client.verify.v2.
+    //             services(verifySid)
+    //             .verifications.create({
+    //                 to: countryCode + " " + phoneNumber,
+    //                 channel: 'sms'
+    //             });
+
+    //         await db.users.update(
+    //             { otp: verification.serviceSid, is_verify: 0 },
+    //             { where: { phoneNumber: phoneNumber } }
+    //         );
+    //         return helper.success(res, "Otp sent successfully", userData)
+    //     } catch (error) {
+    //         console.log(error, "==here is error");
+    //     }
+    // },
     resendOTP: async (req, res) => {
         try {
+            const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
+
             const v = new Validator(req.body, {
                 phoneNumber: "required|string",
                 countryCode: "required|string",
@@ -590,82 +626,117 @@ module.exports = {
             if (errorResponse) {
                 return helper.error(res, errorResponse);
             }
+
             const { phoneNumber, countryCode } = req.body;
             const userData = await db.users.findOne({ where: { phoneNumber, countryCode } });
 
             if (!userData) {
-                return helper.error(res, "Phone number not found");
+                let msg = "Phone number not found";
+                if (languageType === 1) msg = "رقم الهاتف غير موجود";
+                else if (languageType === 2) msg = "Numéro de téléphone non trouvé";
+                return helper.error(res, msg);
             }
-            // const sendOtp = await client.verify.v2.services.create({ friendlyName: "Carim", codeLength: 4 })
-            const verification = await client.verify.v2.
-                services(verifySid)
-                .verifications.create({
-                    to: countryCode + " " + phoneNumber,
-                    channel: 'sms'
-                });
 
-            await db.users.update(
-                { otp: verification.serviceSid, is_verify: 0 },
-                { where: { phoneNumber: phoneNumber } }
-            );
-            return helper.success(res, "Otp sent successfully", userData)
+            // Get admin details to determine OTP type (same as login logic)
+            const admin = await db.users.findOne({ where: { role: "0" } });
+
+            let otp = null;
+
+          
+
+            const updateData = {
+                otpVerify: "0"  
+            };
+
+            if (admin && admin.otpStatus == 0) {
+                otp = "1111";
+                updateData.otp = otp;
+                await db.users.update(updateData, { where: { id: userData.id } });
+
+                const updatedUser = await db.users.findOne({ where: { id: userData.id } });
+
+                let msg = "OTP sent successfully";
+                if (languageType === 1) msg = "تم إرسال OTP بنجاح";
+                else if (languageType === 2) msg = "OTP envoyé avec succès";
+                return helper.success(res, msg, updatedUser);
+
+            } else if (admin && admin.otpStatus == 1) {
+                try {
+                    if (!verifySid) {
+                        throw new Error('Twilio Verify Service SID is not configured');
+                    }
+
+                    const verification = await client.verify.v2
+                        .services(verifySid)
+                        .verifications.create({
+                            to: `${countryCode}${phoneNumber}`,
+                            channel: 'sms'
+                        });
+
+                    otp = verification.serviceSid;
+                    updateData.otp = otp;
+                    await db.users.update(updateData, { where: { id: userData.id } });
+
+
+                    const updatedUser = await db.users.findOne({ where: { id: userData.id } });
+
+                    let msg = "OTP sent successfully";
+                    if (languageType === 1) msg = "تم إرسال OTP بنجاح";
+                    else if (languageType === 2) msg = "OTP envoyé avec succès";
+                    return helper.success(res, msg, updatedUser);
+
+                } catch (otpError) {
+                    console.error("Resend OTP sending error:", otpError);
+                    let msg = "Failed to send OTP. Please try again.";
+                    if (languageType === 1) msg = "فشل إرسال OTP. يرجى المحاولة مرة أخرى.";
+                    else if (languageType === 2) msg = "Échec de l'envoi de l'OTP. Veuillez réessayer.";
+                    return helper.error(res, msg);
+                }
+            } else {
+                // Default case - if no admin found or admin has different otpStatus
+                console.log(`⚠️ No admin found or unexpected admin otpStatus: ${admin?.otpStatus}, defaulting to dynamic OTP`);
+                try {
+                    if (!verifySid) {
+                        throw new Error('Twilio Verify Service SID is not configured');
+                    }
+
+                    const verification = await client.verify.v2
+                        .services(verifySid)
+                        .verifications.create({
+                            to: `${countryCode}${phoneNumber}`,
+                            channel: 'sms'
+                        });
+
+                    otp = verification.serviceSid;
+                    updateData.otp = otp;
+                    await db.users.update(updateData, { where: { id: userData.id } });
+
+                    // Get updated user data
+                    const updatedUser = await db.users.findOne({ where: { id: userData.id } });
+
+                    let msg = "OTP sent successfully";
+                    if (languageType === 1) msg = "تم إرسال OTP بنجاح";
+                    else if (languageType === 2) msg = "OTP envoyé avec succès";
+                    return helper.success(res, msg, updatedUser);
+
+                } catch (otpError) {
+                    console.error("Resend OTP sending error:", otpError);
+                    let msg = "Failed to send OTP. Please try again.";
+                    if (languageType === 1) msg = "فشل إرسال OTP. يرجى المحاولة مرة أخرى.";
+                    else if (languageType === 2) msg = "Échec de l'envoi de l'OTP. Veuillez réessayer.";
+                    return helper.error(res, msg);
+                }
+            }
+
         } catch (error) {
-            console.log(error, "==here is error");
+            console.log(error, "==here is error in resendOTP");
+            let msg = "Something went wrong";
+            const languageType = Number(req.headers.languagetype);
+            if (languageType === 1) msg = "حدث خطأ ما";
+            else if (languageType === 2) msg = "Quelque chose s'est mal passé";
+            return helper.error(res, msg);
         }
     },
-    // resendOTP1: async (req, res) => {
-    //     try {
-    //         const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
-
-    //         const v = new Validator(req.body, {
-    //             countryCode: "required",
-    //             phoneNumber: "required",
-    //         });
-
-    //         const errorsResponse = await helper.checkValidation(v);
-    //         if (errorsResponse) {
-    //             return helper.failure(res, errorsResponse);
-    //         }
-
-    //         const { countryCode, phoneNumber } = req.body;
-
-    //         const user = await db.users.findOne({
-    //             where: { phoneNumber, countryCode, deletedAt: null },
-    //             raw: true
-    //         });
-
-    //         if (!user) {
-    //             let msg = "User not found";
-    //             if (languageType == 1) msg = "المستخدم غير موجود";
-    //             else if (languageType == 2) msg = "Utilisateur non trouvé";
-    //             return helper.failure(res, msg);
-    //         }
-
-    //         const otp = '1111';
-    //         //    const otp =  Math.floor(1000 + Math.random() * 9000).toString();
-
-    //         await db.users.update(
-    //             {
-    //                 otp: otp,
-    //                 otpVerify: "0",
-    //             },
-    //             { where: { id: user.id } }
-    //         );
-
-    //         let msg = "OTP Re-sent Successfully";
-    //         if (languageType == 1) msg = "تم إعادة إرسال OTP بنجاح";
-    //         else if (languageType == 2) msg = "OTP renvoyé avec succès";
-
-    //         return helper.success(res, msg);
-
-    //     } catch (error) {
-    //         console.error('resendOTP error:', error);
-    //         let msg = "OTP Not Sent!";
-    //         if (languageType == 1) msg = "لم يتم إرسال OTP!";
-    //         else if (languageType == 2) msg = "OTP non envoyé !";
-    //         return helper.failure(res, msg);
-    //     }
-    // },
 
 
     createAccount: async (req, res) => {
