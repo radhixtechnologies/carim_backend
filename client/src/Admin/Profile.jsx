@@ -17,6 +17,7 @@ const Profile = () => {
     priceRushHour: "",
     parkingCharge: "",
     status: 0, // Add status field
+    otpStatus: 0
   });
   const [imagePreview, setImagePreview] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
@@ -145,6 +146,36 @@ const Profile = () => {
     }
   };
 
+  const otpStatus = async () => {
+    setLoading(true);
+    const newStatuss = data.otpStatus === "0" ? "1" : "0";
+    const userId = data.id || localStorage.getItem("userId");
+
+    if (!userId) {
+      toast.error("User ID not found");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await axiosInstance.post(`/otpStatus`, {
+        id: userId,  // Uncommented and fixed
+        otpStatus: newStatuss,
+      });
+
+      if (response.data.success) {
+        setData(prev => ({ ...prev, otpStatus: newStatuss }));
+        toast.success(`OTP Status ${newStatuss === "1" ? 'Activated' : 'Deactivated'} successfully`);
+      } else {
+        toast.error(response.data.message || "Status change failed");
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "An error occurred");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleFirstNameChange = (e) => {
     const { value } = e.target;
     setData((prevData) => ({ ...prevData, firstName: value }));
@@ -253,6 +284,8 @@ const Profile = () => {
     formData.append("parkingCharge", data.parkingCharge);
 
     formData.append("status", data.status);
+    formData.append("otpStatus", data.otpStatus);
+
 
     if (selectedImage) {
       formData.append("image", selectedImage);
@@ -332,7 +365,6 @@ const Profile = () => {
                       <div className="d-flex justify-content-between align-items-center mb-4 p-3 bg-light rounded">
                         <div>
                           <h5 className="mb-1"> Status</h5>
-
                         </div>
                         <div className="form-check form-switch">
                           <input
@@ -353,6 +385,34 @@ const Profile = () => {
                           {loading && (
                             <span className="ms-2">
                               <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="d-flex justify-content-between align-items-center mb-4 p-3 bg-light rounded">
+                        <div>
+                          <h5 className="mb-1">OTP Status</h5>
+                        </div>
+                        <div className="form-check form-switch">
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            id="otpStatus"
+                            checked={data.otpStatus === "1"}  
+                            onChange={otpStatus}
+                            disabled={loading}
+                            style={{
+                              width: '3rem',
+                              height: '1.5rem',
+                              cursor: loading ? 'wait' : 'pointer',
+                              backgroundColor: data.otpStatus === "1" ? "#28a745" : "#dc3545",  
+                              borderColor: data.otpStatus === "1" ? "#28a745" : "#dc3545",  
+                            }}
+                          />
+                          {loading && (
+                            <span className="ms-2">
+                              <span className="spinner-border spinner-border-sm" role="otpStatus" aria-hidden="true"></span>
                             </span>
                           )}
                         </div>
@@ -536,7 +596,7 @@ const Profile = () => {
                             </div>
                           )}
                         </div>
-                         <div style={{ marginBottom: "16px" }}>
+                        <div style={{ marginBottom: "16px" }}>
                           <label htmlFor="parkingCharge" className="mb-1 fw-medium">
                             Price Parking
                           </label>
@@ -567,6 +627,33 @@ const Profile = () => {
                           </button>
                         </div>
                       </form>
+                      <div className="d-flex justify-content-between align-items-center mb-4 p-3 bg-light rounded">
+                        <div>
+                          <h5 className="mb-1">Otp Status</h5>
+                        </div>
+                        <div className="form-check form-switch">
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            id="statusToggle"
+                            checked={data.status === "1"}
+                            onChange={otpStatus}
+                            disabled={loading}
+                            style={{
+                              width: '3rem',
+                              height: '1.5rem',
+                              cursor: loading ? 'wait' : 'pointer',
+                              backgroundColor: data.status === "1" ? "#28a745" : "#dc3545",
+                              borderColor: data.status === "1" ? "#28a745" : "#dc3545",
+                            }}
+                          />
+                          {loading && (
+                            <span className="ms-2">
+                              <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
