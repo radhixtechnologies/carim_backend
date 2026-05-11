@@ -388,7 +388,7 @@ const Profile = () => {
                     <div className="card-body">
                       <div className="d-flex justify-content-between align-items-center mb-4 p-3 bg-light rounded">
                         <div>
-                          <h5 className="mb-1">Rush Hour Status</h5>
+                          <h5 className="mb-1">Rush Hour </h5>
                         </div>
                         <div className="form-check form-switch">
                           <input
@@ -416,29 +416,42 @@ const Profile = () => {
 
                       <div className="d-flex justify-content-between align-items-center mb-4 p-3 bg-light rounded">
                         <div>
-                          <h5 className="mb-1">Static otp Status</h5>
+                          <h5 className="mb-1">Static Otp</h5>
                         </div>
-                        <div className="form-check form-switch">
-                          <input
-                            className="form-check-input"
-                            type="checkbox"
-                            id="otpStatus"
-                            checked={data.otpStatus === 1}
-                            onChange={otpStatus}
-                            disabled={otpStatusLoading}  // Use otpStatusLoading
-                            style={{
-                              width: '3rem',
-                              height: '1.5rem',
-                              cursor: otpStatusLoading ? 'wait' : 'pointer',
-                              backgroundColor: data.otpStatus === 1 ? "#28a745" : "#dc3545",
-                              borderColor: data.otpStatus === 1 ? "#28a745" : "#dc3545",
-                            }}
-                          />
-                          {otpStatusLoading && (
-                            <span className="ms-2">
-                              <span className="spinner-border spinner-border-sm" role="otpStatus" aria-hidden="true"></span>
-                            </span>
-                          )}
+                        <div className="d-flex align-items-center gap-2">
+                          <span
+                            className={`fw-bold ${data.otpStatus === 1 ? "text-success" : "text-danger"
+                              }`}
+                          >
+                            {data.otpStatus === 1 ? "Static" : "twillio"}
+                          </span>
+
+                          <div className="form-check form-switch m-0">
+                            <input
+                              className="form-check-input"
+                              type="checkbox"
+                              id="otpStatus"
+                              checked={data.otpStatus === 1}
+                              onChange={otpStatus}
+                              disabled={otpStatusLoading}
+                              style={{
+                                width: "3rem",
+                                height: "1.5rem",
+                                cursor: otpStatusLoading ? "wait" : "pointer",
+                                backgroundColor: data.otpStatus === 1 ? "#28a745" : "#dc3545",
+                                borderColor: data.otpStatus === 1 ? "#28a745" : "#dc3545",
+                              }}
+                            />
+                            {otpStatusLoading && (
+                              <span className="ms-2">
+                                <span
+                                  className="spinner-border spinner-border-sm"
+                                  role="status"
+                                  aria-hidden="true"
+                                ></span>
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
 
