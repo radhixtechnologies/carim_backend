@@ -624,4 +624,22 @@ module.exports = {
             return helper.error(res, error.message);
         }
     },
+
+    otpStatus: async (req, res) => {
+        try {
+            const { id, otpStatus } = req.body;
+            const user = await db.users.findOne({ where: { id } });
+            if (!user) {
+                return helper.error(res, "User not found");
+            }
+            await db.users.update({ otpStatus }, { where: { id } });
+            return helper.success(res, " otpStatus updated successfully", {
+                id,
+                otpStatus
+            });
+
+        } catch (error) {
+            return helper.error(res, error.message);
+        }
+    },
 }
