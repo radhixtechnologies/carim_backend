@@ -485,12 +485,12 @@ module.exports = {
             }
 
             // CHECK: If user is already verified (otpVerify === "1")
-            if (user.otpVerify === "1") {
-                let msg = languageType == 1 ? 'تم التحقق من OTP بالفعل. لا يمكن التحقق مرة أخرى.' :
-                    languageType == 2 ? 'OTP déjà vérifié. Impossible de vérifier à nouveau.' :
-                        'OTP already verified. Cannot verify again.';
-                return helper.failure(res, msg);
-            }
+            // if (user.otpVerify === "1") {
+            //     let msg = languageType == 1 ? 'تم التحقق من OTP بالفعل. لا يمكن التحقق مرة أخرى.' :
+            //         languageType == 2 ? 'OTP déjà vérifié. Impossible de vérifier à nouveau.' :
+            //             'OTP already verified. Cannot verify again.';
+            //     return helper.failure(res, msg);
+            // }
 
             if (user.otpStatus === 0) {
                 if (otp == 1111) {
