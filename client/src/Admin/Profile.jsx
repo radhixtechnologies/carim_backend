@@ -16,13 +16,17 @@ const Profile = () => {
     rideAmount: "",
     priceRushHour: "",
     parkingCharge: "",
-    status: 0, // Add status field
-    otpStatus: 0
+    status: "0",
+    otpStatus: 0,
+    priceStatus: 0          // ✅ Number for INT
   });
   const [imagePreview, setImagePreview] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
   const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false); // For toggle loading state
+  const [loading, setLoading] = useState(false);
+  const [statusLoading, setStatusLoading] = useState(false);  // Separate loading for status
+  const [otpStatusLoading, setOtpStatusLoading] = useState(false);
+  const [priceStatusLoading, setpriceStatusLoading] = useState(false); // Separate loading for OTP status
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -42,12 +46,17 @@ const Profile = () => {
               ...profileData,
               firstName,
               lastName,
-              status: profileData.status || 0 // Set status from API
+              status: profileData.status ? profileData.status.toString() : "0",
+              otpStatus: profileData.otpStatus !== undefined ? profileData.otpStatus : 0,
+              priceStatus: profileData.priceStatus !== undefined ? profileData.priceStatus : 0
+
             });
           } else {
             setData({
               ...profileData,
-              status: profileData.status || 0
+              status: profileData.status ? profileData.status.toString() : "0",
+              otpStatus: profileData.otpStatus !== undefined ? profileData.otpStatus : 0,
+              priceStatus: profileData.priceStatus !== undefined ? profileData.priceStatus : 0
             });
           }
 
@@ -119,60 +128,65 @@ const Profile = () => {
     return "";
   };
 
+
   const toggleStatus = async () => {
-    setLoading(true);
-    const newStatus = data.status === "0" ? "1" : "0";
+    setpriceStatusLoading(true);
+    const newStatus = data.priceStatus === 0 ? 1 : 0;  // Changed from "0"/"1" to 0/1
     const userId = data.id || localStorage.getItem("userId");
+
     if (!userId) {
       toast.error("User ID not found");
-      setLoading(false);
+      setpriceStatusLoading(false);
       return;
     }
+
     try {
-      const response = await axiosInstance.post(`/userStatus`, {
+      const response = await axiosInstance.post(`/pricePushStatus`, {
         id: userId,
-        status: newStatus,
+        priceStatus: newStatus,
       });
 
       if (response.data.success) {
-        setData(prev => ({ ...prev, status: newStatus }));
-        toast.success(`Status ${newStatus === "1" ? 'Active' : 'Inactive'}`);
-      } else {
-        toast.error(response.data.message || "Status change failed");
-      }
-    } catch (error) {
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const otpStatus = async () => {
-    setLoading(true);
-    const newStatuss = data.otpStatus === "0" ? "1" : "0";
-    const userId = data.id || localStorage.getItem("userId");
-
-    if (!userId) {
-      toast.error("User ID not found");
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const response = await axiosInstance.post(`/otpStatus`, {
-        id: userId,  // Uncommented and fixed
-        otpStatus: newStatuss,
-      });
-
-      if (response.data.success) {
-        setData(prev => ({ ...prev, otpStatus: newStatuss }));
-        toast.success(`OTP Status ${newStatuss === "1" ? 'Activated' : 'Deactivated'} successfully`);
+        setData(prev => ({ ...prev, priceStatus: newStatus }));
+        toast.success(`Status ${newStatus === 1 ? 'Active' : 'Inactive'}`);
       } else {
         toast.error(response.data.message || "Status change failed");
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "An error occurred");
     } finally {
-      setLoading(false);
+      setpriceStatusLoading(false);
+    }
+  };
+
+
+  const otpStatus = async () => {
+    setOtpStatusLoading(true);  // Use otpStatusLoading instead of loading
+    const newStatuss = data.otpStatus === 0 ? 1 : 0;
+    const userId = data.id || localStorage.getItem("userId");
+
+    if (!userId) {
+      toast.error("User ID not found");
+      setOtpStatusLoading(false);
+      return;
+    }
+
+    try {
+      const response = await axiosInstance.post(`/otpStatus`, {
+        id: userId,
+        otpStatus: newStatuss,
+      });
+
+      if (response.data.success) {
+        setData(prev => ({ ...prev, otpStatus: newStatuss }));
+        toast.success(`OTP Status ${newStatuss === 1 ? 'Activated' : 'Deactivated'} successfully`);
+      } else {
+        toast.error(response.data.message || "Status change failed");
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "An error occurred");
+    } finally {
+      setOtpStatusLoading(false);
     }
   };
 
@@ -230,6 +244,7 @@ const Profile = () => {
       }));
     }
   };
+
   const handleParkingCharge = (e) => {
     const { value } = e.target;
     const cleanedValue = value.replace(/\s/g, "");
@@ -268,6 +283,11 @@ const Profile = () => {
       return;
     }
 
+    // Save current values before submit
+    const currentStatus = data.status;
+    const currentOtpStatus = data.otpStatus;
+    const currentpriceStatus = data.priceStatus;
+
     const fullName = data.lastName.trim() === ""
       ? data.firstName.trim()
       : `${data.firstName.trim()} ${data.lastName.trim()}`.trim();
@@ -282,9 +302,9 @@ const Profile = () => {
     formData.append("rideAmount", data.rideAmount);
     formData.append("priceRushHour", data.priceRushHour);
     formData.append("parkingCharge", data.parkingCharge);
-
-    formData.append("status", data.status);
-    formData.append("otpStatus", data.otpStatus);
+    formData.append("status", currentStatus);
+    formData.append("otpStatus", currentOtpStatus);
+    formData.append("priceStatus", currentpriceStatus);
 
 
     if (selectedImage) {
@@ -311,14 +331,18 @@ const Profile = () => {
           ...updatedData,
           firstName,
           lastName,
-          status: updatedData.status || prev.status
+          status: currentStatus,
+          otpStatus: currentOtpStatus,
+          priceStatus: currentpriceStatus
         }));
       } else {
         setData(prev => ({
           ...prev,
           ...updatedData,
           lastName: updatedData.lastName || "",
-          status: updatedData.status || prev.status
+          status: currentStatus,
+          otpStatus: currentOtpStatus,
+          priceStatus: currentpriceStatus
         }));
       }
 
@@ -371,18 +395,18 @@ const Profile = () => {
                             className="form-check-input"
                             type="checkbox"
                             id="statusToggle"
-                            checked={data.status === "1"}
+                            checked={data.priceStatus === 1}  // Already correct - comparing with 1
                             onChange={toggleStatus}
-                            disabled={loading}
+                            disabled={priceStatusLoading}
                             style={{
                               width: '3rem',
                               height: '1.5rem',
-                              cursor: loading ? 'wait' : 'pointer',
-                              backgroundColor: data.status === "1" ? "#28a745" : "#dc3545",
-                              borderColor: data.status === "1" ? "#28a745" : "#dc3545",
+                              cursor: priceStatusLoading ? 'wait' : 'pointer',
+                              backgroundColor: data.priceStatus === 1 ? "#28a745" : "#dc3545",
+                              borderColor: data.priceStatus === 1 ? "#28a745" : "#dc3545",
                             }}
                           />
-                          {loading && (
+                          {priceStatusLoading && (
                             <span className="ms-2">
                               <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                             </span>
@@ -399,18 +423,18 @@ const Profile = () => {
                             className="form-check-input"
                             type="checkbox"
                             id="otpStatus"
-                            checked={data.otpStatus === "1"}  
+                            checked={data.otpStatus === 1}
                             onChange={otpStatus}
-                            disabled={loading}
+                            disabled={otpStatusLoading}  // Use otpStatusLoading
                             style={{
                               width: '3rem',
                               height: '1.5rem',
-                              cursor: loading ? 'wait' : 'pointer',
-                              backgroundColor: data.otpStatus === "1" ? "#28a745" : "#dc3545",  
-                              borderColor: data.otpStatus === "1" ? "#28a745" : "#dc3545",  
+                              cursor: otpStatusLoading ? 'wait' : 'pointer',
+                              backgroundColor: data.otpStatus === 1 ? "#28a745" : "#dc3545",
+                              borderColor: data.otpStatus === 1 ? "#28a745" : "#dc3545",
                             }}
                           />
-                          {loading && (
+                          {otpStatusLoading && (
                             <span className="ms-2">
                               <span className="spinner-border spinner-border-sm" role="otpStatus" aria-hidden="true"></span>
                             </span>
@@ -596,6 +620,7 @@ const Profile = () => {
                             </div>
                           )}
                         </div>
+
                         <div style={{ marginBottom: "16px" }}>
                           <label htmlFor="parkingCharge" className="mb-1 fw-medium">
                             Price Parking
@@ -627,7 +652,7 @@ const Profile = () => {
                           </button>
                         </div>
                       </form>
-                      
+
                     </div>
                   </div>
                 </div>
