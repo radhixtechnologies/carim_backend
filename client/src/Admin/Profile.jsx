@@ -627,33 +627,7 @@ const Profile = () => {
                           </button>
                         </div>
                       </form>
-                      <div className="d-flex justify-content-between align-items-center mb-4 p-3 bg-light rounded">
-                        <div>
-                          <h5 className="mb-1">Otp Status</h5>
-                        </div>
-                        <div className="form-check form-switch">
-                          <input
-                            className="form-check-input"
-                            type="checkbox"
-                            id="statusToggle"
-                            checked={data.status === "1"}
-                            onChange={otpStatus}
-                            disabled={loading}
-                            style={{
-                              width: '3rem',
-                              height: '1.5rem',
-                              cursor: loading ? 'wait' : 'pointer',
-                              backgroundColor: data.status === "1" ? "#28a745" : "#dc3545",
-                              borderColor: data.status === "1" ? "#28a745" : "#dc3545",
-                            }}
-                          />
-                          {loading && (
-                            <span className="ms-2">
-                              <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                            </span>
-                          )}
-                        </div>
-                      </div>
+                      
                     </div>
                   </div>
                 </div>
