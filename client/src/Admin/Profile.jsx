@@ -388,7 +388,7 @@ const Profile = () => {
                     <div className="card-body">
                       <div className="d-flex justify-content-between align-items-center mb-4 p-3 bg-light rounded">
                         <div>
-                          <h5 className="mb-1"> Status</h5>
+                          <h5 className="mb-1">Rush Hour Status</h5>
                         </div>
                         <div className="form-check form-switch">
                           <input
@@ -416,7 +416,7 @@ const Profile = () => {
 
                       <div className="d-flex justify-content-between align-items-center mb-4 p-3 bg-light rounded">
                         <div>
-                          <h5 className="mb-1">OTP Status</h5>
+                          <h5 className="mb-1">Static otp Status</h5>
                         </div>
                         <div className="form-check form-switch">
                           <input
