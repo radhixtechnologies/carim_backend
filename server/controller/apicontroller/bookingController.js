@@ -968,12 +968,12 @@ module.exports = {
                     totalDistance = rideDistanceKm;
 
                     // Validate max distance for close ride
-                    const MAX_CLOSE_RIDE_DISTANCE_KM = 30;
+                    const MAX_CLOSE_RIDE_DISTANCE_KM = 50;
                     if (rideDistanceKm > MAX_CLOSE_RIDE_DISTANCE_KM) {
                         return helper.failure(res,
                             languageType === 1 ? `لا يمكن حجز رحلة مغلقة تزيد مسافتها عن ٣٠٠ كم (المسافة: ${rideDistanceKm.toFixed(2)} كم)` :
-                                languageType === 2 ? `Impossible de réserver une course fermée de plus de 30 km (Distance: ${rideDistanceKm.toFixed(2)} km)` :
-                                    `Cannot book close ride longer than 30km (Distance: ${rideDistanceKm.toFixed(2)} km)`
+                                languageType === 2 ? `Impossible de réserver une course fermée de plus de 50 km (Distance: ${rideDistanceKm.toFixed(2)} km)` :
+                                    `Cannot book close ride longer than 50km (Distance: ${rideDistanceKm.toFixed(2)} km)`
                         );
                     }
 
