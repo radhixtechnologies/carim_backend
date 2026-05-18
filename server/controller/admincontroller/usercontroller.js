@@ -196,94 +196,183 @@ module.exports = {
             return helper.error(res, error.message);
         }
     },
+    // driverList1: async (req, res) => {
+    //     try {
+    //         let { page, limit, search, dateFilter } = req.query;
+    //         page = parseInt(page) || 1;
+    //         limit = parseInt(limit) || 10;
+    //         const offset = (page - 1) * limit;
+    //         dateFilter = dateFilter || "all";
+
+    //         const Op = db.Sequelize.Op;
+    //         const whereCondition = { role: "2", vehicle: "1" };
+    //         if (search && search.trim() !== "") {
+    //             whereCondition[Op.or] = [
+    //                 { firstName: { [Op.like]: `%${search}%` } },
+    //                 { email: { [Op.like]: `%${search}%` } },
+    //             ];
+    //         }
+
+    //         if (dateFilter !== 'all') {
+    //             const daysAgo = parseInt(dateFilter, 10);
+    //             if (!isNaN(daysAgo)) {
+    //                 const startDate = new Date();
+    //                 startDate.setDate(startDate.getDate() - daysAgo);
+    //                 whereCondition.createdAt = {
+    //                     [Op.gte]: startDate,
+    //                 };
+    //             }
+    //         }
+
+    //         const include = [
+    //             {
+    //                 model: db.reviewrating,
+    //                 as: 'receivedRatings',
+    //                 required: false,
+    //                 attributes: []
+    //             }
+    //         ];
+
+    //         const { count, rows } = await db.users.findAndCountAll({
+    //             where: whereCondition,
+    //             offset,
+    //             limit,
+    //             include,
+    //             attributes: {
+    //                 include: [
+    //                     [
+    //                         db.Sequelize.fn(
+    //                             'COALESCE',
+    //                             db.Sequelize.fn(
+    //                                 'ROUND',
+    //                                 db.Sequelize.fn('AVG', db.Sequelize.col('receivedRatings.rating')),
+    //                                 2
+    //                             ),
+    //                             0
+    //                         ),
+    //                         'averageRating'
+    //                     ],
+    //                     [
+    //                         db.Sequelize.fn('COUNT', db.Sequelize.col('receivedRatings.id')),
+    //                         'totalReviews'
+    //                     ]
+    //                 ]
+    //             },
+    //             group: ['users.id'],
+    //             subQuery: false,
+    //             order: [["id", "DESC"]],
+    //             distinct: true,
+    //         });
+
+    //         const formattedRows = rows.map(row => {
+    //             const userData = row.toJSON();
+    //             return {
+    //                 ...userData,
+    //                 averageRating: parseFloat(userData.averageRating) || 0,
+    //                 totalReviews: parseInt(userData.totalReviews) || 0
+    //             };
+    //         });
+
+
+    //         return helper.success(res, "All drivers Detail", {
+    //             data: formattedRows,
+    //             currentPage: page,
+    //             totalPages: Math.ceil(count.length / limit),
+    //             totalUsers: count.length,
+    //         });
+    //     } catch (error) {
+    //         return helper.error(res, error.message);
+    //     }
+    // },
     driverList: async (req, res) => {
         try {
             let { page, limit, search, dateFilter } = req.query;
+
             page = parseInt(page) || 1;
             limit = parseInt(limit) || 10;
+
             const offset = (page - 1) * limit;
-            dateFilter = dateFilter || "all";
 
             const Op = db.Sequelize.Op;
-            const whereCondition = { role: "2", vehicle: "1" };
+            const sequelize = db.Sequelize; 
+
+            let whereCondition = {
+                role: "2",
+                vehicle: "1",
+                otpVerify: "1"
+            };
             if (search && search.trim() !== "") {
+                const cleanSearch = search.replace(/\s+/g, "");
+
                 whereCondition[Op.or] = [
-                    { firstName: { [Op.like]: `%${search}%` } },
-                    { email: { [Op.like]: `%${search}%` } },
+                    {
+                        firstName: {
+                            [Op.like]: `%${cleanSearch}%`,
+                        },
+                    },
+                    {
+                        lastName: {
+                            [Op.like]: `%${cleanSearch}%`,
+                        },
+                    },
+                    {
+                        email: {
+                            [Op.like]: `%${cleanSearch}%`,
+                        },
+                    },
+                    {
+                        countryCode: {
+                            [Op.like]: `%${cleanSearch}%`,
+                        },
+                    },
+                    {
+                        phoneNumber: {
+                            [Op.like]: `%${cleanSearch}%`,
+                        },
+                    },
+                    sequelize.where(
+                        sequelize.fn(
+                            "CONCAT",
+                            sequelize.col("countryCode"),
+                            sequelize.col("phoneNumber")
+                        ),
+                        {
+                            [Op.like]: `%${cleanSearch}%`,
+                        }
+                    ),
                 ];
             }
-
-            if (dateFilter !== 'all') {
+            if (dateFilter !== "all") {
                 const daysAgo = parseInt(dateFilter, 10);
                 if (!isNaN(daysAgo)) {
                     const startDate = new Date();
                     startDate.setDate(startDate.getDate() - daysAgo);
+
                     whereCondition.createdAt = {
                         [Op.gte]: startDate,
                     };
                 }
             }
-
-            const include = [
-                {
-                    model: db.reviewrating,
-                    as: 'receivedRatings',
-                    required: false,
-                    attributes: []
-                }
-            ];
-
             const { count, rows } = await db.users.findAndCountAll({
                 where: whereCondition,
-                offset,
-                limit,
-                include,
-                attributes: {
-                    include: [
-                        [
-                            db.Sequelize.fn(
-                                'COALESCE',
-                                db.Sequelize.fn(
-                                    'ROUND',
-                                    db.Sequelize.fn('AVG', db.Sequelize.col('receivedRatings.rating')),
-                                    2
-                                ),
-                                0
-                            ),
-                            'averageRating'
-                        ],
-                        [
-                            db.Sequelize.fn('COUNT', db.Sequelize.col('receivedRatings.id')),
-                            'totalReviews'
-                        ]
-                    ]
-                },
-                group: ['users.id'],
-                subQuery: false,
+                limit: limit,
+                offset: offset,
                 order: [["id", "DESC"]],
-                distinct: true,
             });
-
-            const formattedRows = rows.map(row => {
-                const userData = row.toJSON();
-                return {
-                    ...userData,
-                    averageRating: parseFloat(userData.averageRating) || 0,
-                    totalReviews: parseInt(userData.totalReviews) || 0
-                };
-            });
-
 
             return helper.success(res, "All drivers Detail", {
-                data: formattedRows,
+                data: rows,
                 currentPage: page,
-                totalPages: Math.ceil(count.length / limit),
-                totalUsers: count.length,
+                totalPages: Math.ceil(count / limit),
+                totalUsers: count,
             });
+
         } catch (error) {
+            console.log("Driver List Error =>", error);
             return helper.error(res, error.message);
         }
     },
+
 
     block: async (req, res) => {
         try {

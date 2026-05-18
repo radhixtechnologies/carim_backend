@@ -293,7 +293,7 @@ const DriverList = () => {
                             {/* <th>Image</th> */}
                             <th>First Name</th>
                             <th>Last Name</th>
-                            {/* <th>Email Address</th> */}
+                            <th>Phone Number</th>
                             <th>Location</th>
                             <th>Blocked</th>
                             <th>Suspended</th>
@@ -325,7 +325,7 @@ const DriverList = () => {
                                 </td> */}
                                 <td>{user.firstName || ""}</td>
                                 <td>{user.lastName || ""}</td>
-                                {/* <td>{user.email || ""}</td> */}
+                               <td>({user.countryCode || ""}) {user.phoneNumber || ""}</td>
                                 <td>
                                   {/* {user.city && `${user.city} `} */}
                                   {user.location && `${user.location}, `}
@@ -670,6 +670,7 @@ const DriverList = () => {
                       <span className="ms-2 font-size-15 fw-semibold">
                         {selectedUser.firstName || "No Name"}
                         {selectedUser.lastName || "No Name"}
+                        
                       </span>
                     </div>
                     {/* <div className="d-flex align-items-center position-relative mb-1">
@@ -742,6 +743,7 @@ const DriverList = () => {
                       {selectedUser.phoneNumber || ""}
                     </td>
                   </tr>
+                  
                   <tr>
                     <td>Gender:</td>
                     <td className="text-end text-black fw-medium">
