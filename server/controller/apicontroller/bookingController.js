@@ -1668,7 +1668,7 @@ module.exports = {
                     }]
                 });
 
-                // 🔥🔥🔥 MODIFIED DRIVER BALANCE LOGIC 🔥🔥🔥
+                //  MODIFIED DRIVER BALANCE LOGIC 
                 // Drivers with balance 0 will receive requests
                 // Drivers with negative balance will NOT receive requests
                 const freeDrivers = drivers.filter(d => {
@@ -1955,7 +1955,7 @@ module.exports = {
                     } catch (err) {
                         console.error("Scheduler failed:", err);
                     }
-                }, 960000);
+                }, 300000);
 
                 await db.bookings.update(
                     {
