@@ -636,6 +636,66 @@ module.exports = {
             return helper.error(res, error.message);
         }
     },
+
+    // doucmentList1: async (req, res) => {
+    //     try {
+    //         let { page, limit, search, dateFilter, driverId } = req.query;
+    //         page = parseInt(page) || 1;
+    //         limit = parseInt(limit) || 10;
+    //         const offset = (page - 1) * limit;
+    //         dateFilter = dateFilter || "all";
+
+    //         const Op = db.Sequelize.Op;
+    //         const whereCondition = { role: "2", vehicle: "1" };
+
+    //         if (driverId && driverId.trim() !== "") {
+    //             whereCondition.id = driverId;
+    //         }
+
+    //         if (search && search.trim() !== "") {
+    //             whereCondition[Op.or] = [
+    //                 { firstName: { [Op.like]: `%${search}%` } },
+    //                 { lastName: { [Op.like]: `%${search}%` } },
+    //                 { email: { [Op.like]: `%${search}%` } },
+    //             ];
+    //         }
+
+    //         if (dateFilter !== 'all') {
+    //             const daysAgo = parseInt(dateFilter, 10);
+    //             if (!isNaN(daysAgo)) {
+    //                 const startDate = new Date();
+    //                 startDate.setDate(startDate.getDate() - daysAgo);
+
+    //                 whereCondition.createdAt = {
+    //                     [Op.gte]: startDate,
+    //                 };
+    //             }
+    //         }
+
+    //         const { count, rows } = await db.users.findAndCountAll({
+    //             where: whereCondition,
+    //             include: [
+    //                 {
+    //                     model: db.vehicleDetails,
+    //                     as: 'vehicleDetail',
+    //                     required: false,
+    //                 }
+    //             ],
+    //             offset,
+    //             limit,
+    //             order: [["id", "DESC"]],
+    //         });
+
+    //         return helper.success(res, "All driver Detail", {
+    //             data: rows,
+    //             currentPage: page,
+    //             totalPages: Math.ceil(count / limit),
+    //             totalUsers: count,
+    //         });
+    //     } catch (error) {
+    //         return helper.error(res, error.message);
+    //     }
+    // },
     doucmentList: async (req, res) => {
         try {
             let { page, limit, search, dateFilter, driverId } = req.query;
@@ -651,11 +711,24 @@ module.exports = {
                 whereCondition.id = driverId;
             }
 
+            // Prepare include for vehicleDetail
+            const includeCondition = [
+                {
+                    model: db.vehicleDetails,
+                    as: 'vehicleDetail',
+                    required: false, 
+                }
+            ];
+
             if (search && search.trim() !== "") {
                 whereCondition[Op.or] = [
                     { firstName: { [Op.like]: `%${search}%` } },
                     { lastName: { [Op.like]: `%${search}%` } },
                     { email: { [Op.like]: `%${search}%` } },
+                    db.Sequelize.where(
+                        db.Sequelize.col('vehicleDetail.vehicleNumber'),
+                        { [Op.like]: `%${search}%` }
+                    )
                 ];
             }
 
@@ -664,7 +737,6 @@ module.exports = {
                 if (!isNaN(daysAgo)) {
                     const startDate = new Date();
                     startDate.setDate(startDate.getDate() - daysAgo);
-
                     whereCondition.createdAt = {
                         [Op.gte]: startDate,
                     };
@@ -673,16 +745,12 @@ module.exports = {
 
             const { count, rows } = await db.users.findAndCountAll({
                 where: whereCondition,
-                include: [
-                    {
-                        model: db.vehicleDetails,
-                        as: 'vehicleDetail',
-                        required: false,
-                    }
-                ],
+                include: includeCondition,
                 offset,
                 limit,
                 order: [["id", "DESC"]],
+                distinct: true,
+                subQuery: false, 
             });
 
             return helper.success(res, "All driver Detail", {
@@ -695,7 +763,6 @@ module.exports = {
             return helper.error(res, error.message);
         }
     },
-
     pricePushStatus: async (req, res) => {
         try {
             const { id, priceStatus } = req.body;
