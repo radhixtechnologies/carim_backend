@@ -294,7 +294,7 @@ module.exports = {
             const offset = (page - 1) * limit;
 
             const Op = db.Sequelize.Op;
-            const sequelize = db.Sequelize; 
+            const sequelize = db.Sequelize;
 
             let whereCondition = {
                 role: "2",
@@ -645,7 +645,7 @@ module.exports = {
             dateFilter = dateFilter || "all";
 
             const Op = db.Sequelize.Op;
-            const whereCondition = { role: "2" };
+            const whereCondition = { role: "2", vehicle: "1" };
 
             if (driverId && driverId.trim() !== "") {
                 whereCondition.id = driverId;
