@@ -668,7 +668,7 @@ const Profile = () => {
 
                         <div style={{ marginBottom: "16px" }}>
                           <label htmlFor="setKmRange" className="mb-1 fw-medium">
-                            Set Km Range
+                            Driver Km Range
                           </label>
                           <div className="input-group">
                             <input
@@ -678,7 +678,7 @@ const Profile = () => {
                               value={data.setKmRange}
                               onChange={handleKmRange}
                               placeholder="Enter km"
-                              maxLength={5}
+                              maxLength={3}
                             />
                           </div>
                           {errors.setKmRange && (

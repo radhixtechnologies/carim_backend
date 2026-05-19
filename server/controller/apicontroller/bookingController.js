@@ -252,7 +252,6 @@ module.exports = {
                                 "Pickup location and coordinates are required."
                     );
                 }
-
                 // Drop location validation - only required for rideOpen == 0
                 if (rideOpen == 0 && (!dropLocation || !dropLatitude || !dropLongitude)) {
                     return helper.failure(res,
@@ -325,13 +324,11 @@ module.exports = {
                     const x = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a)) * Math.cos(toRad(c)) * Math.sin(dLon / 2) ** 2;
                     return R * (2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x)));
                 };
-
                 let rideDistanceKm = "";
                 let bookingPriceValue = "";
                 let basePrice = "";
                 let totalMinutes = 0;
                 let totalDistance = 0;
-
                 // ---------------- ADMIN PRICE ----------------
                 const adminData = await db.users.findOne({
                     where: { role: '0' },
