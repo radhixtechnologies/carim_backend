@@ -41,7 +41,7 @@ export const toggleUserBlock = createAsyncThunk(
     const newStatus = currentStatus === "0" ? "1" : "0";
     const response = await axiosInstance.post("/blockstatus", {
       id,
-      block: newStatus, 
+      block: newStatus,
     });
     return response.data.success
       ? { id, newStatus }
@@ -55,11 +55,32 @@ export const toggleUserSuspend = createAsyncThunk(
     const newStatus = currentStatus === "0" ? "1" : "0";
     const response = await axiosInstance.post("/suspendstatus", {
       id,
-      suspend: newStatus, 
+      suspend: newStatus,
     });
     return response.data.success
       ? { id, newStatus }
       : { id, newStatus: currentStatus };
+  }
+);
+
+// Add this - Update User (Only firstName & lastName)
+export const updateUser = createAsyncThunk(
+  "users/updateUser",
+  async (userData, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.put(
+        `/editUser/${userData.id}`,
+        {
+          firstName: userData.firstName,
+          lastName: userData.lastName
+        }
+      );
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data || { message: "Failed to update user" }
+      );
+    }
   }
 );
 
@@ -105,15 +126,37 @@ const UserSlice = createSlice({
         const { id, newStatus } = action.payload;
         const user = state.users.find((user) => user.id === id);
         if (user) {
-          user.block = newStatus; 
+          user.block = newStatus;
         }
       })
       .addCase(toggleUserSuspend.fulfilled, (state, action) => {
         const { id, newStatus } = action.payload;
         const user = state.users.find((user) => user.id === id);
         if (user) {
-          user.suspend = newStatus; 
+          user.suspend = newStatus;
         }
+      })
+      // Add this - Update User cases
+      .addCase(updateUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateUser.fulfilled, (state, action) => {
+        state.loading = false;
+        // Update user in the list if present
+        if (action.payload && action.payload.body && action.payload.body.user) {
+          const updatedUser = action.payload.body.user;
+          const index = state.users.findIndex(
+            (user) => user.id === updatedUser.id
+          );
+          if (index !== -1) {
+            state.users[index] = { ...state.users[index], ...updatedUser };
+          }
+        }
+      })
+      .addCase(updateUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload?.message || "Failed to update user";
       });
   },
 });

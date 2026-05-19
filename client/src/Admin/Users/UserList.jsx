@@ -7,6 +7,7 @@ import {
   toggleUserStatus,
   toggleUserBlock,
   toggleUserSuspend,
+  updateUser, // Add this to your UserSlice
 } from "../redux/UserSlice";
 import { toast, ToastContainer } from "react-toastify";
 import { Link } from "react-router-dom";
@@ -22,6 +23,7 @@ const UserList = () => {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [editUserData, setEditUserData] = useState(null);
   const limit = 10;
   const [dateFilter, setDateFilter] = useState("all");
 
@@ -97,7 +99,6 @@ const UserList = () => {
           "error"
         );
       }
-    } else {
     }
   };
 
@@ -130,6 +131,57 @@ const UserList = () => {
 
   const handleViewDetails = (user) => {
     setSelectedUser(user);
+  };
+
+  const handleEditClick = (user) => {
+    setEditUserData({
+      id: user.id,
+      firstName: user.firstName || "",
+      lastName: user.lastName || ""
+    });
+  };
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditUserData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleUpdateUser = async () => {
+    try {
+      const updatePayload = {
+        id: editUserData.id,
+        firstName: editUserData.firstName,
+        lastName: editUserData.lastName,
+      };
+
+      await dispatch(updateUser(updatePayload)).unwrap();
+      toast.success("User updated successfully");
+
+      // Close modal
+      const modalElement = document.getElementById("editUserModal");
+      const modal = window.bootstrap?.Modal?.getInstance(modalElement);
+      if (modal) {
+        modal.hide();
+      } else {
+        // Fallback if bootstrap is not available globally
+        const closeButton = modalElement?.querySelector('.btn-close');
+        if (closeButton) closeButton.click();
+      }
+
+      setEditUserData(null);
+
+      // Refresh user list
+      dispatch(
+        fetchUsers({
+          page: currentPage,
+          limit,
+          search: debouncedSearch,
+          dateFilter,
+        })
+      );
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to update user");
+    }
   };
 
   const getCurrentFilterLabel = () => {
@@ -212,11 +264,9 @@ const UserList = () => {
                         <thead>
                           <tr>
                             <th>Sr no.</th>
-                            {/* <th>Image</th> */}
                             <th>Phone Number</th>
-                            {/* <th>Last Name</th>
-                            <th>Email Address</th> */}
-                            {/* <th>Location</th> */}
+                             <th>First Name</th>
+                            <th>Last Name</th>
                             <th>Blocked</th>
                             <th>Suspended</th>
                             <th>Status</th>
@@ -228,29 +278,9 @@ const UserList = () => {
                             users.map((user, index) => (
                               <tr key={user.id}>
                                 <td>{(currentPage - 1) * limit + index + 1}</td>
-                                {/* <td>
-                                  {user.image ? (
-                                    <img
-                                      src={`${BASE_URL}/${user.image}`}
-                                      alt="User"
-                                      style={{
-                                        width: "50px",
-                                        height: "50px",
-                                        borderRadius: "50%",
-                                      }}
-                                    />
-                                  ) : (
-                                    "No Image"
-                                  )}
-                                </td> */}
                                 <td>({user.countryCode || ""}) {user.phoneNumber || ""}</td>
-                                {/* <td>{user.lastName || ""}</td>
-                                <td>{user.email || ""}</td> */}
-                                {/* <td> */}
-                                  {/* {user.city && `${user.city} `} */}
-                                  {/* {user.location && `${user.location}, `} */}
-                                  {/* {user.country || ""} */}
-                                {/* </td> */}
+                                <td>{user.firstName || ""}</td>
+                                <td>{user.lastName || ""}</td>
                                 <td>
                                   <div className="form-check form-switch">
                                     <input
@@ -332,6 +362,17 @@ const UserList = () => {
                                     >
                                       <i className="ri-eye-fill font-size-16"></i>
                                     </button>
+                                    {/* Edit Button */}
+                                    <button
+                                      type="button"
+                                      className="btn btn-soft-warning px-2 btn-sm me-1"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#editUserModal"
+                                      onClick={() => handleEditClick(user)}
+                                      title="Edit User"
+                                    >
+                                      <i className="ri-edit-line font-size-16"></i>
+                                    </button>
                                     <button
                                       onClick={() => deleteUserHandler(user.id)}
                                       className="btn btn-soft-danger px-2 btn-sm"
@@ -342,7 +383,7 @@ const UserList = () => {
                                       }}
                                       title="Delete User"
                                     >
-                                      <i className="ri-delete-bin-line font-size-16"></i>{" "}
+                                      <i className="ri-delete-bin-line font-size-16"></i>
                                     </button>
                                   </div>
                                 </td>
@@ -351,7 +392,7 @@ const UserList = () => {
                           ) : (
                             <tr>
                               <td
-                                colSpan="9"
+                                colSpan="6"
                                 style={{ textAlign: "center", padding: "20px" }}
                               >
                                 No users found
@@ -410,47 +451,15 @@ const UserList = () => {
         <div className="offcanvas-body">
           {selectedUser ? (
             <>
-              {/* <div className="scroll-room mb-3" id="scrollRoom">
-                {selectedUser.image ? (
-                  <a
-                    href={`${BASE_URL}/${selectedUser.image}`}
-                    data-fancybox="gallery"
-                    className="image-popup-gallery-item"
-                  >
-                    <img
-                      src={`${BASE_URL}/${selectedUser.image}`}
-                      className="img-fluid rounded"
-                      alt="User"
-                      style={{
-                        width: "100%",
-                        maxHeight: "300px",
-                        objectFit: "cover",
-                      }}
-                    />
-                  </a>
-                ) : (
-                  <div
-                    className="bg-light rounded d-flex align-items-center justify-content-center"
-                    style={{ height: "200px" }}
-                  >
-                    <span className="text-muted">No Image Available</span>
-                  </div>
-                )}
-              </div> */}
               <div>
                 <div className="border-bottom mb-2 pb-1">
-                  {/* <h5 className="fw-semibold font-size-17 mb-1">
-                    {selectedUser.firstName || "No Name"}
-                  </h5> */}
                   <p className="mb-0 text-lowdark">
-                    {`${selectedUser.country || ""}${
-                      selectedUser.country && selectedUser.city ? ", " : ""
-                    }${selectedUser.city || ""}${
-                      (selectedUser.city || selectedUser.country) &&
-                      selectedUser.state
+                    {`${selectedUser.country || ""}${selectedUser.country && selectedUser.city ? ", " : ""
+                      }${selectedUser.city || ""}${(selectedUser.city || selectedUser.country) &&
+                        selectedUser.state
                         ? ", "
                         : ""
-                    }${selectedUser.state || ""}`}
+                      }${selectedUser.state || ""}`}
                   </p>
 
                   <div className="mb-2">
@@ -472,38 +481,6 @@ const UserList = () => {
                     </span>
                   </div>
                 </div>
-                {/* <div className="d-flex align-items-center border-bottom pt-1 pb-3">
-                  {selectedUser.image ? (
-                    <img
-                      src={`${BASE_URL}/${selectedUser.image}`}
-                      className="rounded-circle me-3"
-                      width="100"
-                      height="100"
-                      alt="User Avatar"
-                    />
-                  ) : (
-                    <div
-                      className="rounded-circle bg-light d-flex align-items-center justify-content-center me-3"
-                      style={{ width: "100px", height: "100px" }}
-                    >
-                      <i className="ri-user-line font-size-20 text-muted"></i>
-                    </div>
-                  )}
-                  <div>
-                    <div className="d-flex align-items-center position-relative mb-1">
-                      <span className="me-2">User</span>
-                      <span className="line-circle"></span>
-                      <span className="ms-2 font-size-15 fw-semibold">
-                        {selectedUser.firstName || "No Name"}
-                      </span>
-                    </div>
-                    <div className="d-flex align-items-center position-relative mb-1">
-                      <span className="me-2">
-                        Email: {selectedUser.email || "No Email"}
-                      </span>
-                    </div>
-                  </div>
-                </div> */}
               </div>
               <div className="font-size-16 fw-medium pt-3 mt-1 mb-2">
                 User Information
@@ -519,24 +496,6 @@ const UserList = () => {
                       {selectedUser.id}
                     </td>
                   </tr>
-                  {/* <tr>
-                    <td>First Name :</td>
-                    <td className="text-end text-black fw-medium">
-                      {selectedUser.firstName || ""}
-                    </td>
-                  </tr>
-                   <tr>
-                    <td>Last Name :</td>
-                    <td className="text-end text-black fw-medium">
-                      {selectedUser.lastName || ""}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Email :</td>
-                    <td className="text-end text-black fw-medium">
-                      {selectedUser.email || ""}
-                    </td>
-                  </tr> */}
                   <tr>
                     <td>Country Code :</td>
                     <td className="text-end text-black fw-medium">
@@ -549,28 +508,26 @@ const UserList = () => {
                       {selectedUser.phoneNumber || ""}
                     </td>
                   </tr>
-                  {/* <tr>
-                    <td>Location:</td>
+                   <tr>
+                    <td>First Name :</td>
                     <td className="text-end text-black fw-medium">
-                      {`${selectedUser.country || ""}${
-                        selectedUser.country && selectedUser.city ? ", " : ""
-                      }${selectedUser.city || ""}${
-                        (selectedUser.city || selectedUser.country) &&
-                        selectedUser.state
-                          ? ", "
-                          : ""
-                      }${selectedUser.state || ""}`}
+                      {selectedUser.firstName || ""}
                     </td>
-                  </tr> */}
+                  </tr>
+                  <tr>
+                    <td>Last Name :</td>
+                    <td className="text-end text-black fw-medium">
+                      {selectedUser.lastName || ""}
+                    </td>
+                  </tr>
                   <tr>
                     <td>Blocked Status :</td>
                     <td className="text-end text-black fw-medium">
                       <span
-                        className={`badge ${
-                          selectedUser.block === "1"
+                        className={`badge ${selectedUser.block === "1"
                             ? "bg-danger"
                             : "bg-success"
-                        }`}
+                          }`}
                       >
                         {selectedUser.block === "1" ? "Blocked" : "Not Blocked"}
                       </span>
@@ -580,11 +537,10 @@ const UserList = () => {
                     <td>Suspended Status :</td>
                     <td className="text-end text-black fw-medium">
                       <span
-                        className={`badge ${
-                          selectedUser.suspend === "1"
+                        className={`badge ${selectedUser.suspend === "1"
                             ? "bg-danger"
                             : "bg-success"
-                        }`}
+                          }`}
                       >
                         {selectedUser.suspend === "1"
                           ? "Suspended"
@@ -596,11 +552,10 @@ const UserList = () => {
                     <td>Account Status :</td>
                     <td className="text-end text-black fw-medium">
                       <span
-                        className={`badge ${
-                          selectedUser.status === "1"
+                        className={`badge ${selectedUser.status === "1"
                             ? "bg-success"
                             : "bg-danger"
-                        }`}
+                          }`}
                       >
                         {selectedUser.status === "1" ? "Active" : "Inactive"}
                       </span>
@@ -608,26 +563,6 @@ const UserList = () => {
                   </tr>
                 </tbody>
               </table>
-              {/* <div className="mt-3">
-                <div className="font-size-16 fw-medium mb-2">Bio:</div>
-                <div className="bg-light">
-                  {selectedUser.bio ? (
-                    <textarea
-                      readOnly
-                      className="form-control"
-                      rows="4"
-                      value={selectedUser.bio}
-                      style={{
-                        resize: "none",
-                        backgroundColor: "#f8f9fa",
-                        border: "1px solid black",
-                      }}
-                    />
-                  ) : (
-                    "No bio available"
-                  )}
-                </div>
-              </div> */}
             </>
           ) : (
             <div className="text-center py-5">
@@ -635,6 +570,76 @@ const UserList = () => {
               <p className="mt-3 text-muted">No user selected</p>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Edit User Modal - Only First Name & Last Name */}
+      <div
+        className="modal fade"
+        id="editUserModal"
+        tabIndex="-1"
+        aria-labelledby="editUserModalLabel"
+        aria-hidden="true"
+      >
+        <div className="modal-dialog modal-dialog-centered">
+          <div className="modal-content">
+            <div className="modal-header" style={{ backgroundColor: "#1e3308", color: "white" }}>
+              <h5 className="modal-title" id="editUserModalLabel">
+                <i className="ri-edit-line me-2"></i> Edit User
+              </h5>
+              <button
+                type="button"
+                className="btn-close btn-close-white"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+              ></button>
+            </div>
+            <div className="modal-body">
+              {editUserData && (
+                <form>
+                  <div className="mb-3">
+                    <label className="form-label">First Name</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="firstName"
+                      value={editUserData.firstName || ""}
+                      onChange={handleEditChange}
+                      placeholder="Enter first name"
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Last Name</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      name="lastName"
+                      value={editUserData.lastName || ""}
+                      onChange={handleEditChange}
+                      placeholder="Enter last name"
+                    />
+                  </div>
+                </form>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                data-bs-dismiss="modal"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                style={{ backgroundColor: "#1e3308", borderColor: "#1e3308" }}
+                onClick={handleUpdateUser}
+              >
+                Update User
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </>
