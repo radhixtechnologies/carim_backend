@@ -1072,7 +1072,7 @@ module.exports = {
                 }
 
                 // ---------------- FILTER DRIVERS WITHIN 15KM RADIUS ----------------
-                const MAX_DRIVER_DISTANCE_KM = 3;
+                const MAX_DRIVER_DISTANCE_KM = 1.5; //km
                 const nearbyDrivers = [];
 
                 for (const driver of freeDrivers) {
@@ -1096,8 +1096,8 @@ module.exports = {
                 if (!nearbyDrivers.length) {
                     return helper.failure(res,
                         languageType === 1 ? "لا يوجد سائقون متاحون ضمن نطاق ١٥ كم" :
-                            languageType === 2 ? "Aucun chauffeur disponible dans un rayon de 3 km" :
-                                "No drivers available within 3 km radius"
+                            languageType === 2 ? "Aucun chauffeur disponible dans un rayon de 1.5 km" :
+                                "No drivers available within 1.5 km radius"
                     );
                 }
 
