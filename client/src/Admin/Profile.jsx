@@ -18,6 +18,7 @@ const Profile = () => {
     parkingCharge: "",
     status: "0",
     otpStatus: 0,
+    setKmRange: "",
     priceStatus: 0          // ✅ Number for INT
   });
   const [imagePreview, setImagePreview] = useState(null);
@@ -233,6 +234,15 @@ const Profile = () => {
     }
   };
 
+  const handleKmRange = (e) => {
+    const { value } = e.target;
+    const cleanedValue = value.replace(/\s/g, "");
+
+    if (cleanedValue === "" || /^\d*\.?\d*$/.test(cleanedValue)) {
+      setData((prevData) => ({ ...prevData, setKmRange: cleanedValue }));
+    }
+  };
+
   const handlePriceRushHour = (e) => {
     const { value } = e.target;
     const cleanedValue = value.replace(/\s/g, "");
@@ -305,7 +315,7 @@ const Profile = () => {
     formData.append("status", currentStatus);
     formData.append("otpStatus", currentOtpStatus);
     formData.append("priceStatus", currentpriceStatus);
-
+    formData.append("setKmRange", data.setKmRange);
 
     if (selectedImage) {
       formData.append("image", selectedImage);
@@ -656,6 +666,27 @@ const Profile = () => {
                           )}
                         </div>
 
+                        <div style={{ marginBottom: "16px" }}>
+                          <label htmlFor="setKmRange" className="mb-1 fw-medium">
+                            Set Km Range
+                          </label>
+                          <div className="input-group">
+                            <input
+                              type="text"
+                              className="form-control"
+                              name="setKmRange"
+                              value={data.setKmRange}
+                              onChange={handleKmRange}
+                              placeholder="Enter km"
+                              maxLength={5}
+                            />
+                          </div>
+                          {errors.setKmRange && (
+                            <div className="text-danger">
+                              {errors.setKmRange}
+                            </div>
+                          )}
+                        </div>
                         <div className="text-end mb-2">
                           <button
                             type="submit"

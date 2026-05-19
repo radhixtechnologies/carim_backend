@@ -92,7 +92,7 @@ module.exports = {
                     priceRushHour: req.body.priceRushHour || find_user.priceRushHour,
                     priceStatus: req.body.priceStatus || find_user.priceStatus,
                     parkingCharge: req.body.parkingCharge || find_user.parkingCharge,
-
+                    setKmRange: req.body.setKmRange || find_user.setKmRange,
                 },
                 { where: { id: userId } }
             );

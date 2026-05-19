@@ -1,5 +1,5 @@
 const Sequelize = require('sequelize');
-module.exports = function(sequelize, DataTypes) {
+module.exports = function (sequelize, DataTypes) {
   return sequelize.define('users', {
     id: {
       autoIncrement: true,
@@ -8,7 +8,7 @@ module.exports = function(sequelize, DataTypes) {
       primaryKey: true
     },
     role: {
-      type: DataTypes.ENUM('0','1','2','3'),
+      type: DataTypes.ENUM('0', '1', '2', '3'),
       allowNull: false,
       defaultValue: "1",
       comment: "o=>admin,1=>user,2=>driver,3=>employee"
@@ -24,7 +24,7 @@ module.exports = function(sequelize, DataTypes) {
       defaultValue: ""
     },
     isProfileComplete: {
-      type: DataTypes.ENUM('0','1'),
+      type: DataTypes.ENUM('0', '1'),
       allowNull: false,
       defaultValue: "0"
     },
@@ -64,13 +64,13 @@ module.exports = function(sequelize, DataTypes) {
       defaultValue: ""
     },
     otpVerify: {
-      type: DataTypes.ENUM('0','1'),
+      type: DataTypes.ENUM('0', '1'),
       allowNull: false,
       defaultValue: "0",
       comment: "0=>not verify,1=>verify"
     },
     status: {
-      type: DataTypes.ENUM('0','1'),
+      type: DataTypes.ENUM('0', '1'),
       allowNull: false,
       defaultValue: "1",
       comment: "0=>incative,1=>active"
@@ -101,7 +101,7 @@ module.exports = function(sequelize, DataTypes) {
       defaultValue: ""
     },
     isNotificationOn: {
-      type: DataTypes.ENUM('0','1'),
+      type: DataTypes.ENUM('0', '1'),
       allowNull: false,
       defaultValue: "1",
       comment: "0 off ,1 on"
@@ -122,7 +122,7 @@ module.exports = function(sequelize, DataTypes) {
       defaultValue: ""
     },
     online: {
-      type: DataTypes.ENUM('0','1'),
+      type: DataTypes.ENUM('0', '1'),
       allowNull: false,
       defaultValue: "0",
       comment: "for chat 1=>online, 0=>offline"
@@ -140,7 +140,7 @@ module.exports = function(sequelize, DataTypes) {
       comment: "for Stripe Payment "
     },
     hashAccount: {
-      type: DataTypes.ENUM('0','1'),
+      type: DataTypes.ENUM('0', '1'),
       allowNull: false,
       defaultValue: "0",
       comment: "for Stripe Payment   0=>pending,1=>complete"
@@ -161,31 +161,31 @@ module.exports = function(sequelize, DataTypes) {
       defaultValue: ""
     },
     gender: {
-      type: DataTypes.ENUM('0','1','2'),
+      type: DataTypes.ENUM('0', '1', '2'),
       allowNull: false,
       defaultValue: "0",
       comment: "for chat 0=>male, 1=>female, 2=>other"
     },
     block: {
-      type: DataTypes.ENUM('0','1'),
+      type: DataTypes.ENUM('0', '1'),
       allowNull: false,
       defaultValue: "0",
       comment: " 0=>unblock, 1=>block"
     },
     suspend: {
-      type: DataTypes.ENUM('0','1'),
+      type: DataTypes.ENUM('0', '1'),
       allowNull: false,
       defaultValue: "0",
       comment: " 0=>unsuspend, 1=>suspend"
     },
     approve: {
-      type: DataTypes.ENUM('0','1','2'),
+      type: DataTypes.ENUM('0', '1', '2'),
       allowNull: false,
       defaultValue: "0",
       comment: " 0=>pending, 1=>aproved, 2=>rejected"
     },
     documentVerify: {
-      type: DataTypes.ENUM('0','1','2'),
+      type: DataTypes.ENUM('0', '1', '2'),
       allowNull: false,
       defaultValue: "0",
       comment: " 0=>pending, 1=>verified, 2=>rejected"
@@ -207,7 +207,7 @@ module.exports = function(sequelize, DataTypes) {
       defaultValue: ""
     },
     vehicle: {
-      type: DataTypes.ENUM('0','1'),
+      type: DataTypes.ENUM('0', '1'),
       allowNull: false,
       defaultValue: "0"
     },
@@ -239,6 +239,11 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 0
+    },
+    setKmRange: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      defaultValue: ""
     },
   }, {
     sequelize,
