@@ -335,7 +335,7 @@ module.exports = {
                 // ---------------- ADMIN PRICE ----------------
                 const adminData = await db.users.findOne({
                     where: { role: '0' },
-                    attributes: ['rideAmount', 'priceRushHour', 'status'],
+                    attributes: ['rideAmount', 'priceRushHour', 'status', 'setKmRange'],
                     raw: true
                 });
 
@@ -474,7 +474,13 @@ module.exports = {
                 }
 
                 // ---------------- FILTER DRIVERS WITHIN 15KM RADIUS ----------------
-                const MAX_DRIVER_DISTANCE_KM = 1; //km
+                const MAX_DRIVER_DISTANCE_KM = 1; // Default value 1km
+                if (adminData && adminData.setKmRange) {
+                    MAX_DRIVER_DISTANCE_KM = parseFloat(adminData.setKmRange);
+                    if (isNaN(MAX_DRIVER_DISTANCE_KM) || MAX_DRIVER_DISTANCE_KM <= 0) {
+                        MAX_DRIVER_DISTANCE_KM = 1;
+                    }
+                }
                 const nearbyDrivers = [];
 
                 for (const driver of freeDrivers) {
@@ -497,9 +503,9 @@ module.exports = {
 
                 if (!nearbyDrivers.length) {
                     return helper.failure(res,
-                        languageType === 1 ? "لا يوجد سائقون متاحون ضمن نطاق ١٥ كم" :
-                            languageType === 2 ? "Aucun chauffeur disponible dans un rayon de 1 km" :
-                                "No drivers available within 1 km radius"
+                        languageType === 1 ? `لا يوجد سائقون متاحون ضمن نطاق ${MAX_DRIVER_DISTANCE_KM} كم` :
+                            languageType === 2 ? `Aucun chauffeur disponible dans un rayon de ${MAX_DRIVER_DISTANCE_KM} km` :
+                                `No drivers available within ${MAX_DRIVER_DISTANCE_KM} km radius`
                     );
                 }
 
