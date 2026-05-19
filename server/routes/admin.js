@@ -35,6 +35,7 @@ router.get('/bankdetails', auth.AdminBank);
 router.post('/updatebank', auth.updateBankDetails);
 
 // router for users
+router.put('/editUser/:id', usercontroller.editUser)
 router.post('/userStatus', usercontroller.userStatus);
 router.post('/userDelete/:id', usercontroller.userDelete);
 router.get('/userlist', usercontroller.userList);

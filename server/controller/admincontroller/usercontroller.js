@@ -27,6 +27,16 @@ module.exports = {
                 const cleanSearch = search.replace(/\s+/g, "");
 
                 whereCondition[Op.or] = [
+                     {
+                        firstName: {
+                            [Op.like]: `%${cleanSearch}%`,
+                        },
+                    },
+                    {
+                        lastName: {
+                            [Op.like]: `%${cleanSearch}%`,
+                        },
+                    },
                     {
                         phoneNumber: {
                             [Op.like]: `%${cleanSearch}%`,
@@ -152,6 +162,53 @@ module.exports = {
     //         return helper.error(res, error.message);
     //     }
     // },
+
+    editUser: async (req, res) => {
+        try {
+            const userId = req.params.id;
+            const { firstName, lastName } = req.body;
+
+            if (!userId) {
+                return helper.error(res, "User ID is required", 400);
+            }
+
+            const user = await db.users.findOne({
+                where: {
+                    id: userId,
+                    role: "1",
+                    otpVerify: "1"
+                }
+            });
+
+            if (!user) {
+                return helper.error(res, "User not found", 404);
+            }
+
+            await db.users.update(
+                {
+                    firstName: firstName || user.firstName,
+                    lastName: lastName || user.lastName,
+                    updatedAt: new Date()
+                },
+                {
+                    where: { id: userId }
+                }
+            );
+            const updatedUser = await db.users.findOne({
+                where: { id: userId },
+                attributes: { exclude: ['password'] }
+            });
+
+            return helper.success(res, "User updated successfully", {
+                user: updatedUser
+            });
+
+        } catch (error) {
+            console.log(error, "error");
+            return helper.error(res, error.message || "Internal server error", 500);
+        }
+    },
+
 
     userStatus: async (req, res) => {
         try {
@@ -716,7 +773,7 @@ module.exports = {
                 {
                     model: db.vehicleDetails,
                     as: 'vehicleDetail',
-                    required: false, 
+                    required: false,
                 }
             ];
 
@@ -750,7 +807,7 @@ module.exports = {
                 limit,
                 order: [["id", "DESC"]],
                 distinct: true,
-                subQuery: false, 
+                subQuery: false,
             });
 
             return helper.success(res, "All driver Detail", {
