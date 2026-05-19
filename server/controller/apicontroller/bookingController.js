@@ -240,8 +240,8 @@ module.exports = {
                     callerPhone,
                     callerCountryCode,
                     callerName,
-                    bookingPrice,      // Frontend se aayega for rideOpen == 0
-                    rideDistance       // Frontend se aayega for rideOpen == 0
+                    bookingPrice,      // Frontend  rideOpen == 0
+                    rideDistance       // Frontend  rideOpen == 0
                 } = req.body;
 
                 // ---------------- PICKUP / DROP VALIDATION ----------------
@@ -288,27 +288,27 @@ module.exports = {
 
                         const response = await axios.get(url);
 
-                        console.log("📊 Full Response:", JSON.stringify(response.data, null, 2));
+                        console.log("Full Response:", JSON.stringify(response.data, null, 2));
 
                         if (response.data.status === 'OK') {
                             if (response.data.rows[0].elements[0].status === 'OK') {
                                 const distanceInMeters = response.data.rows[0].elements[0].distance.value;
                                 const distanceInKm = distanceInMeters / 1000;
-                                console.log(`✅ SUCCESS! Road distance: ${distanceInKm} km`);
+                                console.log(` SUCCESS! Road distance: ${distanceInKm} km`);
                                 return distanceInKm;
                             } else {
-                                console.log("❌ Element status:", response.data.rows[0].elements[0].status);
+                                console.log(" Element status:", response.data.rows[0].elements[0].status);
                                 return null;
                             }
                         } else {
-                            console.log("❌ API Status:", response.data.status);
+                            console.log(" API Status:", response.data.status);
                             if (response.data.error_message) {
                                 console.log("Error message:", response.data.error_message);
                             }
                             return null;
                         }
                     } catch (error) {
-                        console.error("❌ API Call Failed:", error.message);
+                        console.error(" API Call Failed:", error.message);
                         if (error.response) {
                             console.log("Error response:", error.response.data);
                         }
@@ -382,12 +382,6 @@ module.exports = {
                     console.log(`Close ride (rideOpen=0) - Using frontend values - Distance: ${rideDistanceKm} km, Price: ${bookingPriceValue} MRU (No backend calculation)`);
 
                 } else if (rideOpen == 1) {
-                    // OPEN RIDE: Backend calculate karega (Original logic)
-
-                    // For open ride, drop location is not required
-                    // But we need pickup and drop for distance calculation?
-                    // For open ride, we only have pickup, no drop - so we use base price only
-
                     rideDistanceKm = "";
                     let calculatedPrice = BASE_PRICE;
 
@@ -454,11 +448,7 @@ module.exports = {
                     // Allow if balance is 0 or greater (0, 5, 10, 15, 20, 25, 30, etc.)
                     // But NOT if balance is negative (-89, -1, etc.)
                     const isValidBalance = driverBalance >= 0;
-
-                    // Original condition: Balance greater than commission amount
                     const hasHighBalance = driverBalance > commissionAmount;
-
-                    // New condition: Balance between 0 and 30 MRU (0,5,10,15,20,25,30 all included)
                     const isLowBalance = driverBalance >= 0 && driverBalance <= 30;
 
                     // If no active booking, AND (has high balance OR has low balance) AND balance is not negative
@@ -773,7 +763,6 @@ module.exports = {
                         maxDriverDistance: MAX_DRIVER_DISTANCE_KM,
                         maxRideDistance: 300,
                         notificationsSent: notificationPromises.length,
-                        // Price details
                         priceDetails: {
                             basePrice: BASE_PRICE,
                             freeKm: FREE_KM,
