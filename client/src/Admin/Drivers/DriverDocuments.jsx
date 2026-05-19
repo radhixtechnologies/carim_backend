@@ -361,7 +361,7 @@ const DriverDocuments = () => {
                             {/* <th>Image</th> */}
                             <th>first Name</th>
                             <th>Last Name</th>
-                            {/* <th>Email</th> */}
+                             <th>Vehicle Number</th> 
                             <th>Location</th>
                             <th>Verified Status</th>
                             <th>Upload Date</th>
@@ -396,7 +396,7 @@ const DriverDocuments = () => {
                                 <td>{user.firstName || ""}</td>
                                 <td>{user.lastName || ""}</td>
 
-                                {/* <td>{user.email || ""}</td> */}
+                                 <td>{user.vehicleDetail?.vehicleNumber || ""}</td> 
                                 <td>
                                   {`${user.location || ""}${user.location && user.location ? ", " : ""
                                     }${user.location || ""}` || ""}
