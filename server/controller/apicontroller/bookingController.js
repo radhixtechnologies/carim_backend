@@ -474,7 +474,7 @@ module.exports = {
                 }
 
                 // ---------------- FILTER DRIVERS WITHIN 15KM RADIUS ----------------
-                const MAX_DRIVER_DISTANCE_KM = 1; // Default value 1km
+                var MAX_DRIVER_DISTANCE_KM = 1; // Default value 1km
                 if (adminData && adminData.setKmRange) {
                     MAX_DRIVER_DISTANCE_KM = parseFloat(adminData.setKmRange);
                     if (isNaN(MAX_DRIVER_DISTANCE_KM) || MAX_DRIVER_DISTANCE_KM <= 0) {

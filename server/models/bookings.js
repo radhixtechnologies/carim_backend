@@ -167,25 +167,7 @@ module.exports = function (sequelize, DataTypes) {
       allowNull: false,
       defaultValue: ""
     },
-    rideStartTime: {
-      type: DataTypes.STRING(255),
-      allowNull: true,
-      defaultValue: ""
-    },
-    lastPerMinuteCalculation: {
-      type: DataTypes.DATE,
-      allowNull: true
-    },
-    totalPerMinuteCharge: {
-      type: DataTypes.STRING(255),
-      allowNull: false,
-      defaultValue: "0"
-    },
-    parkingActive: {
-      type: DataTypes.ENUM('0', '1'),
-      allowNull: false,
-      defaultValue: "0"
-    }
+    
   }, {
     sequelize,
     tableName: 'bookings',
