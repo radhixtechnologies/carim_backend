@@ -23,6 +23,7 @@ router.post('/termsconditions', cmsController.updateterm);
 
 router.post('/login', auth.login);
 router.post('/addLocation', reportController.addLocation);
+router.post('/status', reportController.status);
 
 router.use(authtoken.verifyToken);
 router.get('/profile', auth.profile);

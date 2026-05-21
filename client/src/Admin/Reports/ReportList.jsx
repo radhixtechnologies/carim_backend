@@ -7,6 +7,8 @@ import Stack from "@mui/material/Stack";
 import "@fancyapps/fancybox/dist/jquery.fancybox.css";
 import "@fancyapps/fancybox";
 import { axiosInstance } from "../../Config";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const ReportList = () => {
   const [matches, setMatches] = useState([]);
@@ -117,8 +119,32 @@ const ReportList = () => {
     setSelectedMatch(match);
   };
 
+  const toggleStatus = async (id, currentStatus) => {
+    try {
+      const newStatus = currentStatus === "1" ? "0" : "1";
+      const response = await axiosInstance.post("/status", {
+        id,
+        status: newStatus,
+      });
+      if (response.data.success) {
+        setMatches(prevMatches =>
+          prevMatches.map(match =>
+            match.id === id ? { ...match, status: newStatus } : match
+          )
+        );
+        toast.success("Status updated successfully");
+      } else {
+        throw new Error(response.data.message || "Failed to update status");
+      }
+    } catch (error) {
+      console.error("Status update error:", error);
+      toast.error(error.response?.data?.message || "Failed to update status");
+    }
+  };
+
   return (
     <>
+      <ToastContainer />
       <div id="layout-wrapper">
         <div className="main-content">
           <div className="page-content">
@@ -200,13 +226,14 @@ const ReportList = () => {
                             <th>Sr no.</th>
                             <th>Pickup Location</th>
                             <th>Drop Location</th>
+                            <th>Status</th>
                             <th className="text-end">Action</th>
                           </tr>
                         </thead>
                         <tbody>
                           {loading ? (
                             <tr>
-                              <td colSpan="4" style={{ textAlign: "center", padding: "40px" }}>
+                              <td colSpan="5" style={{ textAlign: "center", padding: "40px" }}>
                                 <div className="spinner-border text-primary" role="status">
                                   <span className="visually-hidden">Loading...</span>
                                 </div>
@@ -219,6 +246,25 @@ const ReportList = () => {
                                   <td>{(currentPage - 1) * limit + index + 1}</td>
                                   <td>{match.pickupLocation || "-"}</td>
                                   <td>{match.dropLocation || "-"}</td>
+                                  <td>
+                                    <div className="form-check form-switch">
+                                      <input
+                                        className="form-check-input"
+                                        type="checkbox"
+                                        id={`toggleStatus${match.id}`}
+                                        checked={match.status === "1" || match.status === 1}
+                                        onChange={() => toggleStatus(match.id, match.status)}
+                                        style={{
+                                          backgroundColor: (match.status === "1" || match.status === 1)
+                                            ? "#1e3308"
+                                            : "lightgray",
+                                          borderColor: (match.status === "1" || match.status === 1)
+                                            ? "#1e3308"
+                                            : "lightgray",
+                                        }}
+                                      />
+                                    </div>
+                                  </td>
                                   <td>
                                     <div className="d-flex justify-content-end">
                                       <button
@@ -250,7 +296,7 @@ const ReportList = () => {
                             })
                           ) : (
                             <tr>
-                              <td colSpan="4" style={{ textAlign: "center", padding: "40px" }}>
+                              <td colSpan="5" style={{ textAlign: "center", padding: "40px" }}>
                                 <div>
                                   <i className="ri-inbox-line" style={{ fontSize: "48px", color: "#ccc" }}></i>
                                   <p className="mt-2">No locations found</p>
@@ -337,14 +383,14 @@ const ReportList = () => {
                   <th>Drop Longitude :</th>
                   <td className="text-end text-black fw-medium">{selectedMatch.dropLongitude || "-"}</td>
                 </tr>
-                {/* <tr>
+                <tr>
                   <th>Status :</th>
                   <td className="text-end">
-                    <span className={`badge ${selectedMatch.status === 1 ? "bg-success" : "bg-warning"}`}>
-                      {selectedMatch.status === 1 ? "Active" : "Pending"}
+                    <span className={`badge ${selectedMatch.status === "1" || selectedMatch.status === 1 ? "bg-success" : "bg-secondary"}`}>
+                      {selectedMatch.status === "1" || selectedMatch.status === 1 ? "Active" : "Inactive"}
                     </span>
                   </td>
-                </tr> */}
+                </tr>
                 <tr>
                   <th>Created At :</th>
                   <td className="text-end text-black fw-medium">

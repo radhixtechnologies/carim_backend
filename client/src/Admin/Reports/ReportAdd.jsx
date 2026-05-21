@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -19,9 +19,10 @@ const mapContainerStyle = {
   height: "400px",
 };
 
+// Temporary default center (will be replaced immediately by user's location)
 const defaultCenter = {
-  lat: 28.6139,
-  lng: 77.2090,
+  lat: 20.5937,
+  lng: 78.9629,
 };
 
 const mapOptions = {
@@ -46,18 +47,71 @@ const ReportAdd = () => {
   const [selectedPickup, setSelectedPickup] = useState(null);
   const [selectedDrop, setSelectedDrop] = useState(null);
   const [directions, setDirections] = useState(null);
-  const [mapCenter, setMapCenter] = useState(defaultCenter);
+  const [mapCenter, setMapCenter] = useState(null); // Start with null
   const [pickupMarker, setPickupMarker] = useState(null);
   const [dropMarker, setDropMarker] = useState(null);
+  const [locationStatus, setLocationStatus] = useState("loading"); // loading, success, error
   
   const pickupAutocompleteRef = useRef(null);
   const dropAutocompleteRef = useRef(null);
   const navigate = useNavigate();
 
   const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY, // Add your API key in .env file
+    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
     libraries,
   });
+
+  // Get user's current location immediately on component mount
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          const userLoc = { lat: latitude, lng: longitude };
+          setMapCenter(userLoc);
+          setLocationStatus("success");
+          toast.success(`📍 Location detected! Map centered to your location`, {
+            position: "top-right",
+            autoClose: 3000,
+          });
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+          let errorMessage = "Unable to get your location. ";
+          
+          switch(error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage += "Please allow location access and refresh the page.";
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage += "Location information is unavailable.";
+              break;
+            case error.TIMEOUT:
+              errorMessage += "Location request timed out. Please try again.";
+              break;
+            default:
+              errorMessage += "Please check your location settings.";
+          }
+          
+          setLocationStatus("error");
+          toast.error(errorMessage, {
+            autoClose: 5000,
+          });
+          // Still set a default center so map shows something
+          setMapCenter(defaultCenter);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    } else {
+      setLocationStatus("error");
+      toast.error("Geolocation is not supported by your browser");
+      setMapCenter(defaultCenter);
+    }
+  }, []);
 
   const validateForm = () => {
     const newErrors = {};
@@ -133,7 +187,6 @@ const ReportAdd = () => {
         setPickupMarker({ lat, lng });
         setMapCenter({ lat, lng });
         
-        // Clear any error for these fields
         setErrors(prev => ({
           ...prev,
           pickupLocation: "",
@@ -141,7 +194,6 @@ const ReportAdd = () => {
           longitude: ""
         }));
         
-        // If both pickup and drop are selected, calculate route
         if (selectedDrop) {
           calculateRoute({ lat, lng }, selectedDrop);
         }
@@ -174,7 +226,6 @@ const ReportAdd = () => {
           dropLongitude: ""
         }));
         
-        // If pickup is already selected, calculate route
         if (selectedPickup) {
           calculateRoute(selectedPickup, { lat, lng });
         }
@@ -205,17 +256,14 @@ const ReportAdd = () => {
   };
 
   const handleMapClick = (event) => {
-    // You can implement map click to set location if needed
     const lat = event.latLng.lat();
     const lng = event.latLng.lng();
     
-    // Reverse geocoding to get address
     const geocoder = new window.google.maps.Geocoder();
     geocoder.geocode({ location: { lat, lng } }, (results, status) => {
       if (status === "OK" && results[0]) {
         const address = results[0].formatted_address;
         
-        // If pickup is not set, set it as pickup
         if (!selectedPickup) {
           setFormData(prev => ({
             ...prev,
@@ -226,8 +274,8 @@ const ReportAdd = () => {
           setSelectedPickup({ lat, lng });
           setPickupMarker({ lat, lng });
           setMapCenter({ lat, lng });
+          toast.success("Pickup location set");
         } 
-        // If pickup is set but drop is not, set as drop
         else if (selectedPickup && !selectedDrop) {
           setFormData(prev => ({
             ...prev,
@@ -238,6 +286,10 @@ const ReportAdd = () => {
           setSelectedDrop({ lat, lng });
           setDropMarker({ lat, lng });
           calculateRoute(selectedPickup, { lat, lng });
+          toast.success("Drop location set");
+        }
+        else {
+          toast.warning("Both locations already set! Use clear buttons to reset.");
         }
       }
     });
@@ -284,6 +336,7 @@ const ReportAdd = () => {
       longitude: ""
     }));
     setDirections(null);
+    toast.info("Pickup location cleared");
   };
 
   const clearDrop = () => {
@@ -296,6 +349,25 @@ const ReportAdd = () => {
       dropLongitude: ""
     }));
     setDirections(null);
+    toast.info("Drop location cleared");
+  };
+
+  const centerToCurrentLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          const currentLoc = { lat: latitude, lng: longitude };
+          setMapCenter(currentLoc);
+          toast.success("📍 Map centered to your current location");
+        },
+        (error) => {
+          toast.error("Unable to get your current location");
+        }
+      );
+    } else {
+      toast.error("Geolocation not supported");
+    }
   };
 
   if (loadError) {
@@ -315,6 +387,18 @@ const ReportAdd = () => {
           <span className="visually-hidden">Loading Maps...</span>
         </div>
         <p>Loading Google Maps...</p>
+      </div>
+    );
+  }
+
+  if (!mapCenter) {
+    return (
+      <div className="container mt-5 text-center">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Getting your location...</span>
+        </div>
+        <p className="mt-3">Getting your current location...</p>
+        <p className="text-muted small">Please allow location access when prompted</p>
       </div>
     );
   }
@@ -346,20 +430,52 @@ const ReportAdd = () => {
                 </nav>
               </div>
 
+              {/* Location Status Banner */}
+              {locationStatus === "success" && (
+                <div className="alert alert-success alert-dismissible fade show mb-3" role="alert">
+                  <i className="ri-checkbox-circle-fill me-2"></i>
+                  <strong>Location detected!</strong> Map centered to your current location.
+                  <button type="button" className="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+              )}
+
+              {locationStatus === "error" && (
+                <div className="alert alert-warning alert-dismissible fade show mb-3" role="alert">
+                  <i className="ri-alert-fill me-2"></i>
+                  <strong>Location access issue!</strong> Using default map center. 
+                  <button 
+                    type="button" 
+                    className="btn btn-sm btn-primary ms-2"
+                    onClick={centerToCurrentLocation}
+                  >
+                    <i className="ri-crosshair-line me-1"></i> Try Again
+                  </button>
+                  <button type="button" className="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+              )}
+
               <div className="row">
                 <div className="col-lg-12 mb-4">
                   <div className="card">
-                    <div className="card-header">
+                    <div className="card-header d-flex justify-content-between align-items-center">
                       <h5 className="card-title mb-0">
                         <i className="ri-map-pin-line me-2"></i>
                         Select Location on Map
                       </h5>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-primary"
+                        onClick={centerToCurrentLocation}
+                      >
+                        <i className="ri-crosshair-line me-1"></i>
+                        My Location
+                      </button>
                     </div>
                     <div className="card-body p-0">
                       <GoogleMap
                         mapContainerStyle={mapContainerStyle}
                         center={mapCenter}
-                        zoom={12}
+                        zoom={14}
                         options={mapOptions}
                         onClick={handleMapClick}
                       >
@@ -390,7 +506,7 @@ const ReportAdd = () => {
                             directions={directions}
                             options={{
                               polylineOptions: {
-                                strokeColor: "#1976D2",
+                                strokeColor: "#FF0000",
                                 strokeWeight: 4,
                               },
                             }}
@@ -419,7 +535,7 @@ const ReportAdd = () => {
                               onPlaceChanged={onPickupPlaceChanged}
                               options={{
                                 types: ["geocode", "establishment"],
-                                componentRestrictions: { country: "in" }, // Change as needed
+                                componentRestrictions: { country: "in" },
                               }}
                             >
                               <input
@@ -435,7 +551,7 @@ const ReportAdd = () => {
                             {selectedPickup && (
                               <button
                                 type="button"
-                                className="btn btn-outline-secondary"
+                                className="btn btn-outline-danger"
                                 onClick={clearPickup}
                                 title="Clear pickup location"
                               >
@@ -449,7 +565,8 @@ const ReportAdd = () => {
                             </div>
                           )}
                           <small className="text-muted">
-                            Search for a location or click on the map
+                            <i className="ri-search-line me-1"></i>
+                            Search or click on map (First click = Pickup)
                           </small>
                         </div>
 
@@ -527,7 +644,7 @@ const ReportAdd = () => {
                             {selectedDrop && (
                               <button
                                 type="button"
-                                className="btn btn-outline-secondary"
+                                className="btn btn-outline-danger"
                                 onClick={clearDrop}
                                 title="Clear drop location"
                               >
@@ -541,7 +658,8 @@ const ReportAdd = () => {
                             </div>
                           )}
                           <small className="text-muted">
-                            Search for a location or click on the map
+                            <i className="ri-search-line me-1"></i>
+                            Search or click on map (Second click = Drop)
                           </small>
                         </div>
 

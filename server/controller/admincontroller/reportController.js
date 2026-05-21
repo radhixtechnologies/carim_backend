@@ -302,4 +302,22 @@ module.exports = {
             return helper.error(res, error.message);
         }
     },
+
+    status: async (req, res) => {
+        try {
+            const { id, status } = req.body;
+            const user = await db.testingLocation.findOne({ where: { id } });
+            if (!user) {
+                return helper.error(res, "User not found");
+            }
+            await db.testingLocation.update({ status }, { where: { id } });
+            return helper.success(res, " status updated successfully", {
+                id,
+                status
+            });
+
+        } catch (error) {
+            return helper.error(res, error.message);
+        }
+    },
 };
