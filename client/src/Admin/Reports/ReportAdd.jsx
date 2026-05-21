@@ -41,7 +41,7 @@ const ReportAdd = () => {
     dropLatitude: "",
     dropLongitude: ""
   });
-  
+
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [selectedPickup, setSelectedPickup] = useState(null);
@@ -51,7 +51,7 @@ const ReportAdd = () => {
   const [pickupMarker, setPickupMarker] = useState(null);
   const [dropMarker, setDropMarker] = useState(null);
   const [locationStatus, setLocationStatus] = useState("loading"); // loading, success, error
-  
+
   const pickupAutocompleteRef = useRef(null);
   const dropAutocompleteRef = useRef(null);
   const navigate = useNavigate();
@@ -78,8 +78,8 @@ const ReportAdd = () => {
         (error) => {
           console.error("Error getting location:", error);
           let errorMessage = "Unable to get your location. ";
-          
-          switch(error.code) {
+
+          switch (error.code) {
             case error.PERMISSION_DENIED:
               errorMessage += "Please allow location access and refresh the page.";
               break;
@@ -92,7 +92,7 @@ const ReportAdd = () => {
             default:
               errorMessage += "Please check your location settings.";
           }
-          
+
           setLocationStatus("error");
           toast.error(errorMessage, {
             autoClose: 5000,
@@ -175,25 +175,25 @@ const ReportAdd = () => {
         const lat = place.geometry.location.lat();
         const lng = place.geometry.location.lng();
         const address = place.formatted_address || place.name;
-        
+
         setFormData(prev => ({
           ...prev,
           pickupLocation: address,
           latitude: lat.toString(),
           longitude: lng.toString()
         }));
-        
+
         setSelectedPickup({ lat, lng });
         setPickupMarker({ lat, lng });
         setMapCenter({ lat, lng });
-        
+
         setErrors(prev => ({
           ...prev,
           pickupLocation: "",
           latitude: "",
           longitude: ""
         }));
-        
+
         if (selectedDrop) {
           calculateRoute({ lat, lng }, selectedDrop);
         }
@@ -208,24 +208,24 @@ const ReportAdd = () => {
         const lat = place.geometry.location.lat();
         const lng = place.geometry.location.lng();
         const address = place.formatted_address || place.name;
-        
+
         setFormData(prev => ({
           ...prev,
           dropLocation: address,
           dropLatitude: lat.toString(),
           dropLongitude: lng.toString()
         }));
-        
+
         setSelectedDrop({ lat, lng });
         setDropMarker({ lat, lng });
-        
+
         setErrors(prev => ({
           ...prev,
           dropLocation: "",
           dropLatitude: "",
           dropLongitude: ""
         }));
-        
+
         if (selectedPickup) {
           calculateRoute(selectedPickup, { lat, lng });
         }
@@ -235,9 +235,9 @@ const ReportAdd = () => {
 
   const calculateRoute = (origin, destination) => {
     if (!origin || !destination) return;
-    
+
     const directionsService = new window.google.maps.DirectionsService();
-    
+
     directionsService.route(
       {
         origin: origin,
@@ -258,12 +258,12 @@ const ReportAdd = () => {
   const handleMapClick = (event) => {
     const lat = event.latLng.lat();
     const lng = event.latLng.lng();
-    
+
     const geocoder = new window.google.maps.Geocoder();
     geocoder.geocode({ location: { lat, lng } }, (results, status) => {
       if (status === "OK" && results[0]) {
         const address = results[0].formatted_address;
-        
+
         if (!selectedPickup) {
           setFormData(prev => ({
             ...prev,
@@ -275,7 +275,7 @@ const ReportAdd = () => {
           setPickupMarker({ lat, lng });
           setMapCenter({ lat, lng });
           toast.success("Pickup location set");
-        } 
+        }
         else if (selectedPickup && !selectedDrop) {
           setFormData(prev => ({
             ...prev,
@@ -431,7 +431,7 @@ const ReportAdd = () => {
               </div>
 
               {/* Location Status Banner */}
-              {locationStatus === "success" && (
+              {/* {locationStatus === "success" && (
                 <div className="alert alert-success alert-dismissible fade show mb-3" role="alert">
                   <i className="ri-checkbox-circle-fill me-2"></i>
                   <strong>Location detected!</strong> Map centered to your current location.
@@ -452,7 +452,7 @@ const ReportAdd = () => {
                   </button>
                   <button type="button" className="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
-              )}
+              )} */}
 
               <div className="row">
                 <div className="col-lg-12 mb-4">
