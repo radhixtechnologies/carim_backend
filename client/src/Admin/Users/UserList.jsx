@@ -265,8 +265,8 @@ const UserList = () => {
                           <tr>
                             <th>Sr no.</th>
                             <th>Phone Number</th>
-                             <th>First Name</th>
-                            <th>Last Name</th>
+                             <th>Name</th>
+                            {/* <th>Last Name</th> */}
                             <th>Blocked</th>
                             <th>Suspended</th>
                             <th>Status</th>
@@ -280,7 +280,7 @@ const UserList = () => {
                                 <td>{(currentPage - 1) * limit + index + 1}</td>
                                 <td>({user.countryCode || ""}) {user.phoneNumber || ""}</td>
                                 <td>{user.firstName || ""}</td>
-                                <td>{user.lastName || ""}</td>
+                                {/* <td>{user.lastName || ""}</td> */}
                                 <td>
                                   <div className="form-check form-switch">
                                     <input
@@ -509,17 +509,17 @@ const UserList = () => {
                     </td>
                   </tr>
                    <tr>
-                    <td>First Name :</td>
+                    <td> Name :</td>
                     <td className="text-end text-black fw-medium">
                       {selectedUser.firstName || ""}
                     </td>
                   </tr>
-                  <tr>
+                  {/* <tr>
                     <td>Last Name :</td>
                     <td className="text-end text-black fw-medium">
                       {selectedUser.lastName || ""}
                     </td>
-                  </tr>
+                  </tr> */}
                   <tr>
                     <td>Blocked Status :</td>
                     <td className="text-end text-black fw-medium">
@@ -598,7 +598,7 @@ const UserList = () => {
               {editUserData && (
                 <form>
                   <div className="mb-3">
-                    <label className="form-label">First Name</label>
+                    <label className="form-label">Name</label>
                     <input
                       type="text"
                       className="form-control"
@@ -608,7 +608,7 @@ const UserList = () => {
                       placeholder="Enter first name"
                     />
                   </div>
-                  <div className="mb-3">
+                  {/* <div className="mb-3">
                     <label className="form-label">Last Name</label>
                     <input
                       type="text"
@@ -618,7 +618,7 @@ const UserList = () => {
                       onChange={handleEditChange}
                       placeholder="Enter last name"
                     />
-                  </div>
+                  </div> */}
                 </form>
               )}
             </div>
