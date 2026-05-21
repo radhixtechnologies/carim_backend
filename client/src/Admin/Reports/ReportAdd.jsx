@@ -1,9 +1,35 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { axiosInstance } from "../../Config";
 import { Link } from "react-router-dom";
+import {
+  useLoadScript,
+  GoogleMap,
+  Marker,
+  Autocomplete,
+  DirectionsRenderer,
+} from "@react-google-maps/api";
+
+const libraries = ["places"];
+
+const mapContainerStyle = {
+  width: "100%",
+  height: "400px",
+};
+
+const defaultCenter = {
+  lat: 28.6139,
+  lng: 77.2090,
+};
+
+const mapOptions = {
+  disableDefaultUI: false,
+  zoomControl: true,
+  streetViewControl: true,
+  mapTypeControl: true,
+};
 
 const ReportAdd = () => {
   const [formData, setFormData] = useState({
@@ -17,12 +43,25 @@ const ReportAdd = () => {
   
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [selectedPickup, setSelectedPickup] = useState(null);
+  const [selectedDrop, setSelectedDrop] = useState(null);
+  const [directions, setDirections] = useState(null);
+  const [mapCenter, setMapCenter] = useState(defaultCenter);
+  const [pickupMarker, setPickupMarker] = useState(null);
+  const [dropMarker, setDropMarker] = useState(null);
+  
+  const pickupAutocompleteRef = useRef(null);
+  const dropAutocompleteRef = useRef(null);
   const navigate = useNavigate();
+
+  const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY, // Add your API key in .env file
+    libraries,
+  });
 
   const validateForm = () => {
     const newErrors = {};
 
-    // Validate pickupLocation
     if (!formData.pickupLocation.trim()) {
       newErrors.pickupLocation = "Pickup location is required.";
     } else if (formData.pickupLocation.length < 2) {
@@ -31,31 +70,26 @@ const ReportAdd = () => {
       newErrors.pickupLocation = "Pickup location cannot be longer than 255 characters.";
     }
 
-    // Validate latitude
     if (!formData.latitude.trim()) {
       newErrors.latitude = "Latitude is required.";
     } else if (isNaN(formData.latitude) || formData.latitude < -90 || formData.latitude > 90) {
       newErrors.latitude = "Please enter a valid latitude (-90 to 90).";
     }
 
-    // Validate longitude
     if (!formData.longitude.trim()) {
       newErrors.longitude = "Longitude is required.";
     } else if (isNaN(formData.longitude) || formData.longitude < -180 || formData.longitude > 180) {
       newErrors.longitude = "Please enter a valid longitude (-180 to 180).";
     }
 
-    // Validate dropLocation (optional but if provided, check length)
     if (formData.dropLocation && formData.dropLocation.length > 255) {
       newErrors.dropLocation = "Drop location cannot be longer than 255 characters.";
     }
 
-    // Validate dropLatitude if provided
     if (formData.dropLatitude && (isNaN(formData.dropLatitude) || formData.dropLatitude < -90 || formData.dropLatitude > 90)) {
       newErrors.dropLatitude = "Please enter a valid drop latitude (-90 to 90).";
     }
 
-    // Validate dropLongitude if provided
     if (formData.dropLongitude && (isNaN(formData.dropLongitude) || formData.dropLongitude < -180 || formData.dropLongitude > 180)) {
       newErrors.dropLongitude = "Please enter a valid drop longitude (-180 to 180).";
     }
@@ -67,10 +101,146 @@ const ReportAdd = () => {
   const handleChange = (e) => {
     const { id, value } = e.target;
     setFormData((prev) => ({ ...prev, [id]: value }));
-    // Clear error for this field when user starts typing
     if (errors[id]) {
       setErrors((prev) => ({ ...prev, [id]: "" }));
     }
+  };
+
+  const onPickupLoad = (autocomplete) => {
+    pickupAutocompleteRef.current = autocomplete;
+  };
+
+  const onDropLoad = (autocomplete) => {
+    dropAutocompleteRef.current = autocomplete;
+  };
+
+  const onPickupPlaceChanged = () => {
+    if (pickupAutocompleteRef.current) {
+      const place = pickupAutocompleteRef.current.getPlace();
+      if (place && place.geometry) {
+        const lat = place.geometry.location.lat();
+        const lng = place.geometry.location.lng();
+        const address = place.formatted_address || place.name;
+        
+        setFormData(prev => ({
+          ...prev,
+          pickupLocation: address,
+          latitude: lat.toString(),
+          longitude: lng.toString()
+        }));
+        
+        setSelectedPickup({ lat, lng });
+        setPickupMarker({ lat, lng });
+        setMapCenter({ lat, lng });
+        
+        // Clear any error for these fields
+        setErrors(prev => ({
+          ...prev,
+          pickupLocation: "",
+          latitude: "",
+          longitude: ""
+        }));
+        
+        // If both pickup and drop are selected, calculate route
+        if (selectedDrop) {
+          calculateRoute({ lat, lng }, selectedDrop);
+        }
+      }
+    }
+  };
+
+  const onDropPlaceChanged = () => {
+    if (dropAutocompleteRef.current) {
+      const place = dropAutocompleteRef.current.getPlace();
+      if (place && place.geometry) {
+        const lat = place.geometry.location.lat();
+        const lng = place.geometry.location.lng();
+        const address = place.formatted_address || place.name;
+        
+        setFormData(prev => ({
+          ...prev,
+          dropLocation: address,
+          dropLatitude: lat.toString(),
+          dropLongitude: lng.toString()
+        }));
+        
+        setSelectedDrop({ lat, lng });
+        setDropMarker({ lat, lng });
+        
+        setErrors(prev => ({
+          ...prev,
+          dropLocation: "",
+          dropLatitude: "",
+          dropLongitude: ""
+        }));
+        
+        // If pickup is already selected, calculate route
+        if (selectedPickup) {
+          calculateRoute(selectedPickup, { lat, lng });
+        }
+      }
+    }
+  };
+
+  const calculateRoute = (origin, destination) => {
+    if (!origin || !destination) return;
+    
+    const directionsService = new window.google.maps.DirectionsService();
+    
+    directionsService.route(
+      {
+        origin: origin,
+        destination: destination,
+        travelMode: window.google.maps.TravelMode.DRIVING,
+      },
+      (result, status) => {
+        if (status === "OK") {
+          setDirections(result);
+        } else {
+          console.error("Directions request failed:", status);
+          toast.error("Could not calculate route between locations");
+        }
+      }
+    );
+  };
+
+  const handleMapClick = (event) => {
+    // You can implement map click to set location if needed
+    const lat = event.latLng.lat();
+    const lng = event.latLng.lng();
+    
+    // Reverse geocoding to get address
+    const geocoder = new window.google.maps.Geocoder();
+    geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+      if (status === "OK" && results[0]) {
+        const address = results[0].formatted_address;
+        
+        // If pickup is not set, set it as pickup
+        if (!selectedPickup) {
+          setFormData(prev => ({
+            ...prev,
+            pickupLocation: address,
+            latitude: lat.toString(),
+            longitude: lng.toString()
+          }));
+          setSelectedPickup({ lat, lng });
+          setPickupMarker({ lat, lng });
+          setMapCenter({ lat, lng });
+        } 
+        // If pickup is set but drop is not, set as drop
+        else if (selectedPickup && !selectedDrop) {
+          setFormData(prev => ({
+            ...prev,
+            dropLocation: address,
+            dropLatitude: lat.toString(),
+            dropLongitude: lng.toString()
+          }));
+          setSelectedDrop({ lat, lng });
+          setDropMarker({ lat, lng });
+          calculateRoute(selectedPickup, { lat, lng });
+        }
+      }
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -104,6 +274,51 @@ const ReportAdd = () => {
     }
   };
 
+  const clearPickup = () => {
+    setSelectedPickup(null);
+    setPickupMarker(null);
+    setFormData(prev => ({
+      ...prev,
+      pickupLocation: "",
+      latitude: "",
+      longitude: ""
+    }));
+    setDirections(null);
+  };
+
+  const clearDrop = () => {
+    setSelectedDrop(null);
+    setDropMarker(null);
+    setFormData(prev => ({
+      ...prev,
+      dropLocation: "",
+      dropLatitude: "",
+      dropLongitude: ""
+    }));
+    setDirections(null);
+  };
+
+  if (loadError) {
+    return (
+      <div className="container mt-5">
+        <div className="alert alert-danger">
+          Error loading Google Maps. Please check your API key.
+        </div>
+      </div>
+    );
+  }
+
+  if (!isLoaded) {
+    return (
+      <div className="container mt-5 text-center">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading Maps...</span>
+        </div>
+        <p>Loading Google Maps...</p>
+      </div>
+    );
+  }
+
   return (
     <>
       <div id="layout-wrapper">
@@ -131,38 +346,114 @@ const ReportAdd = () => {
                 </nav>
               </div>
 
-              <div className="row justify-content-center">
-                <div className="col-lg-8">
+              <div className="row">
+                <div className="col-lg-12 mb-4">
+                  <div className="card">
+                    <div className="card-header">
+                      <h5 className="card-title mb-0">
+                        <i className="ri-map-pin-line me-2"></i>
+                        Select Location on Map
+                      </h5>
+                    </div>
+                    <div className="card-body p-0">
+                      <GoogleMap
+                        mapContainerStyle={mapContainerStyle}
+                        center={mapCenter}
+                        zoom={12}
+                        options={mapOptions}
+                        onClick={handleMapClick}
+                      >
+                        {pickupMarker && (
+                          <Marker
+                            position={pickupMarker}
+                            label={{
+                              text: "P",
+                              color: "white",
+                              fontWeight: "bold",
+                            }}
+                            title="Pickup Location"
+                          />
+                        )}
+                        {dropMarker && (
+                          <Marker
+                            position={dropMarker}
+                            label={{
+                              text: "D",
+                              color: "white",
+                              fontWeight: "bold",
+                            }}
+                            title="Drop Location"
+                          />
+                        )}
+                        {directions && (
+                          <DirectionsRenderer
+                            directions={directions}
+                            options={{
+                              polylineOptions: {
+                                strokeColor: "#1976D2",
+                                strokeWeight: 4,
+                              },
+                            }}
+                          />
+                        )}
+                      </GoogleMap>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="col-lg-12">
                   <div className="card">
                     <div className="card-header">
                       <h5 className="card-title mb-0">Location Information</h5>
                     </div>
                     <div className="card-body">
                       <form onSubmit={handleSubmit}>
-                        {/* Pickup Location */}
+                        {/* Pickup Location with Autocomplete */}
                         <div className="mb-3">
                           <label className="form-label fw-medium">
                             Pickup Location <span className="text-danger">*</span>
                           </label>
-                          <input
-                            type="text"
-                            className={`form-control ${errors.pickupLocation ? "is-invalid" : ""}`}
-                            id="pickupLocation"
-                            placeholder="Enter pickup location"
-                            value={formData.pickupLocation}
-                            onChange={handleChange}
-                            maxLength={255}
-                          />
+                          <div className="input-group">
+                            <Autocomplete
+                              onLoad={onPickupLoad}
+                              onPlaceChanged={onPickupPlaceChanged}
+                              options={{
+                                types: ["geocode", "establishment"],
+                                componentRestrictions: { country: "in" }, // Change as needed
+                              }}
+                            >
+                              <input
+                                type="text"
+                                className={`form-control ${errors.pickupLocation ? "is-invalid" : ""}`}
+                                id="pickupLocation"
+                                placeholder="Search pickup location..."
+                                value={formData.pickupLocation}
+                                onChange={handleChange}
+                                maxLength={255}
+                              />
+                            </Autocomplete>
+                            {selectedPickup && (
+                              <button
+                                type="button"
+                                className="btn btn-outline-secondary"
+                                onClick={clearPickup}
+                                title="Clear pickup location"
+                              >
+                                <i className="ri-close-line"></i>
+                              </button>
+                            )}
+                          </div>
                           {errors.pickupLocation && (
-                            <div className="invalid-feedback">
+                            <div className="invalid-feedback d-block">
                               {errors.pickupLocation}
                             </div>
                           )}
-                          <small className="text-muted">Maximum 255 characters</small>
+                          <small className="text-muted">
+                            Search for a location or click on the map
+                          </small>
                         </div>
 
                         <div className="row">
-                          {/* Latitude */}
                           <div className="col-md-6 mb-3">
                             <label className="form-label fw-medium">
                               Latitude <span className="text-danger">*</span>
@@ -174,16 +465,15 @@ const ReportAdd = () => {
                               placeholder="e.g., 28.6139"
                               value={formData.latitude}
                               onChange={handleChange}
+                              readOnly
                             />
                             {errors.latitude && (
                               <div className="invalid-feedback">
                                 {errors.latitude}
                               </div>
                             )}
-                            <small className="text-muted">Range: -90 to 90</small>
                           </div>
 
-                          {/* Longitude */}
                           <div className="col-md-6 mb-3">
                             <label className="form-label fw-medium">
                               Longitude <span className="text-danger">*</span>
@@ -195,13 +485,13 @@ const ReportAdd = () => {
                               placeholder="e.g., 77.2090"
                               value={formData.longitude}
                               onChange={handleChange}
+                              readOnly
                             />
                             {errors.longitude && (
                               <div className="invalid-feedback">
                                 {errors.longitude}
                               </div>
                             )}
-                            <small className="text-muted">Range: -180 to 180</small>
                           </div>
                         </div>
 
@@ -210,29 +500,52 @@ const ReportAdd = () => {
                           <h6 className="mb-3">Drop Location Details (Optional)</h6>
                         </div>
 
-                        {/* Drop Location */}
+                        {/* Drop Location with Autocomplete */}
                         <div className="mb-3">
                           <label className="form-label fw-medium">
                             Drop Location
                           </label>
-                          <input
-                            type="text"
-                            className={`form-control ${errors.dropLocation ? "is-invalid" : ""}`}
-                            id="dropLocation"
-                            placeholder="Enter drop location"
-                            value={formData.dropLocation}
-                            onChange={handleChange}
-                            maxLength={255}
-                          />
+                          <div className="input-group">
+                            <Autocomplete
+                              onLoad={onDropLoad}
+                              onPlaceChanged={onDropPlaceChanged}
+                              options={{
+                                types: ["geocode", "establishment"],
+                                componentRestrictions: { country: "in" },
+                              }}
+                            >
+                              <input
+                                type="text"
+                                className={`form-control ${errors.dropLocation ? "is-invalid" : ""}`}
+                                id="dropLocation"
+                                placeholder="Search drop location..."
+                                value={formData.dropLocation}
+                                onChange={handleChange}
+                                maxLength={255}
+                              />
+                            </Autocomplete>
+                            {selectedDrop && (
+                              <button
+                                type="button"
+                                className="btn btn-outline-secondary"
+                                onClick={clearDrop}
+                                title="Clear drop location"
+                              >
+                                <i className="ri-close-line"></i>
+                              </button>
+                            )}
+                          </div>
                           {errors.dropLocation && (
-                            <div className="invalid-feedback">
+                            <div className="invalid-feedback d-block">
                               {errors.dropLocation}
                             </div>
                           )}
+                          <small className="text-muted">
+                            Search for a location or click on the map
+                          </small>
                         </div>
 
                         <div className="row">
-                          {/* Drop Latitude */}
                           <div className="col-md-6 mb-3">
                             <label className="form-label fw-medium">
                               Drop Latitude
@@ -244,16 +557,15 @@ const ReportAdd = () => {
                               placeholder="e.g., 28.7041"
                               value={formData.dropLatitude}
                               onChange={handleChange}
+                              readOnly
                             />
                             {errors.dropLatitude && (
                               <div className="invalid-feedback">
                                 {errors.dropLatitude}
                               </div>
                             )}
-                            <small className="text-muted">Range: -90 to 90 (Optional)</small>
                           </div>
 
-                          {/* Drop Longitude */}
                           <div className="col-md-6 mb-3">
                             <label className="form-label fw-medium">
                               Drop Longitude
@@ -265,13 +577,13 @@ const ReportAdd = () => {
                               placeholder="e.g., 77.1025"
                               value={formData.dropLongitude}
                               onChange={handleChange}
+                              readOnly
                             />
                             {errors.dropLongitude && (
                               <div className="invalid-feedback">
                                 {errors.dropLongitude}
                               </div>
                             )}
-                            <small className="text-muted">Range: -180 to 180 (Optional)</small>
                           </div>
                         </div>
 
