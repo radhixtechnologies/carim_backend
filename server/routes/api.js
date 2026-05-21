@@ -16,6 +16,7 @@ module.exports = (io) => {
     router.post('/fileupload', authController.fileUploadDriver)
     router.post('/login', authController.login);
 
+    router.get('/getLocations', authController.getLocations);
 
     router.use(middleware.verifyUser);
     router.post("/verifyOtp", authController.verifyOtp);
@@ -61,7 +62,6 @@ module.exports = (io) => {
 
 
     router.post('/testLocation', authController.testLocation);
-    router.get('/getLocations', authController.getLocations);
     router.post('/languageTypeChange', bookingController.languageTypeChange);
 
     router.get('/driverWaletBalance', bookingController.driverWaletBalance);

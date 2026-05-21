@@ -109,7 +109,7 @@ module.exports = {
     // },
 
 
-    addLocation: async (req, res) => {
+    addLocation1: async (req, res) => {
         try {
             const admin = await db.users.findOne({
                 where: {
@@ -152,7 +152,76 @@ module.exports = {
             return helper.error(res, "Something went wrong");
         }
     },
+    addLocation: async (req, res) => {
+        try {
+            const admin = await db.users.findOne({
+                where: {
+                    role: "0"
+                },
+                attributes: ["id"]
+            });
 
+            if (!admin) {
+                return helper.error(res, "Admin not found");
+            }
+
+            const {
+                pickupLocation,
+                latitude,
+                longitude,
+                dropLocation,
+                dropLatitude,
+                dropLongitude
+            } = req.body;
+
+            // Validate required fields
+            if (!pickupLocation || !latitude || !longitude) {
+                return helper.error(res, "Pickup location, latitude, and longitude are required");
+            }
+
+            // Validate coordinate ranges
+            const lat = parseFloat(latitude);
+            const lng = parseFloat(longitude);
+
+            if (isNaN(lat) || lat < -90 || lat > 90) {
+                return helper.error(res, "Invalid latitude. Must be between -90 and 90");
+            }
+
+            if (isNaN(lng) || lng < -180 || lng > 180) {
+                return helper.error(res, "Invalid longitude. Must be between -180 and 180");
+            }
+
+            // Validate drop coordinates if provided
+            if (dropLatitude && dropLongitude) {
+                const dropLat = parseFloat(dropLatitude);
+                const dropLng = parseFloat(dropLongitude);
+
+                if (isNaN(dropLat) || dropLat < -90 || dropLat > 90) {
+                    return helper.error(res, "Invalid drop latitude. Must be between -90 and 90");
+                }
+
+                if (isNaN(dropLng) || dropLng < -180 || dropLng > 180) {
+                    return helper.error(res, "Invalid drop longitude. Must be between -180 and 180");
+                }
+            }
+
+            const data = await db.testingLocation.create({
+                userId: admin.id,
+                pickupLocation: pickupLocation.trim(),
+                latitude: lat,
+                longitude: lng,
+                dropLocation: dropLocation ? dropLocation.trim() : "",
+                dropLatitude: dropLatitude ? parseFloat(dropLatitude) : "",
+                dropLongitude: dropLongitude ? parseFloat(dropLongitude) : ""
+            });
+
+            return helper.success(res, "Location created successfully", data);
+
+        } catch (error) {
+            console.error("Error in addLocation API:", error);
+            return helper.error(res, "Something went wrong");
+        }
+    },
     reportList: async (req, res) => {
         try {
             const page = parseInt(req.query.page) || 1;

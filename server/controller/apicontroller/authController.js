@@ -1768,7 +1768,7 @@ module.exports = {
             const { location, latitude, longitude } = req.body;
 
             if (!location || !latitude || !longitude) {
-                return helper.failed(res, "location, latitude, and longitude are required");
+                return helper.failure(res, "location, latitude, and longitude are required");
             }
             const data = await db.testingLocation.create({
                 userId,
@@ -1780,22 +1780,19 @@ module.exports = {
             return helper.success(res, "Created successfully", data);
         } catch (error) {
             console.log(error, "error in testLocation API");
-            return helper.failed(res, "Something went wrong");
+            return helper.failure(res, "Something went wrong");
         }
     },
     getLocations: async (req, res) => {
         try {
-            const userId = req.user.id;
-
             const locations = await db.testingLocation.findAll({
-                where: { userId },
                 order: [['createdAt', 'DESC']] // latest first
             });
 
             return helper.success(res, "Locations fetched successfully", locations);
         } catch (error) {
             console.log(error, "error in getLocations API");
-            return helper.failed(res, "Something went wrong");
+            return helper.failure(res, "Something went wrong");
         }
     },
 
