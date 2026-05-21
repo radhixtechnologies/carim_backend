@@ -179,11 +179,13 @@ module.exports = function (sequelize, DataTypes) {
     },
     parkingActive: {
       type: DataTypes.ENUM('0', '1'),
-      allowNull: false
+      allowNull: false,
+      defaultValue: '0'
     },
     lastPerMinuteCalculation: {
       type: DataTypes.DATE,
-      allowNull: false
+      allowNull: false,
+      defaultValue: Sequelize.Sequelize.literal('CURRENT_TIMESTAMP')
     }
   }, {
     sequelize,
