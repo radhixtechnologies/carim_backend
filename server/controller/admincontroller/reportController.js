@@ -152,6 +152,7 @@ module.exports = {
             return helper.error(res, "Something went wrong");
         }
     },
+
     addLocation: async (req, res) => {
         try {
             const admin = await db.users.findOne({
@@ -174,7 +175,7 @@ module.exports = {
                 dropLongitude
             } = req.body;
 
-            // Validate required fields
+            // Valid required fields
             if (!pickupLocation || !latitude || !longitude) {
                 return helper.error(res, "Pickup location, latitude, and longitude are required");
             }
