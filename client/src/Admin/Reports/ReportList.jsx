@@ -225,7 +225,7 @@ const ReportList = () => {
                           <tr>
                             <th>Sr no.</th>
                             <th>Pickup Location</th>
-                            <th>Drop Location</th>
+                            {/* <th>Drop Location</th> */}
                             <th>Status</th>
                             <th className="text-end">Action</th>
                           </tr>
@@ -245,7 +245,7 @@ const ReportList = () => {
                                 <tr key={match.id}>
                                   <td>{(currentPage - 1) * limit + index + 1}</td>
                                   <td>{match.pickupLocation || "-"}</td>
-                                  <td>{match.dropLocation || "-"}</td>
+                                  {/* <td>{match.dropLocation || "-"}</td> */}
                                   <td>
                                     <div className="form-check form-switch">
                                       <input
@@ -371,7 +371,7 @@ const ReportList = () => {
                   <th>Pickup Longitude :</th>
                   <td className="text-end text-black fw-medium">{selectedMatch.longitude || "-"}</td>
                 </tr>
-                <tr>
+                {/* <tr>
                   <th>Drop Location :</th>
                   <td className="text-end text-black fw-medium">{selectedMatch.dropLocation || "-"}</td>
                 </tr>
@@ -382,7 +382,7 @@ const ReportList = () => {
                 <tr>
                   <th>Drop Longitude :</th>
                   <td className="text-end text-black fw-medium">{selectedMatch.dropLongitude || "-"}</td>
-                </tr>
+                </tr> */}
                 <tr>
                   <th>Status :</th>
                   <td className="text-end">

@@ -564,13 +564,13 @@ const ReportAdd = () => {
                               {errors.pickupLocation}
                             </div>
                           )}
-                          <small className="text-muted">
+                          {/* <small className="text-muted">
                             <i className="ri-search-line me-1"></i>
-                            Search or click on map (First click = Pickup)
-                          </small>
+                            Search or click on map 
+                          </small> */}
                         </div>
 
-                        <div className="row">
+                        {/* <div className="row">
                           <div className="col-md-6 mb-3">
                             <label className="form-label fw-medium">
                               Latitude <span className="text-danger">*</span>
@@ -610,15 +610,15 @@ const ReportAdd = () => {
                               </div>
                             )}
                           </div>
-                        </div>
+                        </div> */}
 
-                        <div className="mb-3">
+                        {/* <div className="mb-3">
                           <hr />
                           <h6 className="mb-3">Drop Location Details (Optional)</h6>
-                        </div>
+                        </div> */}
 
                         {/* Drop Location with Autocomplete */}
-                        <div className="mb-3">
+                        {/* <div className="mb-3">
                           <label className="form-label fw-medium">
                             Drop Location
                           </label>
@@ -703,7 +703,7 @@ const ReportAdd = () => {
                               </div>
                             )}
                           </div>
-                        </div>
+                        </div> */}
 
                         <div className="text-end mt-3">
                           <Link
