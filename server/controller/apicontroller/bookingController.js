@@ -1333,7 +1333,7 @@ module.exports = {
 
                 // ===== CLEAN EXPIRED BOOKINGS =====
                 // const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
-                const oneMinuteAgo = new Date(Date.now() - 15 * 60 * 1000);
+                const oneMinuteAgo = new Date(Date.now() - 5 * 60 * 1000);
 
                 const expiredBookings = await db.bookings.findAll({
                     where: {
