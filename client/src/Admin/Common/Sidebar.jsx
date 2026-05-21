@@ -310,14 +310,16 @@ function Sidebar({ isOpen }) {
                   </li>
                 </ul>
               )}
-            </li>
+            </li>*/}
+
+
             <li className={activeMenu === "report" ? "mm-active" : ""}>
               <Link
                 className="has-arrow waves-effect"
                 onClick={() => toggleMenu("report")}
               >
                 <Activity />
-                <span>Reports</span>
+                <span>Location</span>
               </Link>
               {isSidebarExpanded && activeMenu === "report" && (
                 <ul className="sub-menu mm-show">
@@ -327,12 +329,14 @@ function Sidebar({ isOpen }) {
                       to="/reportlist"
                       onClick={handleLinkClick}
                     >
-                      Report list
+                      Location list
                     </Link>
                   </li>
                 </ul>
               )}
-            </li> */}
+            </li> 
+
+
             <li className={activeMenu === "banner" ? "mm-active" : ""}>
               <Link
                 className="has-arrow waves-effect"

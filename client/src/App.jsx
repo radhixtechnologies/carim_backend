@@ -34,6 +34,8 @@ import PrivacyPolicyApp from './Admin/AppCms/PrivacyPolicyApp';
 import TermsConditionsApp from './Admin/AppCms/TermsConditionsApp';
 import DeleteAccount from './Admin/AppCms/DeleteAcount';
 import DriverWallet from './Admin/Drivers/DriverWallet';
+import ReportAdd from './Admin/Reports/ReportAdd';
+
 
 
 const App = () => {
@@ -93,6 +95,7 @@ const App = () => {
             <Route path="/screenshotlist" element={<PrivateRoute element={<ScreenShotList />} />} />
             <Route path="/bookingcompleted" element={<PrivateRoute element={<BookingCompleted />} />} />
             <Route path="/driverwalletList" element={<PrivateRoute element={<DriverWallet />} />} />
+            <Route path="/ReportAdd" element={<PrivateRoute element={<ReportAdd />} />} />
 
           </Route>
         </Routes>

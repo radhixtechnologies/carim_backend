@@ -15,6 +15,7 @@ const ReportList = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [dateFilter, setDateFilter] = useState("all");
   const [selectedMatch, setSelectedMatch] = useState(null);
+  const [loading, setLoading] = useState(false);
   const limit = 10;
 
   const dateFilters = [
@@ -30,28 +31,38 @@ const ReportList = () => {
   }, [currentPage, searchTerm, dateFilter]);
 
   const fetchData = async (page, search = "", filter = "all") => {
+    setLoading(true);
     try {
       const response = await axiosInstance.get(
         `/reportlist?page=${page}&limit=${limit}&search=${encodeURIComponent(
           search
         )}&dateFilter=${filter}`
       );
+
+      console.log("API Response:", response.data);
+
       if (response.data.success) {
-        setMatches(response.data.body.data);
-        setTotalPages(response.data.body.totalPages);
+        const responseData = response.data.body;
+        setMatches(responseData.data || []);
+        setTotalPages(responseData.totalPages || 1);
       } else {
         Swal.fire(
           "Error",
-          response.data.message || "Failed to load report",
+          response.data.message || "Failed to load location",
           "error"
         );
+        setMatches([]);
       }
     } catch (error) {
+      console.error("Fetch error:", error);
       Swal.fire(
         "Error",
-        "An error occurred while fetching the report list",
+        error.response?.data?.message || "An error occurred while fetching the location list",
         "error"
       );
+      setMatches([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -62,6 +73,7 @@ const ReportList = () => {
 
   const handlePageChange = (event, value) => {
     setCurrentPage(value);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDateFilter = (filterValue) => {
@@ -88,33 +100,16 @@ const ReportList = () => {
     if (result.isConfirmed) {
       try {
         await axiosInstance.post(`/reportdelete/${id}`);
-
-        const response = await axiosInstance.get(
-          `/ratinglist?page=${currentPage}&limit=${limit}&search=${encodeURIComponent(
-            searchTerm
-          )}&dateFilter=${dateFilter}`
-        );
-
-        if (response.data.success) {
-          const newTotalPages = response.data.body.totalPages;
-          const newData = response.data.body.data;
-          if (newData.length === 0 && currentPage > 1) {
-            setCurrentPage((prevPage) => prevPage - 1);
-          } else {
-            setMatches(newData);
-            setTotalPages(newTotalPages);
-          }
-
-          Swal.fire("Deleted!", "Report has been deleted.", "success");
-        }
+        await fetchData(currentPage, searchTerm, dateFilter);
+        Swal.fire("Deleted!", "Location has been deleted.", "success");
       } catch (error) {
+        console.error("Delete error:", error);
         Swal.fire(
           "Error!",
-          error.response?.data?.message || "Error deleting Report",
+          error.response?.data?.message || "Error deleting location",
           "error"
         );
       }
-    } else {
     }
   };
 
@@ -129,7 +124,7 @@ const ReportList = () => {
           <div className="page-content">
             <div className="container-fluid">
               <div className="title-box mb-3 pb-1">
-                <h4 className="mb-0 page-title">Report List</h4>
+                <h4 className="mb-0 page-title">Location List</h4>
                 <nav aria-label="breadcrumb" className="mt-1">
                   <ol className="breadcrumb mb-0">
                     <li className="breadcrumb-item">
@@ -139,11 +134,11 @@ const ReportList = () => {
                     </li>
                     <li className="breadcrumb-item">
                       <Link to="/" className="new">
-                        <i className="ri-group-2-line me-1" /> Reports
+                        <i className="ri-group-2-line me-1" /> Location
                       </Link>
                     </li>
                     <li className="breadcrumb-item active" aria-current="page">
-                      Report Listings
+                      Location Listings
                     </li>
                   </ol>
                 </nav>
@@ -159,7 +154,7 @@ const ReportList = () => {
                       <input
                         type="text"
                         className="form-control"
-                        placeholder="Search..."
+                        placeholder="Search by pickup or drop location..."
                         value={searchTerm}
                         onChange={handleSearchChange}
                       />
@@ -188,6 +183,14 @@ const ReportList = () => {
                         ))}
                       </ul>
                     </div>
+                    <div className="d-flex justify-content-end ms-auto">
+                      <Link
+                        to="/ReportAdd"
+                        className="btn btn-soft-primary px-2 btn-sm me-1"
+                      >
+                        <i className="ri-add-fill font-size-16"></i>
+                      </Link>
+                    </div>
                   </div>
                   <div className="table-responsive table-card border-top">
                     <div data-simplebar="" className="cus-scroll scmob">
@@ -195,25 +198,27 @@ const ReportList = () => {
                         <thead>
                           <tr>
                             <th>Sr no.</th>
-                            <th>Report By</th>
-                            <th>Report To</th>
-                            <th>Booking Id</th>
+                            <th>Pickup Location</th>
+                            <th>Drop Location</th>
                             <th className="text-end">Action</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {matches.length > 0 ? (
+                          {loading ? (
+                            <tr>
+                              <td colSpan="4" style={{ textAlign: "center", padding: "40px" }}>
+                                <div className="spinner-border text-primary" role="status">
+                                  <span className="visually-hidden">Loading...</span>
+                                </div>
+                              </td>
+                            </tr>
+                          ) : matches.length > 0 ? (
                             matches.map((match, index) => {
                               return (
                                 <tr key={match.id}>
-                                  <td>
-                                    {(currentPage - 1) * limit + index + 1}
-                                  </td>
-
-                                  {/* Update to use firstName and lastName */}
-                                  <td>{`${match.reportedby?.firstName || ""} ${match.reportedby?.lastName || ""}`}</td>
-                                  <td>{`${match.reportedto?.firstName || ""} ${match.reportedto?.lastName || ""}`}</td>
-                                  <td>{match.reportedbooking?.id || ""}</td>
+                                  <td>{(currentPage - 1) * limit + index + 1}</td>
+                                  <td>{match.pickupLocation || "-"}</td>
+                                  <td>{match.dropLocation || "-"}</td>
                                   <td>
                                     <div className="d-flex justify-content-end">
                                       <button
@@ -235,9 +240,8 @@ const ReportList = () => {
                                           borderColor: "#ea5455",
                                           color: "#fff",
                                         }}
-                                        title="Delete report"
                                       >
-                                        <i className="ri-delete-bin-line font-size-16"></i>{" "}
+                                        <i className="ri-delete-bin-line font-size-16"></i>
                                       </button>
                                     </div>
                                   </td>
@@ -246,29 +250,29 @@ const ReportList = () => {
                             })
                           ) : (
                             <tr>
-                              <td
-                                colSpan="5"
-                                style={{ textAlign: "center", padding: "20px" }}
-                              >
-                                No reports found
+                              <td colSpan="4" style={{ textAlign: "center", padding: "40px" }}>
+                                <div>
+                                  <i className="ri-inbox-line" style={{ fontSize: "48px", color: "#ccc" }}></i>
+                                  <p className="mt-2">No locations found</p>
+                                </div>
                               </td>
                             </tr>
                           )}
                         </tbody>
                       </table>
-                      <div className="d-flex justify-content-center align-items-center mt-3 ">
-                        <Stack
-                          spacing={2}
-                          className="d-flex justify-content-center mt-3"
-                        >
-                          <Pagination
-                            count={totalPages}
-                            page={currentPage}
-                            onChange={handlePageChange}
-                            color="primary"
-                          />
-                        </Stack>
-                      </div>
+                      {totalPages > 1 && (
+                        <div className="d-flex justify-content-center align-items-center mt-3">
+                          <Stack spacing={2}>
+                            <Pagination
+                              count={totalPages}
+                              page={currentPage}
+                              onChange={handlePageChange}
+                              color="primary"
+                              shape="rounded"
+                            />
+                          </Stack>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -278,7 +282,7 @@ const ReportList = () => {
         </div>
       </div>
 
-      {/* Rating Details Offcanvas */}
+      {/* Location Details Offcanvas */}
       <div
         className="offcanvas offcanvas-end rdetails"
         tabIndex="-1"
@@ -286,15 +290,13 @@ const ReportList = () => {
         aria-labelledby="offcanvasRightLabel"
       >
         <div className="offcanvas-header d-block">
-          <div className="d-flex align-items-center">
-            <div className="d-flex align-items-center">
-              <h5
-                className="offcanvas-title mb-0 me-3 fw-semibold"
-                id="offcanvasRightLabel"
-              >
-                Report Details
-              </h5>
-            </div>
+          <div className="d-flex align-items-center justify-content-between">
+            <h5
+              className="offcanvas-title mb-0 fw-semibold"
+              id="offcanvasRightLabel"
+            >
+              Location Details
+            </h5>
             <button
               type="button"
               className="btn-close"
@@ -305,64 +307,56 @@ const ReportList = () => {
         </div>
         <div className="offcanvas-body">
           {selectedMatch ? (
-            <>
-              <table
-                className="table table-borderless"
-                style={{ marginLeft: "-8px" }}
-              >
-                <tbody>
-                  <tr>
-                    <td>Report ID :</td>
-                    <td className="text-end text-black fw-medium">
-                      {selectedMatch.id}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Report By:</td>
-                    <td className="text-end text-black fw-medium">
-                      {`${selectedMatch.reportedby?.firstName || ""} ${selectedMatch.reportedby?.lastName || ""}`}
-                    </td>
-                  </tr>
-
-                  <tr>
-                    <td>Report To:</td>
-                    <td className="text-end text-black fw-medium">
-                      {`${selectedMatch.reportedto?.firstName || ""} ${selectedMatch.reportedto?.lastName || ""}`}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Booking Id:</td>
-                    <td className="text-end text-black fw-medium">
-                      {selectedMatch.reportedbooking?.id || ""}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-              <div className="mt-3">
-                <div className="font-size-16 fw-medium mb-2">Reason:</div>
-                <div className="bg-light">
-                  {selectedMatch.reason ? (
-                    <textarea
-                      readOnly
-                      className="form-control"
-                      rows="14"
-                      value={selectedMatch.reason}
-                      style={{
-                        resize: "none",
-                        backgroundColor: "#f8f9fa",
-                        border: "1px solid black",
-                      }}
-                    />
-                  ) : (
-                    ""
-                  )}
-                </div>
-              </div>
-            </>
+            <table className="table table-borderless">
+              <tbody>
+                <tr>
+                  <th style={{ width: "40%" }}>ID :</th>
+                  <td className="text-end text-black fw-medium">{selectedMatch.id}</td>
+                </tr>
+                <tr>
+                  <th>Pickup Location :</th>
+                  <td className="text-end text-black fw-medium">{selectedMatch.pickupLocation || "-"}</td>
+                </tr>
+                <tr>
+                  <th>Pickup Latitude :</th>
+                  <td className="text-end text-black fw-medium">{selectedMatch.latitude || "-"}</td>
+                </tr>
+                <tr>
+                  <th>Pickup Longitude :</th>
+                  <td className="text-end text-black fw-medium">{selectedMatch.longitude || "-"}</td>
+                </tr>
+                <tr>
+                  <th>Drop Location :</th>
+                  <td className="text-end text-black fw-medium">{selectedMatch.dropLocation || "-"}</td>
+                </tr>
+                <tr>
+                  <th>Drop Latitude :</th>
+                  <td className="text-end text-black fw-medium">{selectedMatch.dropLatitude || "-"}</td>
+                </tr>
+                <tr>
+                  <th>Drop Longitude :</th>
+                  <td className="text-end text-black fw-medium">{selectedMatch.dropLongitude || "-"}</td>
+                </tr>
+                {/* <tr>
+                  <th>Status :</th>
+                  <td className="text-end">
+                    <span className={`badge ${selectedMatch.status === 1 ? "bg-success" : "bg-warning"}`}>
+                      {selectedMatch.status === 1 ? "Active" : "Pending"}
+                    </span>
+                  </td>
+                </tr> */}
+                <tr>
+                  <th>Created At :</th>
+                  <td className="text-end text-black fw-medium">
+                    {selectedMatch.createdAt ? new Date(selectedMatch.createdAt).toLocaleString() : "-"}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           ) : (
             <div className="text-center py-5">
-              <i className="ri-user-line font-size-48 text-muted"></i>
-              <p className="mt-3 text-muted">No report selected</p>
+              <i className="ri-inbox-line" style={{ fontSize: "48px", color: "#ccc" }}></i>
+              <p className="mt-3 text-muted">No location selected</p>
             </div>
           )}
         </div>
