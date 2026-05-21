@@ -22,6 +22,8 @@ router.post('/termsconditions', cmsController.updateterm);
 
 
 router.post('/login', auth.login);
+router.post('/addLocation', reportController.addLocation);
+
 router.use(authtoken.verifyToken);
 router.get('/profile', auth.profile);
 router.post('/updateprofile', auth.editProfile);
@@ -109,5 +111,7 @@ router.post('/transferscreenshotstatus', transactionController.screenshotstatus)
 router.get('/driverWaletHistory', transactionController.driverWaletHistory);
 router.get('/driverWaletView/:id', transactionController.driverWaletView);
 router.post('/driverWalletDelete/:id', transactionController.driverWalletDelete);
+
+
 
 module.exports = router;

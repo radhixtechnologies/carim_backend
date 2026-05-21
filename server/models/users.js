@@ -222,12 +222,16 @@ module.exports = function (sequelize, DataTypes) {
     },
     priceStatus: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       defaultValue: 0
+    },
+    otpStatus: {
+      type: DataTypes.INTEGER,
+      allowNull: true
     },
     priceRushHour: {
       type: DataTypes.STRING(255),
-      allowNull: true,
+      allowNull: false,
       defaultValue: ""
     },
     parkingCharge: {
@@ -235,16 +239,11 @@ module.exports = function (sequelize, DataTypes) {
       allowNull: false,
       defaultValue: ""
     },
-    otpStatus: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      defaultValue: 0
-    },
     setKmRange: {
       type: DataTypes.STRING(255),
       allowNull: false,
       defaultValue: ""
-    },
+    }
   }, {
     sequelize,
     tableName: 'users',

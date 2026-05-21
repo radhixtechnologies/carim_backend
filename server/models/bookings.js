@@ -132,16 +132,6 @@ module.exports = function (sequelize, DataTypes) {
       type: DataTypes.DATE,
       allowNull: true
     },
-    startParkTime: {
-      type: DataTypes.STRING(255),
-      allowNull: false,
-      defaultValue: ""
-    },
-    endParkTime: {
-      type: DataTypes.STRING(255),
-      allowNull: false,
-      defaultValue: ""
-    },
     callerName: {
       type: DataTypes.STRING(255),
       allowNull: false,
@@ -167,24 +157,33 @@ module.exports = function (sequelize, DataTypes) {
       allowNull: false,
       defaultValue: ""
     },
-    rideStartTime: {
+    startParkTime: {
       type: DataTypes.STRING(255),
-      allowNull: true,
+      allowNull: false,
       defaultValue: ""
     },
-    lastPerMinuteCalculation: {
-      type: DataTypes.DATE,
-      allowNull: true
+    endParkTime: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      defaultValue: ""
+    },
+    rideStartTime: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      defaultValue: ""
     },
     totalPerMinuteCharge: {
       type: DataTypes.STRING(255),
       allowNull: false,
-      defaultValue: "0"
+      defaultValue: ""
     },
     parkingActive: {
       type: DataTypes.ENUM('0', '1'),
-      allowNull: false,
-      defaultValue: "0"
+      allowNull: false
+    },
+    lastPerMinuteCalculation: {
+      type: DataTypes.DATE,
+      allowNull: false
     }
   }, {
     sequelize,

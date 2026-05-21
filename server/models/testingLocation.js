@@ -11,7 +11,7 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.INTEGER,
       allowNull: false
     },
-    location: {
+    pickupLocation: {
       type: DataTypes.STRING(255),
       allowNull: false,
       defaultValue: ""
@@ -25,11 +25,32 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.STRING(255),
       allowNull: false,
       defaultValue: ""
+    },
+    dropLocation: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      defaultValue: ""
+    },
+    dropLatitude: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      defaultValue: ""
+    },
+    dropLongitude: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      defaultValue: ""
+    },
+    status: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0
     }
   }, {
     sequelize,
     tableName: 'testingLocation',
     timestamps: true,
+    paranoid: true,
     indexes: [
       {
         name: "PRIMARY",
