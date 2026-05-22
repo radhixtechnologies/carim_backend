@@ -46,6 +46,7 @@ const ReportAdd = () => {
   const [locationStatus, setLocationStatus] = useState("loading"); // loading, success, error
 
   const pickupAutocompleteRef = useRef(null);
+  const pickupInputRef = useRef(null); // ADDED: Reference to input field
   const navigate = useNavigate();
 
   const { isLoaded, loadError } = useLoadScript({
@@ -144,17 +145,24 @@ const ReportAdd = () => {
     pickupAutocompleteRef.current = autocomplete;
   };
 
+  // FIXED: This is the main fix - keeps user's typed text instead of Google's official name
   const onPickupPlaceChanged = () => {
     if (pickupAutocompleteRef.current) {
       const place = pickupAutocompleteRef.current.getPlace();
       if (place && place.geometry) {
         const lat = place.geometry.location.lat();
         const lng = place.geometry.location.lng();
-        const address = place.formatted_address || place.name;
+
+        // IMPORTANT FIX: Get the actual text user typed in the input field
+        // This prevents "Mohali" from changing to "Sahibzada Ajit Singh Nagar"
+        const userTypedText = pickupInputRef.current ? pickupInputRef.current.value : "";
+
+        // Use user's typed text as the display address, fallback to Google's address if empty
+        const address = userTypedText || place.formatted_address || place.name;
 
         setFormData(prev => ({
           ...prev,
-          pickupLocation: address,
+          pickupLocation: address,  // This will keep "Mohali, Punjab, India"
           latitude: lat.toString(),
           longitude: lng.toString()
         }));
@@ -236,6 +244,10 @@ const ReportAdd = () => {
       latitude: "",
       longitude: ""
     }));
+    // Clear the input field reference as well
+    if (pickupInputRef.current) {
+      pickupInputRef.current.value = "";
+    }
     toast.info("Pickup location cleared");
   };
 
@@ -317,30 +329,6 @@ const ReportAdd = () => {
                 </nav>
               </div>
 
-              {/* Location Status Banner - Commented but kept for reference */}
-              {/* {locationStatus === "success" && (
-                <div className="alert alert-success alert-dismissible fade show mb-3" role="alert">
-                  <i className="ri-checkbox-circle-fill me-2"></i>
-                  <strong>Location detected!</strong> Map centered to your current location.
-                  <button type="button" className="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-              )}
-
-              {locationStatus === "error" && (
-                <div className="alert alert-warning alert-dismissible fade show mb-3" role="alert">
-                  <i className="ri-alert-fill me-2"></i>
-                  <strong>Location access issue!</strong> Using default map center. 
-                  <button 
-                    type="button" 
-                    className="btn btn-sm btn-primary ms-2"
-                    onClick={centerToCurrentLocation}
-                  >
-                    <i className="ri-crosshair-line me-1"></i> Try Again
-                  </button>
-                  <button type="button" className="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-              )} */}
-
               <div className="row">
                 <div className="col-lg-12 mb-4">
                   <div className="card">
@@ -400,7 +388,7 @@ const ReportAdd = () => {
                           <label className="form-label fw-medium">
                             Pickup Location <span className="text-danger">*</span>
                           </label>
-                          <div className="input-group " >
+                          <div className="input-group">
                             <Autocomplete
                               onLoad={onPickupLoad}
                               onPlaceChanged={onPickupPlaceChanged}
@@ -410,6 +398,7 @@ const ReportAdd = () => {
                               }}
                             >
                               <input
+                                ref={pickupInputRef}  // ADDED: Reference to get user's typed text
                                 type="text"
                                 className={`form-control ${errors.pickupLocation ? "is-invalid" : ""}`}
                                 id="pickupLocation"
@@ -441,49 +430,6 @@ const ReportAdd = () => {
                             Search for a place or click on map to set pickup location
                           </small>
                         </div>
-
-                        {/* Latitude and Longitude fields - commented but kept for reference */}
-                        {/* <div className="row">
-                          <div className="col-md-6 mb-3">
-                            <label className="form-label fw-medium">
-                              Latitude <span className="text-danger">*</span>
-                            </label>
-                            <input
-                              type="text"
-                              className={`form-control ${errors.latitude ? "is-invalid" : ""}`}
-                              id="latitude"
-                              placeholder="e.g., 28.6139"
-                              value={formData.latitude}
-                              onChange={handleChange}
-                              readOnly
-                            />
-                            {errors.latitude && (
-                              <div className="invalid-feedback">
-                                {errors.latitude}
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="col-md-6 mb-3">
-                            <label className="form-label fw-medium">
-                              Longitude <span className="text-danger">*</span>
-                            </label>
-                            <input
-                              type="text"
-                              className={`form-control ${errors.longitude ? "is-invalid" : ""}`}
-                              id="longitude"
-                              placeholder="e.g., 77.2090"
-                              value={formData.longitude}
-                              onChange={handleChange}
-                              readOnly
-                            />
-                            {errors.longitude && (
-                              <div className="invalid-feedback">
-                                {errors.longitude}
-                              </div>
-                            )}
-                          </div>
-                        </div> */}
 
                         <div className="text-end mt-3">
                           <Link
