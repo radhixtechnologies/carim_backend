@@ -57,7 +57,7 @@ const ReportAdd = () => {
   const navigate = useNavigate();
 
   const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
+    googleMapsApiKey: "AIzaSyCtIyrbd4iRpjtSV_COX6LInE1010uWm9Q",
     libraries,
   });
 

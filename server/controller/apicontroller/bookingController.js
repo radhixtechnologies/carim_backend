@@ -276,7 +276,7 @@ module.exports = {
                 // ---------------- GOOGLE ROUTES API (NEW) - ONLY FOR rideOpen == 1 ----------------
                 const calculateGoogleDistance = async (originLat, originLng, destLat, destLng) => {
                     try {
-                        const googleMapsKey = "AIzaSyDT712NfS8CFhtKud9s9lfxa5MLdQID91A";
+                        const googleMapsKey = "AIzaSyCtIyrbd4iRpjtSV_COX6LInE1010uWm9Q";
 
                         console.log("🔍 TESTING API CONNECTION...");
                         console.log(`📍 From: ${originLat}, ${originLng} → To: ${destLat}, ${destLng}`);
