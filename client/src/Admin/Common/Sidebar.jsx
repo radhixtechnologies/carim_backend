@@ -215,6 +215,28 @@ function Sidebar({ isOpen }) {
                 </ul>
               )}
             </li>
+            <li className={activeMenu === "report" ? "mm-active" : ""}>
+              <Link
+                className="has-arrow waves-effect"
+                onClick={() => toggleMenu("report")}
+              >
+                <i className="ri-map-pin-line fs-5"></i>
+                <span>Location</span>
+              </Link>
+              {isSidebarExpanded && activeMenu === "report" && (
+                <ul className="sub-menu mm-show">
+                  <li>
+                    <Link
+                      className={isActive("/reportlist") ? "active" : ""}
+                      to="/reportlist"
+                      onClick={handleLinkClick}
+                    >
+                      Location list
+                    </Link>
+                  </li>
+                </ul>
+              )}
+            </li>
             <li className={activeMenu === "booking" ? "mm-active" : ""}>
               <Link
                 className="has-arrow waves-effect"
@@ -284,7 +306,7 @@ function Sidebar({ isOpen }) {
                       Transaction Proof list
                     </Link>
                   </li> */}
-                  
+
                 </ul>
               )}
             </li>
@@ -313,28 +335,7 @@ function Sidebar({ isOpen }) {
             </li>*/}
 
 
-            <li className={activeMenu === "report" ? "mm-active" : ""}>
-              <Link
-                className="has-arrow waves-effect"
-                onClick={() => toggleMenu("report")}
-              >
-                <Activity />
-                <span>Location</span>
-              </Link>
-              {isSidebarExpanded && activeMenu === "report" && (
-                <ul className="sub-menu mm-show">
-                  <li>
-                    <Link
-                      className={isActive("/reportlist") ? "active" : ""}
-                      to="/reportlist"
-                      onClick={handleLinkClick}
-                    >
-                      Location list
-                    </Link>
-                  </li>
-                </ul>
-              )}
-            </li> 
+
 
 
             <li className={activeMenu === "banner" ? "mm-active" : ""}>
