@@ -213,8 +213,8 @@ const ReportList = () => {
                       <Link
                         to="/ReportAdd"
                         className="btn btn-soft-primary px-2 btn-sm me-1"
-                      >
-                        <i className="ri-add-fill font-size-16"></i>
+                      > Add 
+                        <i className="ri-map-pin-line font-size-16"></i>
                       </Link>
                     </div>
                   </div>

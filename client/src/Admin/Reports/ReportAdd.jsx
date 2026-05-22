@@ -400,7 +400,7 @@ const ReportAdd = () => {
                           <label className="form-label fw-medium">
                             Pickup Location <span className="text-danger">*</span>
                           </label>
-                          <div className="input-group">
+                          <div className="input-group " >
                             <Autocomplete
                               onLoad={onPickupLoad}
                               onPlaceChanged={onPickupPlaceChanged}
@@ -417,6 +417,7 @@ const ReportAdd = () => {
                                 value={formData.pickupLocation}
                                 onChange={handleChange}
                                 maxLength={255}
+                                style={{ width: "500px" }}
                               />
                             </Autocomplete>
                             {selectedPickup && (
