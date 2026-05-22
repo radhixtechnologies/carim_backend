@@ -1899,6 +1899,7 @@ module.exports = {
     getLocations: async (req, res) => {
         try {
             const locations = await db.testingLocation.findAll({
+                where :{status:1},
                 order: [['createdAt', 'DESC']] // latest first
             });
 

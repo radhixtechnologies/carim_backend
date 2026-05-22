@@ -1200,7 +1200,7 @@ module.exports = {
                             `Nouvelle demande de course disponible (à ${driver.distance.toFixed(2)} km)`
                         );
 
-                        // 🔥 FIX: REMOVED DIRECT PUSH CALL FROM HERE
+                        //  FIX: REMOVED DIRECT PUSH CALL FROM HERE
                         // Push will only be sent from inside notification creation
 
                         const notificationPromise = db.notifications.create({
@@ -1212,7 +1212,7 @@ module.exports = {
                             bookingId: newBooking.id,
                             is_read: 0
                         }).then(async (notification) => {
-                            // 🔥 FIX: SEND PUSH ONLY ONCE FROM HERE
+                            //  FIX: SEND PUSH ONLY ONCE FROM HERE
                             if (driverToken.deviceToken && driverToken.deviceToken.length > 10) {
                                 await helper.sendNotification_android(driverToken.deviceToken, {
                                     message: msg,

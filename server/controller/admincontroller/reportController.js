@@ -213,7 +213,8 @@ module.exports = {
                 longitude: lng,
                 dropLocation: dropLocation ? dropLocation.trim() : "",
                 dropLatitude: dropLatitude ? parseFloat(dropLatitude) : "",
-                dropLongitude: dropLongitude ? parseFloat(dropLongitude) : ""
+                dropLongitude: dropLongitude ? parseFloat(dropLongitude) : "",
+                status:1,
             });
 
             return helper.success(res, "Location created successfully", data);

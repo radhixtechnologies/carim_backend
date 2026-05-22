@@ -87,7 +87,7 @@ module.exports = {
             throw error;
         }
     },
- sendNotification_android: async function (token, noti_data) {
+    sendNotification_android: async function (token, noti_data) {
         if (!token || typeof token !== "string" || token.trim() === "") {
             console.warn("Invalid device token, skipping push:", token);
             return false;
@@ -95,15 +95,15 @@ module.exports = {
 
         const cacheKey = `${token}_${noti_data.bookingId}_${noti_data.type}`;
         const now = Date.now();
-        
+
         if (pushCache.has(cacheKey)) {
             const lastSent = pushCache.get(cacheKey);
             if (now - lastSent < 2000) {
-                console.log("🚫 Duplicate push blocked for:", cacheKey);
+                console.log(" Duplicate push blocked for:", cacheKey);
                 return true;
             }
         }
-        
+
         pushCache.set(cacheKey, now);
         setTimeout(() => {
             pushCache.delete(cacheKey);
