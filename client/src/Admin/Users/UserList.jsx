@@ -24,6 +24,7 @@ const UserList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedUser, setSelectedUser] = useState(null);
   const [editUserData, setEditUserData] = useState(null);
+  const [editErrors, setEditErrors] = useState({});
   const limit = 10;
   const [dateFilter, setDateFilter] = useState("all");
 
@@ -139,18 +140,37 @@ const UserList = () => {
       firstName: user.firstName || "",
       lastName: user.lastName || ""
     });
+    setEditErrors({}); // Clear errors when opening modal
   };
 
   const handleEditChange = (e) => {
     const { name, value } = e.target;
     setEditUserData((prev) => ({ ...prev, [name]: value }));
+    // Clear error for this field when user starts typing
+    if (editErrors[name]) {
+      setEditErrors((prev) => ({ ...prev, [name]: "" }));
+    }
+  };
+
+  const validateEditForm = () => {
+    const errors = {};
+    if (!editUserData.firstName || editUserData.firstName.trim() === "") {
+      errors.firstName = "Name is required";
+    }
+    setEditErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleUpdateUser = async () => {
+    // Validate before submitting
+    if (!validateEditForm()) {
+      return;
+    }
+
     try {
       const updatePayload = {
         id: editUserData.id,
-        firstName: editUserData.firstName,
+        firstName: editUserData.firstName.trim(),
         lastName: editUserData.lastName,
       };
 
@@ -169,6 +189,7 @@ const UserList = () => {
       }
 
       setEditUserData(null);
+      setEditErrors({});
 
       // Refresh user list
       dispatch(
@@ -265,7 +286,7 @@ const UserList = () => {
                           <tr>
                             <th>Sr no.</th>
                             <th>Phone Number</th>
-                             <th>Name</th>
+                            <th>Name</th>
                             {/* <th>Last Name</th> */}
                             <th>Blocked</th>
                             <th>Suspended</th>
@@ -508,7 +529,7 @@ const UserList = () => {
                       {selectedUser.phoneNumber || ""}
                     </td>
                   </tr>
-                   <tr>
+                  <tr>
                     <td> Name :</td>
                     <td className="text-end text-black fw-medium">
                       {selectedUser.firstName || ""}
@@ -525,8 +546,8 @@ const UserList = () => {
                     <td className="text-end text-black fw-medium">
                       <span
                         className={`badge ${selectedUser.block === "1"
-                            ? "bg-danger"
-                            : "bg-success"
+                          ? "bg-danger"
+                          : "bg-success"
                           }`}
                       >
                         {selectedUser.block === "1" ? "Blocked" : "Not Blocked"}
@@ -538,8 +559,8 @@ const UserList = () => {
                     <td className="text-end text-black fw-medium">
                       <span
                         className={`badge ${selectedUser.suspend === "1"
-                            ? "bg-danger"
-                            : "bg-success"
+                          ? "bg-danger"
+                          : "bg-success"
                           }`}
                       >
                         {selectedUser.suspend === "1"
@@ -553,8 +574,8 @@ const UserList = () => {
                     <td className="text-end text-black fw-medium">
                       <span
                         className={`badge ${selectedUser.status === "1"
-                            ? "bg-success"
-                            : "bg-danger"
+                          ? "bg-success"
+                          : "bg-danger"
                           }`}
                       >
                         {selectedUser.status === "1" ? "Active" : "Inactive"}
@@ -601,12 +622,17 @@ const UserList = () => {
                     <label className="form-label">Name</label>
                     <input
                       type="text"
-                      className="form-control"
+                      className={`form-control ${editErrors.firstName ? 'is-invalid' : ''}`}
                       name="firstName"
                       value={editUserData.firstName || ""}
                       onChange={handleEditChange}
-                      placeholder="Enter first name"
+                      placeholder="Enter Name"
                     />
+                    {editErrors.firstName && (
+                      <div className="invalid-feedback" style={{ display: 'block' }}>
+                        {editErrors.firstName}
+                      </div>
+                    )}
                   </div>
                   {/* <div className="mb-3">
                     <label className="form-label">Last Name</label>

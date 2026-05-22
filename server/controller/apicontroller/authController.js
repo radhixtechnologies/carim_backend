@@ -1900,9 +1900,8 @@ module.exports = {
         try {
             const locations = await db.testingLocation.findAll({
                 where :{status:1},
-                order: [['createdAt', 'DESC']] // latest first
+                order: [['createdAt', 'DESC']] 
             });
-
             return helper.success(res, "Locations fetched successfully", locations);
         } catch (error) {
             console.log(error, "error in getLocations API");
