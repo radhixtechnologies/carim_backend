@@ -9,7 +9,6 @@ import {
   GoogleMap,
   Marker,
   Autocomplete,
-  DirectionsRenderer,
 } from "@react-google-maps/api";
 
 const libraries = ["places"];
@@ -37,27 +36,20 @@ const ReportAdd = () => {
     pickupLocation: "",
     latitude: "",
     longitude: "",
-    dropLocation: "",
-    dropLatitude: "",
-    dropLongitude: ""
   });
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [selectedPickup, setSelectedPickup] = useState(null);
-  const [selectedDrop, setSelectedDrop] = useState(null);
-  const [directions, setDirections] = useState(null);
   const [mapCenter, setMapCenter] = useState(null); // Start with null
   const [pickupMarker, setPickupMarker] = useState(null);
-  const [dropMarker, setDropMarker] = useState(null);
   const [locationStatus, setLocationStatus] = useState("loading"); // loading, success, error
 
   const pickupAutocompleteRef = useRef(null);
-  const dropAutocompleteRef = useRef(null);
   const navigate = useNavigate();
 
   const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: "AIzaSyCtIyrbd4iRpjtSV_COX6LInE1010uWm9Q",
+    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
     libraries,
   });
 
@@ -136,18 +128,6 @@ const ReportAdd = () => {
       newErrors.longitude = "Please enter a valid longitude (-180 to 180).";
     }
 
-    if (formData.dropLocation && formData.dropLocation.length > 255) {
-      newErrors.dropLocation = "Drop location cannot be longer than 255 characters.";
-    }
-
-    if (formData.dropLatitude && (isNaN(formData.dropLatitude) || formData.dropLatitude < -90 || formData.dropLatitude > 90)) {
-      newErrors.dropLatitude = "Please enter a valid drop latitude (-90 to 90).";
-    }
-
-    if (formData.dropLongitude && (isNaN(formData.dropLongitude) || formData.dropLongitude < -180 || formData.dropLongitude > 180)) {
-      newErrors.dropLongitude = "Please enter a valid drop longitude (-180 to 180).";
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -162,10 +142,6 @@ const ReportAdd = () => {
 
   const onPickupLoad = (autocomplete) => {
     pickupAutocompleteRef.current = autocomplete;
-  };
-
-  const onDropLoad = (autocomplete) => {
-    dropAutocompleteRef.current = autocomplete;
   };
 
   const onPickupPlaceChanged = () => {
@@ -193,66 +169,8 @@ const ReportAdd = () => {
           latitude: "",
           longitude: ""
         }));
-
-        if (selectedDrop) {
-          calculateRoute({ lat, lng }, selectedDrop);
-        }
       }
     }
-  };
-
-  const onDropPlaceChanged = () => {
-    if (dropAutocompleteRef.current) {
-      const place = dropAutocompleteRef.current.getPlace();
-      if (place && place.geometry) {
-        const lat = place.geometry.location.lat();
-        const lng = place.geometry.location.lng();
-        const address = place.formatted_address || place.name;
-
-        setFormData(prev => ({
-          ...prev,
-          dropLocation: address,
-          dropLatitude: lat.toString(),
-          dropLongitude: lng.toString()
-        }));
-
-        setSelectedDrop({ lat, lng });
-        setDropMarker({ lat, lng });
-
-        setErrors(prev => ({
-          ...prev,
-          dropLocation: "",
-          dropLatitude: "",
-          dropLongitude: ""
-        }));
-
-        if (selectedPickup) {
-          calculateRoute(selectedPickup, { lat, lng });
-        }
-      }
-    }
-  };
-
-  const calculateRoute = (origin, destination) => {
-    if (!origin || !destination) return;
-
-    const directionsService = new window.google.maps.DirectionsService();
-
-    directionsService.route(
-      {
-        origin: origin,
-        destination: destination,
-        travelMode: window.google.maps.TravelMode.DRIVING,
-      },
-      (result, status) => {
-        if (status === "OK") {
-          setDirections(result);
-        } else {
-          console.error("Directions request failed:", status);
-          toast.error("Could not calculate route between locations");
-        }
-      }
-    );
   };
 
   const handleMapClick = (event) => {
@@ -264,33 +182,16 @@ const ReportAdd = () => {
       if (status === "OK" && results[0]) {
         const address = results[0].formatted_address;
 
-        if (!selectedPickup) {
-          setFormData(prev => ({
-            ...prev,
-            pickupLocation: address,
-            latitude: lat.toString(),
-            longitude: lng.toString()
-          }));
-          setSelectedPickup({ lat, lng });
-          setPickupMarker({ lat, lng });
-          setMapCenter({ lat, lng });
-          toast.success("Pickup location set");
-        }
-        else if (selectedPickup && !selectedDrop) {
-          setFormData(prev => ({
-            ...prev,
-            dropLocation: address,
-            dropLatitude: lat.toString(),
-            dropLongitude: lng.toString()
-          }));
-          setSelectedDrop({ lat, lng });
-          setDropMarker({ lat, lng });
-          calculateRoute(selectedPickup, { lat, lng });
-          toast.success("Drop location set");
-        }
-        else {
-          toast.warning("Both locations already set! Use clear buttons to reset.");
-        }
+        setFormData(prev => ({
+          ...prev,
+          pickupLocation: address,
+          latitude: lat.toString(),
+          longitude: lng.toString()
+        }));
+        setSelectedPickup({ lat, lng });
+        setPickupMarker({ lat, lng });
+        setMapCenter({ lat, lng });
+        toast.success("Pickup location set");
       }
     });
   };
@@ -335,21 +236,7 @@ const ReportAdd = () => {
       latitude: "",
       longitude: ""
     }));
-    setDirections(null);
     toast.info("Pickup location cleared");
-  };
-
-  const clearDrop = () => {
-    setSelectedDrop(null);
-    setDropMarker(null);
-    setFormData(prev => ({
-      ...prev,
-      dropLocation: "",
-      dropLatitude: "",
-      dropLongitude: ""
-    }));
-    setDirections(null);
-    toast.info("Drop location cleared");
   };
 
   const centerToCurrentLocation = () => {
@@ -430,7 +317,7 @@ const ReportAdd = () => {
                 </nav>
               </div>
 
-              {/* Location Status Banner */}
+              {/* Location Status Banner - Commented but kept for reference */}
               {/* {locationStatus === "success" && (
                 <div className="alert alert-success alert-dismissible fade show mb-3" role="alert">
                   <i className="ri-checkbox-circle-fill me-2"></i>
@@ -460,7 +347,7 @@ const ReportAdd = () => {
                     <div className="card-header d-flex justify-content-between align-items-center">
                       <h5 className="card-title mb-0">
                         <i className="ri-map-pin-line me-2"></i>
-                        Select Location on Map
+                        Select Pickup Location on Map
                       </h5>
                       <button
                         type="button"
@@ -490,29 +377,13 @@ const ReportAdd = () => {
                             title="Pickup Location"
                           />
                         )}
-                        {dropMarker && (
-                          <Marker
-                            position={dropMarker}
-                            label={{
-                              text: "D",
-                              color: "white",
-                              fontWeight: "bold",
-                            }}
-                            title="Drop Location"
-                          />
-                        )}
-                        {directions && (
-                          <DirectionsRenderer
-                            directions={directions}
-                            options={{
-                              polylineOptions: {
-                                strokeColor: "#FF0000",
-                                strokeWeight: 4,
-                              },
-                            }}
-                          />
-                        )}
                       </GoogleMap>
+                    </div>
+                    <div className="card-footer bg-light">
+                      <small className="text-muted">
+                        <i className="ri-information-line me-1"></i>
+                        <strong>Instructions:</strong> Click on map or search below to set pickup location. You can update the location anytime by clicking on a new spot or searching.
+                      </small>
                     </div>
                   </div>
                 </div>
@@ -564,12 +435,13 @@ const ReportAdd = () => {
                               {errors.pickupLocation}
                             </div>
                           )}
-                          {/* <small className="text-muted">
+                          <small className="text-muted">
                             <i className="ri-search-line me-1"></i>
-                            Search or click on map 
-                          </small> */}
+                            Search for a place or click on map to set pickup location
+                          </small>
                         </div>
 
+                        {/* Latitude and Longitude fields - commented but kept for reference */}
                         {/* <div className="row">
                           <div className="col-md-6 mb-3">
                             <label className="form-label fw-medium">
@@ -607,99 +479,6 @@ const ReportAdd = () => {
                             {errors.longitude && (
                               <div className="invalid-feedback">
                                 {errors.longitude}
-                              </div>
-                            )}
-                          </div>
-                        </div> */}
-
-                        {/* <div className="mb-3">
-                          <hr />
-                          <h6 className="mb-3">Drop Location Details (Optional)</h6>
-                        </div> */}
-
-                        {/* Drop Location with Autocomplete */}
-                        {/* <div className="mb-3">
-                          <label className="form-label fw-medium">
-                            Drop Location
-                          </label>
-                          <div className="input-group">
-                            <Autocomplete
-                              onLoad={onDropLoad}
-                              onPlaceChanged={onDropPlaceChanged}
-                              options={{
-                                types: ["geocode", "establishment"],
-                                componentRestrictions: { country: "in" },
-                              }}
-                            >
-                              <input
-                                type="text"
-                                className={`form-control ${errors.dropLocation ? "is-invalid" : ""}`}
-                                id="dropLocation"
-                                placeholder="Search drop location..."
-                                value={formData.dropLocation}
-                                onChange={handleChange}
-                                maxLength={255}
-                              />
-                            </Autocomplete>
-                            {selectedDrop && (
-                              <button
-                                type="button"
-                                className="btn btn-outline-danger"
-                                onClick={clearDrop}
-                                title="Clear drop location"
-                              >
-                                <i className="ri-close-line"></i>
-                              </button>
-                            )}
-                          </div>
-                          {errors.dropLocation && (
-                            <div className="invalid-feedback d-block">
-                              {errors.dropLocation}
-                            </div>
-                          )}
-                          <small className="text-muted">
-                            <i className="ri-search-line me-1"></i>
-                            Search or click on map (Second click = Drop)
-                          </small>
-                        </div>
-
-                        <div className="row">
-                          <div className="col-md-6 mb-3">
-                            <label className="form-label fw-medium">
-                              Drop Latitude
-                            </label>
-                            <input
-                              type="text"
-                              className={`form-control ${errors.dropLatitude ? "is-invalid" : ""}`}
-                              id="dropLatitude"
-                              placeholder="e.g., 28.7041"
-                              value={formData.dropLatitude}
-                              onChange={handleChange}
-                              readOnly
-                            />
-                            {errors.dropLatitude && (
-                              <div className="invalid-feedback">
-                                {errors.dropLatitude}
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="col-md-6 mb-3">
-                            <label className="form-label fw-medium">
-                              Drop Longitude
-                            </label>
-                            <input
-                              type="text"
-                              className={`form-control ${errors.dropLongitude ? "is-invalid" : ""}`}
-                              id="dropLongitude"
-                              placeholder="e.g., 77.1025"
-                              value={formData.dropLongitude}
-                              onChange={handleChange}
-                              readOnly
-                            />
-                            {errors.dropLongitude && (
-                              <div className="invalid-feedback">
-                                {errors.dropLongitude}
                               </div>
                             )}
                           </div>

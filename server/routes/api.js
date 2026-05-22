@@ -67,7 +67,6 @@ module.exports = (io) => {
     router.post('/languageTypeChange', bookingController.languageTypeChange);
 
     router.get('/driverWaletBalance', bookingController.driverWaletBalance);
-
     router.get('/notificationClear', bookingController.notificationClear);
 
     return router

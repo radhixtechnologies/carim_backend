@@ -2193,8 +2193,6 @@ module.exports = {
     Notificationlist: async (req, res) => {
         try {
             const notifications = await db.notifications.findAll({
-
-
                 attributes: {
                     include: [
                         [
@@ -2210,7 +2208,6 @@ module.exports = {
                             'senderImage'
                         ]
                     ],
-
                 },
                 where: {
                     receiver_id: req.user.id,
@@ -2220,15 +2217,12 @@ module.exports = {
             return helper.success(res, "Get All Notifications Successfully", notifications);
         } catch (error) {
             console.error("Error fetching notifications:", error);
-
         }
-
     },
 
     notificationClear: async (req, res) => {
         try {
             const userId = req.user.id;
-
             const deletedCount = await db.notifications.destroy({
                 where: {
                     receiver_id: userId
@@ -2239,10 +2233,9 @@ module.exports = {
                 "Notifications cleared successfully",
                 { deletedCount }
             );
-
         } catch (error) {
             console.log("notificationClear error:", error);
-            return helper.failed(res, "Something went wrong");
+            return helper.error(res, "Something went wrong");
         }
     },
 
