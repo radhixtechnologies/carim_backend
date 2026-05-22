@@ -53,6 +53,8 @@ module.exports = (io) => {
     router.get('/bookingdetail/:id', bookingController.bookingDetail);
     router.get("/transactionSsHistory", authController.transactionSsHistory);
     router.get("/userActiveRide", authController.userActiveRide);
+    router.get("/driverActiveRide", authController.driverActiveRide);
+
 
     router.post("/cancelRide", bookingController.cancelRide(io));
     router.post("/report", bookingController.report);
