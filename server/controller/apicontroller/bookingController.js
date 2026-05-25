@@ -1746,10 +1746,10 @@ module.exports = {
                         },
                         include: [{ model: db.users, as: 'user', attributes: ['socketId'] }]
                     });
-                       // Update notification table
+                    // Update notification table
                     if (otherDrivers.length > 0) {
                         const otherDriverIds = otherDrivers.map(item => item.driverId);
-                        
+
                         await db.notifications.update(
                             { status: 1 },
                             {
@@ -1964,16 +1964,6 @@ module.exports = {
                     raw: true
                 });
 
-                // await db.bookings.destroy({
-                //     where: {
-                //         driverId: null,
-                //         status: '0',
-                //         request: '0',
-                //         rejectCount: '0',
-                //         bookingDate: { [Sequelize.Op.lt]: oneMinuteAgo }
-                //     },
-                //     force: true
-                // });
                 await db.bookings.update(
                     { status: '6', request: '2' }, // mark as cancelled due to timeout
                     {
@@ -2828,6 +2818,7 @@ module.exports = {
                 },
                 where: {
                     receiver_id: req.user.id,
+                    // status:0
                 },
                 order: [['id', 'DESC']]
             });

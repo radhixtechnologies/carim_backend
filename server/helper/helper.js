@@ -13,7 +13,7 @@ const pushCache = new Map();
 
 module.exports = {
 
-    sendNotification_android1: async function (token, noti_data) {
+    sendNotification_android: async function (token, noti_data) {
         if (!token || typeof token !== "string" || token.trim() === "") {
             console.warn("Invalid device token, skipping push:", token);
             return false;
@@ -87,96 +87,96 @@ module.exports = {
             throw error;
         }
     },
-    sendNotification_android: async function (token, noti_data) {
-        if (!token || typeof token !== "string" || token.trim() === "") {
-            console.warn("Invalid device token, skipping push:", token);
-            return false;
-        }
+    // sendNotification_android1: async function (token, noti_data) {
+    //     if (!token || typeof token !== "string" || token.trim() === "") {
+    //         console.warn("Invalid device token, skipping push:", token);
+    //         return false;
+    //     }
 
-        const cacheKey = `${token}_${noti_data.bookingId}_${noti_data.type}`;
-        const now = Date.now();
+    //     const cacheKey = `${token}_${noti_data.bookingId}_${noti_data.type}`;
+    //     const now = Date.now();
 
-        if (pushCache.has(cacheKey)) {
-            const lastSent = pushCache.get(cacheKey);
-            if (now - lastSent < 2000) {
-                console.log(" Duplicate push blocked for:", cacheKey);
-                return true;
-            }
-        }
+    //     if (pushCache.has(cacheKey)) {
+    //         const lastSent = pushCache.get(cacheKey);
+    //         if (now - lastSent < 2000) {
+    //             console.log(" Duplicate push blocked for:", cacheKey);
+    //             return true;
+    //         }
+    //     }
 
-        pushCache.set(cacheKey, now);
-        setTimeout(() => {
-            pushCache.delete(cacheKey);
-        }, 2000);
+    //     pushCache.set(cacheKey, now);
+    //     setTimeout(() => {
+    //         pushCache.delete(cacheKey);
+    //     }, 2000);
 
-        try {
-            console.log(token, "Device token");
-            console.log(noti_data, "Notification data");
+    //     try {
+    //         console.log(token, "Device token");
+    //         console.log(noti_data, "Notification data");
 
-            // - ROLE 
-            const role = String(noti_data.targetRole || "1");
+    //         // - ROLE 
+    //         const role = String(noti_data.targetRole || "1");
 
-            const isDriver = role === "2";
-            const androidSound = isDriver ? "driver_alert" : "default";
-            const androidChannel = isDriver ? "driver_channel" : "default";
-            const iosSound = isDriver ? "push_sound.caf" : "user_app.caf";
+    //         const isDriver = role === "2";
+    //         const androidSound = isDriver ? "driver_alert" : "default";
+    //         const androidChannel = isDriver ? "driver_channel" : "default";
+    //         const iosSound = isDriver ? "push_sound.caf" : "user_app.caf";
 
-            // ------------------ FCM PAYLOAD ------------------
-            const message = {
-                token: token,
-                notification: {
-                    title: noti_data.title || "Carim",
-                    body: noti_data.message || "",
-                },
-                data: {
-                    titleData: String(noti_data.title || "Notification"),
-                    messageData: String(noti_data.message || ""),
-                    senderId: String(noti_data.senderId || ""),
-                    type: String(noti_data.type || ""),
-                    notificationId: String(noti_data.notificationId || "0"),
-                    bookingId: String(noti_data.bookingId || "0"),
-                    targetRole: role,
-                    sound: iosSound,
+    //         // ------------------ FCM PAYLOAD ------------------
+    //         const message = {
+    //             token: token,
+    //             notification: {
+    //                 title: noti_data.title || "Carim",
+    //                 body: noti_data.message || "",
+    //             },
+    //             data: {
+    //                 titleData: String(noti_data.title || "Notification"),
+    //                 messageData: String(noti_data.message || ""),
+    //                 senderId: String(noti_data.senderId || ""),
+    //                 type: String(noti_data.type || ""),
+    //                 notificationId: String(noti_data.notificationId || "0"),
+    //                 bookingId: String(noti_data.bookingId || "0"),
+    //                 targetRole: role,
+    //                 sound: iosSound,
 
-                    ...(noti_data.senderName && { senderName: String(noti_data.senderName) }),
-                    ...(noti_data.senderImage && { senderImage: String(noti_data.senderImage) }),
-                    ...(noti_data.phoneNumber && { phoneNumber: String(noti_data.phoneNumber) }),
-                },
-                apns: {
-                    payload: {
-                        aps: {
-                            sound: iosSound,
-                            badge: 1,
-                        },
-                    },
-                },
-                android: {
-                    notification: {
-                        sound: androidSound,
-                        channelId: androidChannel
-                    },
-                },
-            };
+    //                 ...(noti_data.senderName && { senderName: String(noti_data.senderName) }),
+    //                 ...(noti_data.senderImage && { senderImage: String(noti_data.senderImage) }),
+    //                 ...(noti_data.phoneNumber && { phoneNumber: String(noti_data.phoneNumber) }),
+    //             },
+    //             apns: {
+    //                 payload: {
+    //                     aps: {
+    //                         sound: iosSound,
+    //                         badge: 1,
+    //                     },
+    //                 },
+    //             },
+    //             android: {
+    //                 notification: {
+    //                     sound: androidSound,
+    //                     channelId: androidChannel
+    //                 },
+    //             },
+    //         };
 
-            console.log("FCM message payload =>", message);
+    //         console.log("FCM message payload =>", message);
 
-            const response = await admin.messaging().send(message);
-            console.log("Push sent successfully:", response);
+    //         const response = await admin.messaging().send(message);
+    //         console.log("Push sent successfully:", response);
 
-            return true;
-        } catch (error) {
-            console.error("Error sending push notification:", error);
+    //         return true;
+    //     } catch (error) {
+    //         console.error("Error sending push notification:", error);
 
-            if (
-                error.code === "messaging/invalid-registration-token" ||
-                error.code === "messaging/registration-token-not-registered"
-            ) {
-                console.log(`Invalid token: ${token}, remove from DB`);
-            }
+    //         if (
+    //             error.code === "messaging/invalid-registration-token" ||
+    //             error.code === "messaging/registration-token-not-registered"
+    //         ) {
+    //             console.log(`Invalid token: ${token}, remove from DB`);
+    //         }
 
-            throw error;
-        }
-    },
+    //         throw error;
+    //     }
+    // },
 
     success: function (res, message = "", body = {}) {
         return res.status(200).json({
