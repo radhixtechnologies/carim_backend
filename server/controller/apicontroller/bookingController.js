@@ -700,7 +700,7 @@ module.exports = {
     //                                 }
     //                             }
     //                         );
-    //                      
+                         
     //                         const userMsg = getPushMessage(
     //                             languageType,
     //                             "No driver accepted your ride request",
@@ -786,7 +786,6 @@ module.exports = {
     //         }
     //     };
     // },
-
 
     bookRide: (io) => {
         return async (req, res) => {
@@ -1327,7 +1326,7 @@ module.exports = {
                         callerCountryCode: callerCountryCode || "",
                         nearbyDriversCount: nearbyDrivers.length,
                         maxDriverDistance: MAX_DRIVER_DISTANCE_KM,
-                        maxRideDistance: 300,
+                        maxRideDistance: 50,
                         notificationsSent: notificationPromises.length,
                         priceDetails: {
                             basePrice: BASE_PRICE,
