@@ -1899,8 +1899,8 @@ module.exports = {
     getLocations: async (req, res) => {
         try {
             const locations = await db.testingLocation.findAll({
-                where :{status:1},
-                order: [['createdAt', 'DESC']] 
+                where: { status: 1 },
+                order: [['createdAt', 'DESC']]
             });
             return helper.success(res, "Locations fetched successfully", locations);
         } catch (error) {

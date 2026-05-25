@@ -1746,6 +1746,21 @@ module.exports = {
                         },
                         include: [{ model: db.users, as: 'user', attributes: ['socketId'] }]
                     });
+                       // Update notification table
+                    if (otherDrivers.length > 0) {
+                        const otherDriverIds = otherDrivers.map(item => item.driverId);
+                        
+                        await db.notifications.update(
+                            { status: 1 },
+                            {
+                                where: {
+                                    receiver_id: { [Sequelize.Op.in]: otherDriverIds },
+                                    bookingId: bookingId,
+                                    status: 0
+                                }
+                            }
+                        );
+                    }
                     console.log(otherDrivers, "otherDriversotherDriversotherDrivers>>>");
 
                     otherDrivers.forEach(item => {
@@ -2813,6 +2828,7 @@ module.exports = {
                 },
                 where: {
                     receiver_id: req.user.id,
+                    status:0
                 },
                 order: [['id', 'DESC']]
             });
