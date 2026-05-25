@@ -700,18 +700,7 @@ module.exports = {
     //                                 }
     //                             }
     //                         );
-    //                         await db.notifications.update(
-    //                             {
-    //                                 status: 1,
-    //                                 is_read: 1
-    //                             },
-    //                             {
-    //                                 where: {
-    //                                     bookingId: newBooking.id,
-    //                                     type: 1
-    //                                 }
-    //                             }
-    //                         );
+    //                      
     //                         const userMsg = getPushMessage(
     //                             languageType,
     //                             "No driver accepted your ride request",
@@ -797,6 +786,7 @@ module.exports = {
     //         }
     //     };
     // },
+
 
     bookRide: (io) => {
         return async (req, res) => {
@@ -1179,7 +1169,7 @@ module.exports = {
                     }
                 });
 
-                // ---------------- NOTIFICATION PUSH TO NEARBY DRIVERS ----------------
+                // ---------------- PUSH NOTIFICATION TO NEARBY DRIVERS (NO DATABASE STORAGE) ----------------
                 const notificationPromises = [];
                 for (const driver of nearbyDrivers) {
                     if (!driver.id) continue;
@@ -1200,55 +1190,33 @@ module.exports = {
                             `Nouvelle demande de course disponible (à ${driver.distance.toFixed(2)} km)`
                         );
 
-                        //  FIX: REMOVED DIRECT PUSH CALL FROM HERE
-                        // Push will only be sent from inside notification creation
-
-                        const notificationPromise = db.notifications.create({
-                            sender_id: userId,
-                            receiver_id: driver.id,
-                            message: msg,
-                            type: 1,
-                            status: 0,
-                            bookingId: newBooking.id,
-                            is_read: 0
-                        }).then(async (notification) => {
-                            //  FIX: SEND PUSH ONLY ONCE FROM HERE
-                            if (driverToken.deviceToken && driverToken.deviceToken.length > 10) {
-                                await helper.sendNotification_android(driverToken.deviceToken, {
-                                    message: msg,
-                                    type: 1,
-                                    senderId: userId.toString(),
-                                    bookingId: newBooking.id,
-                                    distance: driver.distance.toFixed(2),
-                                    targetRole: '2',
-                                });
-                            }
-
-                            const unreadCount = await db.notifications.count({
-                                where: {
-                                    receiver_id: driver.id,
-                                    is_read: 0
-                                }
+                        // SEND PUSH NOTIFICATION ONLY - NO DATABASE INSERT
+                        if (driverToken.deviceToken && driverToken.deviceToken.length > 10) {
+                            const pushPromise = helper.sendNotification_android(driverToken.deviceToken, {
+                                message: msg,
+                                type: 1,
+                                senderId: userId.toString(),
+                                bookingId: newBooking.id,
+                                distance: driver.distance.toFixed(2),
+                                targetRole: '2',
+                            }).catch(error => {
+                                console.error(`Failed to send push to driver ${driver.id}:`, error);
                             });
 
-                            if (global.onlineUsers[driver.id]) {
-                                global.onlineUsers[driver.id].forEach(sockId => {
-                                    io.to(sockId).emit("notification_count", {
-                                        type: "ride_request",
-                                        message: msg,
-                                        bookingId: newBooking.id,
-                                        unreadCount: unreadCount,
-                                    });
+                            notificationPromises.push(pushPromise);
+                        }
+
+                        // Send socket notification about ride request
+                        if (global.onlineUsers[driver.id]) {
+                            global.onlineUsers[driver.id].forEach(sockId => {
+                                io.to(sockId).emit("notification_count", {
+                                    type: "ride_request",
+                                    message: msg,
+                                    bookingId: newBooking.id,
+                                    unreadCount: 0, // No notifications stored, so unread count is 0
                                 });
-                            }
-
-                            return notification;
-                        }).catch(error => {
-                            console.error(`Failed to create notification for driver ${driver.id}:`, error);
-                            return null;
-                        });
-
-                        notificationPromises.push(notificationPromise);
+                            });
+                        }
 
                     } catch (error) {
                         console.error(`Error processing driver ${driver.id}:`, error);
@@ -1301,18 +1269,7 @@ module.exports = {
                                     }
                                 }
                             );
-                            await db.notifications.update(
-                                {
-                                    status: 1,
-                                    is_read: 1
-                                },
-                                {
-                                    where: {
-                                        bookingId: newBooking.id,
-                                        type: 1
-                                    }
-                                }
-                            );
+
                             const userMsg = getPushMessage(
                                 languageType,
                                 "No driver accepted your ride request",
@@ -1349,7 +1306,7 @@ module.exports = {
                     }
                 );
 
-                // ---------------- RESPONSE (SAME AS BEFORE - NO CHANGE) ----------------
+                // ---------------- RESPONSE ----------------
                 return helper.success(res,
                     languageType === 1 ? "تم إرسال طلب حجز الرحلة بنجاح" :
                         languageType === 2 ? "Demande de réservation envoyée avec succès" :
@@ -1397,7 +1354,6 @@ module.exports = {
             }
         };
     },
-
 
 
     updateDropLocationAndPrice: (io) => {
