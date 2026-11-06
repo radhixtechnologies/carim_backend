@@ -109,7 +109,7 @@ function Navbar({ toggleSidebar }) {
       text: "You will be logged out of your account.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#1e3308",
+      confirmButtonColor: "#0878fe",
       cancelButtonColor: "#d33",
       confirmButtonText: "Yes, log out!",
     });

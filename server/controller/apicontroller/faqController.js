@@ -23,16 +23,10 @@ module.exports = {
     getAllFaqs: async (req, res) => {
         try {
             const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
-            const userId = req.user?.id;
 
-            if (!userId) {
-                let msg = "User ID is missing.";
-                if (languageType === 1) msg = "معرّف المستخدم مفقود.";
-                else if (languageType === 2) msg = "ID utilisateur manquant.";
-                return helper.failure(res, msg);
-            }
-
-            const data = await db.faqs.findAll();
+            const data = await db.faqs.findAll({
+                order: [['id', 'ASC']]
+            });
 
             let msg = "FAQ data fetched successfully.";
             if (languageType === 1) msg = "تم جلب بيانات الأسئلة الشائعة بنجاح.";

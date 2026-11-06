@@ -301,7 +301,7 @@ module.exports = function (io) {
                 delete onlineUsers[userId];
 
                 await db.users.update(
-                  { online: "0", socketId: null },
+                  { online: "0", socketId: "" },
                   { where: { id: userId } }
                 );
               }

@@ -1,3 +1,4 @@
+const fs = require('fs');
 const path = require('path');
 const uuid = require("uuid").v4;
 const axios = require("axios")
@@ -257,7 +258,11 @@ module.exports = {
         try {
             const extension = path.extname(file.name);
             const filename = uuid() + extension;
-            const uploadPath = path.join(process.cwd(), "public", "images", filename);
+            const uploadDir = path.join(process.cwd(), "public", "images");
+            if (!fs.existsSync(uploadDir)) {
+                fs.mkdirSync(uploadDir, { recursive: true });
+            }
+            const uploadPath = path.join(uploadDir, filename);
 
             await file.mv(uploadPath);
 

@@ -19,8 +19,8 @@ const AboutUs = () => {
       try {
         const response = await axiosInstance.get(`/aboutus`);
         const { data } = response.data;
-        setTitle(data.title || "");
-        setContent(data.content || "<p><br></p>");
+        setTitle(data?.title || "");
+        setContent(data?.content || "<p><br></p>");
         hasShownError.current = false;
       } catch (error) {
         if (!hasShownError.current) {

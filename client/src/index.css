@@ -17,19 +17,27 @@ code {
     scrollbar-width: none;
 }
 .text-primary{
-  color: #3b551f !important;
+  color: #0878fe !important;
 }
 .new{
-  color: #3b551f !important;
+  color: #0878fe !important;
 }
 .vertical-menu{
-    background-color: #3b551f;
+    background-color: #0b1b3d !important;
 }
 .bg-primary{
-  background-color: #3b551f !important;
+  background-color: #0878fe !important;
 }
 .right-auth {
-  background-color: #3b551f;
+  background: linear-gradient(135deg, #0b1b3d 0%, #0878fe 100%) !important;
+}
+.btn-primary {
+  background-color: #0878fe !important;
+  border-color: #0878fe !important;
+}
+.btn-primary:hover, .btn-primary:focus {
+  background-color: #0060d4 !important;
+  border-color: #0060d4 !important;
 }
 .vertical-menu {
   height: 100%;

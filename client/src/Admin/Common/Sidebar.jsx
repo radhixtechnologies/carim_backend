@@ -116,7 +116,7 @@ function Sidebar({ isOpen }) {
       <div className="navbar-brand-box">
         <Link to="/dashboard" className="logo" onClick={handleLinkClick}>
           <span className="logo-lg">
-            <img src="/assets/images/carim1.png" alt="" height={20} />
+            <img src="/assets/images/carim1.png" alt="Radhix Logo" height={36} />
           </span>
         </Link>
         {/* <button

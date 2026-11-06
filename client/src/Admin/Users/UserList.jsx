@@ -75,7 +75,7 @@ const UserList = () => {
       text: "You won't be able to revert this!",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#1e3308",
+      confirmButtonColor: "#0878fe",
       cancelButtonColor: "#d33",
       confirmButtonText: "Yes, delete it!",
     });
@@ -315,11 +315,11 @@ const UserList = () => {
                                       style={{
                                         backgroundColor:
                                           user.block === "1"
-                                            ? "#1e3308"
+                                            ? "#0878fe"
                                             : "lightgray",
                                         borderColor:
                                           user.block === "1"
-                                            ? "#1e3308"
+                                            ? "#0878fe"
                                             : "lightgray",
                                       }}
                                     />
@@ -338,11 +338,11 @@ const UserList = () => {
                                       style={{
                                         backgroundColor:
                                           user.suspend === "1"
-                                            ? "#1e3308"
+                                            ? "#0878fe"
                                             : "lightgray",
                                         borderColor:
                                           user.suspend === "1"
-                                            ? "#1e3308"
+                                            ? "#0878fe"
                                             : "lightgray",
                                       }}
                                     />
@@ -361,11 +361,11 @@ const UserList = () => {
                                       style={{
                                         backgroundColor:
                                           user.status === "1"
-                                            ? "#1e3308"
+                                            ? "#0878fe"
                                             : "lightgray",
                                         borderColor:
                                           user.status === "1"
-                                            ? "#1e3308"
+                                            ? "#0878fe"
                                             : "lightgray",
                                       }}
                                     />
@@ -604,7 +604,7 @@ const UserList = () => {
       >
         <div className="modal-dialog modal-dialog-centered">
           <div className="modal-content">
-            <div className="modal-header" style={{ backgroundColor: "#1e3308", color: "white" }}>
+            <div className="modal-header" style={{ backgroundColor: "#0878fe", color: "white" }}>
               <h5 className="modal-title" id="editUserModalLabel">
                 <i className="ri-edit-line me-2"></i> Edit User
               </h5>
@@ -659,7 +659,7 @@ const UserList = () => {
               <button
                 type="button"
                 className="btn btn-primary"
-                style={{ backgroundColor: "#1e3308", borderColor: "#1e3308" }}
+                style={{ backgroundColor: "#0878fe", borderColor: "#0878fe" }}
                 onClick={handleUpdateUser}
               >
                 Update User

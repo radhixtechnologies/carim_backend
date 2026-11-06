@@ -4,16 +4,67 @@ const fs = require('fs');
 const path = require('path');
 const Sequelize = require('sequelize');
 const process = require('process');
+require('dotenv').config();
+
 const basename = path.basename(__filename);
 const env = process.env.NODE_ENV || 'development';
-const config = require(__dirname + '/../config/config.json')[env];
 const db = {};
 
 let sequelize;
-if (config.use_env_variable) {
-  sequelize = new Sequelize(process.env[config.use_env_variable], config);
+
+if (process.env.DATABASE_URL) {
+  sequelize = new Sequelize(process.env.DATABASE_URL, {
+    dialect: 'mysql',
+    logging: false,
+    dialectOptions: {
+      ssl: process.env.DB_SSL === 'true' || process.env.DATABASE_URL.includes('ssl')
+        ? { require: true, rejectUnauthorized: false }
+        : false
+    }
+  });
+} else if (process.env.DB_HOST) {
+  sequelize = new Sequelize(
+    process.env.DB_NAME || 'carim_db',
+    process.env.DB_USER || 'root',
+    process.env.DB_PASSWORD || '',
+    {
+      host: process.env.DB_HOST,
+      port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 3306,
+      dialect: 'mysql',
+      logging: false,
+      dialectOptions: {
+        ssl: process.env.DB_SSL === 'true'
+          ? { require: true, rejectUnauthorized: false }
+          : false
+      }
+    }
+  );
 } else {
-  sequelize = new Sequelize(config.database, config.username, config.password, config);
+  let config = {};
+  try {
+    config = require(__dirname + '/../config/config.json')[env] || {};
+  } catch (e) {
+    config = {
+      username: 'root',
+      password: '',
+      database: 'carim_db',
+      host: '127.0.0.1',
+      port: 3306,
+      dialect: 'mysql',
+      logging: false
+    };
+  }
+
+  if (config.use_env_variable) {
+    sequelize = new Sequelize(process.env[config.use_env_variable], config);
+  } else {
+    sequelize = new Sequelize(
+      config.database || 'carim_db',
+      config.username || 'root',
+      config.password || '',
+      config
+    );
+  }
 }
 
 fs

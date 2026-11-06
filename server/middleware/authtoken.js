@@ -45,6 +45,7 @@ module.exports = {
       return helper.failure(res, errorsResponse);
     }
 
+
     if (
       req.headers.secret_key == process.env.secret_key &&
       req.headers.publish_key == process.env.publish_key

@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "nodemon ./carim.js"
+    "start": "node ./carim.js",
+    "dev": "nodemon ./carim.js"
   },
   "dependencies": {
     "@mui/icons-material": "^7.2.0",

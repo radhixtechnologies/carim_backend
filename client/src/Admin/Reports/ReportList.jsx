@@ -94,7 +94,7 @@ const ReportList = () => {
       text: "You won't be able to revert this!",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#1e3308",
+      confirmButtonColor: "#0878fe",
       cancelButtonColor: "#d33",
       confirmButtonText: "Yes, delete it!",
     });
@@ -256,10 +256,10 @@ const ReportList = () => {
                                         onChange={() => toggleStatus(match.id, match.status)}
                                         style={{
                                           backgroundColor: (match.status === "1" || match.status === 1)
-                                            ? "#1e3308"
+                                            ? "#0878fe"
                                             : "lightgray",
                                           borderColor: (match.status === "1" || match.status === 1)
-                                            ? "#1e3308"
+                                            ? "#0878fe"
                                             : "lightgray",
                                         }}
                                       />

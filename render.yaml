@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: carim-backend
+    env: node
+    plan: free
+    region: frankfurt
+    buildCommand: cd server && npm install
+    startCommand: node server/carim.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        value: carim_super_secret_jwt_key_2026_radhix
+      - key: secret_key
+        value: $2a$12$nM/hXwI9rTugTS1Yl09KLO8.0VRuaLmow3zFZbqBNbH9Ldvai0uxO
+      - key: publish_key
+        value: $2a$12$DLJYUW7x1cqPLgvRyY.dh.Uwu9JTGgwqk/8OeDS9/F.gSnFBNY.Dq
+      - key: DB_HOST
+        value: gateway01.ap-southeast-1.prod.aws.tidbcloud.com
+      - key: DB_PORT
+        value: 4000
+      - key: DB_USER
+        value: DkHB1kJHK1WX9W7.root
+      - key: DB_PASSWORD
+        value: mIueo1BGzn9Tlo8s
+      - key: DB_NAME
+        value: carim_db
+      - key: DB_SSL
+        value: true

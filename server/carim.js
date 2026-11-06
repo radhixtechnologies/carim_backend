@@ -2,6 +2,7 @@ require('dotenv').config();
 const createError = require('http-errors');
 const express = require('express');
 const path = require('path');
+
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const fileupload = require('express-fileupload');
@@ -44,8 +45,10 @@ app.use((req, res, next) => {
 // ------------------------
 const server = http.createServer(app);
 const io = socketIO(server, {
-  cors: { origin: "http://localhost:6546", 
-    methods: ["GET", "POST"] }
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
 });
 
 // Socket logic
@@ -77,10 +80,21 @@ app.use((req, res, next) => next(createError(404)));
 
 // General error handler
 app.use((err, req, res, next) => {
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
-  res.status(err.status || 500);
-  res.render('error');
+  console.error("Server Error:", err.message);
+  if (res.headersSent) return next(err);
+  res.status(err.status || 500).json({
+    success: false,
+    status: err.status || 500,
+    message: err.message || "Internal Server Error"
+  });
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
 // Start server

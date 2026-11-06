@@ -93,7 +93,7 @@ const BookingCompleted = () => {
       text: "You won't be able to revert this!",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#1e3308",
+      confirmButtonColor: "#0878fe",
       cancelButtonColor: "#d33",
       confirmButtonText: "Yes, delete it!",
     });

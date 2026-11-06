@@ -21,7 +21,7 @@ const Footer = () => {
           to="/dashboard"
           rel="nofollow noopener noreferrer"
           title="Carim"
-          style={{ textDecoration: "none", color: "#1e3308" }}
+          style={{ textDecoration: "none", color: "#0878fe" }}
         >
           Carim
         </Link>
