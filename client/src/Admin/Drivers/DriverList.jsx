@@ -295,6 +295,7 @@ const DriverList = () => {
                             <th>First Name</th>
                             <th>Last Name</th>
                             <th>Phone Number</th>
+                            <th>Vehicle Type</th>
                             <th>Location</th>
                             <th>Blocked</th>
                             <th>Suspended</th>
@@ -327,6 +328,11 @@ const DriverList = () => {
                                 <td>{user.firstName || ""}</td>
                                 <td>{user.lastName || ""}</td>
                                <td>({user.countryCode || ""}) {user.phoneNumber || ""}</td>
+                                <td>
+                                  <span className="badge bg-primary-subtle text-primary">
+                                    {user.vehicleDetail?.vehicleType || "Not Set"}
+                                  </span>
+                                </td>
                                 <td>
                                   {/* {user.city && `${user.city} `} */}
                                   {user.location && `${user.location}, `}
@@ -528,7 +534,7 @@ const DriverList = () => {
                           ) : (
                             <tr>
                               <td
-                                colSpan="12"
+                                colSpan="13"
                                 style={{ textAlign: "center", padding: "20px" }}
                               >
                                 <p className="no-found">No drivers found</p>
@@ -870,6 +876,14 @@ const DriverList = () => {
                     <>
                       <table className="table table-sm table-borderless mb-3">
                         <tbody>
+                          <tr>
+                            <td className="text-muted">Vehicle Type:</td>
+                            <td className="text-end fw-medium">
+                              <span className="badge bg-primary-subtle text-primary">
+                                {selectedUser.vehicleDetail.vehicleType || "Not Set"}
+                              </span>
+                            </td>
+                          </tr>
                           <tr>
                             <td className="text-muted">Brand / Model:</td>
                             <td className="text-end fw-medium">

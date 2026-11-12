@@ -363,6 +363,7 @@ const DriverDocuments = () => {
                             {/* <th>Image</th> */}
                             <th>first Name</th>
                             <th>Last Name</th>
+                             <th>Vehicle Type</th>
                              <th>Vehicle Number</th> 
                             <th>Location</th>
                             <th>Documents</th>
@@ -399,6 +400,11 @@ const DriverDocuments = () => {
                                 <td>{user.firstName || ""}</td>
                                 <td>{user.lastName || ""}</td>
 
+                                 <td>
+                                  <span className="badge bg-primary-subtle text-primary">
+                                    {user.vehicleDetail?.vehicleType || "Not Set"}
+                                  </span>
+                                 </td>
                                  <td>{user.vehicleDetail?.vehicleNumber || ""}</td> 
                                 <td>
                                   {user.location || [user.city, user.country].filter(Boolean).join(", ") || ""}
@@ -507,7 +513,7 @@ const DriverDocuments = () => {
                           ) : (
                             <tr>
                               <td
-                                colSpan="9"
+                                colSpan="10"
                                 style={{ textAlign: "center", padding: "20px" }}
                               >
                                 {filteredDriverId
@@ -614,6 +620,20 @@ const DriverDocuments = () => {
                       <div className="col-12">
                         <table className="table table-borderless">
                           <tbody>
+                            <tr>
+                              <td
+                                className="fw-medium"
+                                style={{ width: "40%" }}
+                              >
+                                Vehicle Type:
+                              </td>
+                              <td className="text-end">
+                                <span className="badge bg-primary-subtle text-primary">
+                                  {selectedUser.vehicleDetail.vehicleType ||
+                                    "Not Set"}
+                                </span>
+                              </td>
+                            </tr>
                             <tr>
                               <td
                                 className="fw-medium"

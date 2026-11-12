@@ -11,6 +11,11 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.INTEGER,
       allowNull: true
     },
+    vehicleType: {
+      type: DataTypes.STRING(50),
+      allowNull: false,
+      defaultValue: ""
+    },
     vehicleBrand: {
       type: DataTypes.STRING(255),
       allowNull: false,

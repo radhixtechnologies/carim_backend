@@ -24,8 +24,58 @@ function normalizeMediaPath(val) {
     return stripped;
 }
 
+function normalizeVehicleType(val) {
+    if (val === undefined || val === null) return "";
+    const cleaned = String(val).trim().toLowerCase().replace(/[_-]+/g, " ");
+    if (!cleaned) return "";
+    if (
+        cleaned === "2" ||
+        cleaned === "2w" ||
+        cleaned === "2 wheeler" ||
+        cleaned === "two wheeler" ||
+        cleaned === "bike" ||
+        cleaned === "scooter"
+    ) {
+        return "2 Wheeler";
+    }
+    if (
+        cleaned === "3" ||
+        cleaned === "3w" ||
+        cleaned === "3 wheeler" ||
+        cleaned === "three wheeler" ||
+        cleaned === "auto" ||
+        cleaned === "rickshaw" ||
+        cleaned === "e rickshaw"
+    ) {
+        return "3 Wheeler";
+    }
+    if (
+        cleaned === "4" ||
+        cleaned === "4w" ||
+        cleaned === "4 wheeler" ||
+        cleaned === "four wheeler" ||
+        cleaned === "car" ||
+        cleaned === "cab"
+    ) {
+        return "4 Wheeler";
+    }
+    return String(val).trim();
+}
+
+function defaultPassengerCountForType(vehicleType, fallback = 4) {
+    const normalized = normalizeVehicleType(vehicleType);
+    if (normalized === "2 Wheeler") return 1;
+    if (normalized === "3 Wheeler") return 3;
+    if (normalized === "4 Wheeler") return 4;
+    const parsed = parseInt(fallback, 10);
+    return Number.isNaN(parsed) || parsed <= 0 ? 4 : parsed;
+}
+
 async function attachVehicleFields(userRecord) {
     if (!userRecord) return null;
+    if (typeof db.ensureVehicleTypeColumn === "function") {
+        await db.ensureVehicleTypeColumn();
+    }
     const userJson = typeof userRecord.toJSON === "function" ? userRecord.toJSON() : { ...userRecord };
     const vehicleDetail =
         String(userJson.role || "") !== "1"
@@ -37,6 +87,7 @@ async function attachVehicleFields(userRecord) {
     if (!vehicleDetail) {
         return {
             ...userJson,
+            vehicleType: "",
             vehicleDetail: null,
         };
     }
@@ -44,6 +95,7 @@ async function attachVehicleFields(userRecord) {
         ...userJson,
         vehicleDetail,
         vehicleId: vehicleDetail.id,
+        vehicleType: vehicleDetail.vehicleType || "",
         vehicleBrand: vehicleDetail.vehicleBrand || "",
         vehicleModel: vehicleDetail.vehicleModel || "",
         vehicleYear: vehicleDetail.vehicleYear || "",
@@ -53,6 +105,48 @@ async function attachVehicleFields(userRecord) {
         drivingLicence: vehicleDetail.drivingLicence || "",
         insurance: vehicleDetail.insurance || "",
     };
+}
+
+const PROFILE_ALLOWED_FIELDS = [
+    'firstName',
+    'lastName',
+    'email',
+    'bio',
+    'gender',
+    'country',
+    'city',
+    'state',
+    'location',
+    'image',
+    'isProfileComplete',
+];
+
+async function buildProfileUpdateData(req) {
+    const updatedProfileData = {};
+    for (const key of PROFILE_ALLOWED_FIELDS) {
+        if (req.body[key] !== undefined && req.body[key] !== null) {
+            if (key === 'image') {
+                const normalizedImg = normalizeMediaPath(req.body.image);
+                if (normalizedImg) {
+                    updatedProfileData.image = normalizedImg;
+                }
+            } else {
+                updatedProfileData[key] = req.body[key];
+            }
+        }
+    }
+
+    if (req.files && req.files.image) {
+        const uploadedFile = Array.isArray(req.files.image)
+            ? req.files.image[0]
+            : req.files.image;
+        const uploadedPath = await helper.fileUpload(uploadedFile);
+        if (uploadedPath) {
+            updatedProfileData.image = uploadedPath;
+        }
+    }
+
+    return updatedProfileData;
 }
 
 module.exports = {
@@ -958,15 +1052,24 @@ module.exports = {
 
 
     createAccount: async (req, res) => {
+        const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
         try {
-            const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
-
             let profile = await db.users.findOne({
                 where: { id: req.user.id },
             });
 
-            const rideOtp = Math.floor(1000 + Math.random() * 9000).toString();
-            const updatedProfileData = { ...req.body, rideOtp };
+            if (!profile) {
+                let msg = "User not found.";
+                if (languageType == 1) msg = "المستخدم غير موجود.";
+                else if (languageType == 2) msg = "Utilisateur non trouvé.";
+                return helper.failure(res, msg);
+            }
+
+            const updatedProfileData = await buildProfileUpdateData(req);
+            updatedProfileData.rideOtp = Math.floor(1000 + Math.random() * 9000).toString();
+            if (updatedProfileData.isProfileComplete === undefined) {
+                updatedProfileData.isProfileComplete = 1;
+            }
 
             await db.users.update(updatedProfileData, {
                 where: { id: req.user.id },
@@ -976,12 +1079,13 @@ module.exports = {
                 where: { id: req.user.id },
                 raw: true,
             });
+            const enrichedProfile = await attachVehicleFields(profile);
 
             let msg = "Profile added successfully.";
             if (languageType == 1) msg = "تم إضافة الملف الشخصي بنجاح.";
             else if (languageType == 2) msg = "Profil ajouté avec succès.";
 
-            return helper.success(res, msg, profile);
+            return helper.success(res, msg, enrichedProfile);
 
         } catch (error) {
             console.error('createAccount error:', error);
@@ -1031,9 +1135,8 @@ module.exports = {
     },
 
     editProfile: async (req, res) => {
+        const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
         try {
-            const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
-
             let profile = await db.users.findOne({
                 where: { id: req.user.id },
             });
@@ -1045,45 +1148,13 @@ module.exports = {
                 return helper.failure(res, msg);
             }
 
-            const allowedFields = [
-                'firstName',
-                'lastName',
-                'email',
-                'bio',
-                'gender',
-                'country',
-                'city',
-                'state',
-                'location',
-                'image',
-                'isProfileComplete',
-            ];
-
-            const updatedProfileData = {};
-            for (const key of allowedFields) {
-                if (req.body[key] !== undefined && req.body[key] !== null) {
-                    if (key === 'image') {
-                        const normalizedImg = normalizeMediaPath(req.body.image);
-                        if (normalizedImg) {
-                            updatedProfileData.image = normalizedImg;
-                        }
-                    } else {
-                        updatedProfileData[key] = req.body[key];
-                    }
-                }
-            }
-
-            if (req.files && req.files.image) {
-                const uploadedFile = Array.isArray(req.files.image)
-                    ? req.files.image[0]
-                    : req.files.image;
-                const uploadedPath = await helper.fileUpload(uploadedFile);
-                if (uploadedPath) {
-                    updatedProfileData.image = uploadedPath;
-                }
-            }
+            const updatedProfileData = await buildProfileUpdateData(req);
 
             if (Object.keys(updatedProfileData).length > 0) {
+                if (String(profile.role || "") === "2") {
+                    updatedProfileData.documentVerify = "0";
+                    updatedProfileData.approve = "0";
+                }
                 await db.users.update(updatedProfileData, {
                     where: { id: req.user.id },
                 });
@@ -1339,6 +1410,7 @@ module.exports = {
             const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
 
             const v = new Validator(req.body, {
+                vehicleType: "required",
                 vehicleBrand: "required",
                 vehicleModel: "required",
                 vehicleNumber: "required",
@@ -1352,6 +1424,7 @@ module.exports = {
             }
 
             const {
+                vehicleType,
                 vehicleBrand,
                 vehicleModel,
                 vehicleYear,
@@ -1363,7 +1436,15 @@ module.exports = {
                 passengerCount
             } = req.body;
 
+            const normalizedVehicleType = normalizeVehicleType(vehicleType);
+            if (!["2 Wheeler", "3 Wheeler", "4 Wheeler"].includes(normalizedVehicleType)) {
+                return helper.failure(res, "Please select a valid vehicle type (2 Wheeler, 3 Wheeler, or 4 Wheeler)");
+            }
+
             const driverId = req.user.id;
+            if (typeof db.ensureVehicleTypeColumn === "function") {
+                await db.ensureVehicleTypeColumn();
+            }
 
             const driver = await db.users.findOne({
                 where: { id: driverId, role: "2" }
@@ -1399,8 +1480,14 @@ module.exports = {
             const transaction = await db.sequelize.transaction();
 
             try {
+                const resolvedPassengerCount =
+                    passengerCount !== undefined && passengerCount !== null && String(passengerCount).trim() !== ""
+                        ? parseInt(passengerCount, 10) || defaultPassengerCountForType(normalizedVehicleType)
+                        : defaultPassengerCountForType(normalizedVehicleType);
+
                 const vehicle = await db.vehicleDetails.create({
                     driverId,
+                    vehicleType: normalizedVehicleType,
                     vehicleBrand,
                     vehicleModel,
                     vehicleYear: vehicleYear || "",
@@ -1409,11 +1496,11 @@ module.exports = {
                     vehicleDocument: normalizedVehicleDoc,
                     drivingLicence: normalizedDrivingLicence,
                     insurance: normalizedInsurance || "",
-                    passengerCount: passengerCount || "4"
+                    passengerCount: resolvedPassengerCount
                 }, { transaction });
 
                 await db.users.update(
-                    { vehicle: "1", isProfileComplete: '1' },
+                    { vehicle: "1", isProfileComplete: '1', documentVerify: '0', approve: '0' },
                     { where: { id: driverId }, transaction }
                 );
 
@@ -1424,6 +1511,7 @@ module.exports = {
                 const responseData = {
                     id: vehicle.id,
                     vehicleId: vehicle.id,
+                    vehicleType: vehicle.vehicleType || "",
                     vehicleBrand: vehicle.vehicleBrand,
                     vehicleModel: vehicle.vehicleModel,
                     vehicleYear: vehicle.vehicleYear,
@@ -1434,7 +1522,8 @@ module.exports = {
                     insurance: vehicle.insurance,
                     passengerCount: vehicle.passengerCount,
                     userVehicleStatus: updatedUser.vehicle,
-                    documentVerify: updatedUser.documentVerify || "0"
+                    documentVerify: updatedUser.documentVerify || "0",
+                    approve: updatedUser.approve || "0"
                 };
 
                 let msg = 'Vehicle added successfully';
@@ -1577,6 +1666,9 @@ module.exports = {
             } = req.body;
 
             const driverId = req.user.id;
+            if (typeof db.ensureVehicleTypeColumn === "function") {
+                await db.ensureVehicleTypeColumn();
+            }
 
             const driver = await db.users.findOne({
                 where: { id: driverId, role: "2", deletedAt: null }
@@ -1629,9 +1721,23 @@ module.exports = {
             };
 
             let updatedVehicle;
+            const incomingVehicleType = normalizeVehicleType(req.body.vehicleType);
+            if (incomingVehicleType && !["2 Wheeler", "3 Wheeler", "4 Wheeler"].includes(incomingVehicleType)) {
+                return helper.failure(res, "Please select a valid vehicle type (2 Wheeler, 3 Wheeler, or 4 Wheeler)");
+            }
+
             if (!existingVehicle) {
+                if (!incomingVehicleType) {
+                    return helper.failure(res, "Please select a valid vehicle type (2 Wheeler, 3 Wheeler, or 4 Wheeler)");
+                }
+                const createPassengerCount =
+                    passengerCount !== undefined && passengerCount !== null && String(passengerCount).trim() !== ""
+                        ? parseInt(passengerCount, 10) || defaultPassengerCountForType(incomingVehicleType)
+                        : defaultPassengerCountForType(incomingVehicleType);
+
                 updatedVehicle = await db.vehicleDetails.create({
                     driverId,
+                    vehicleType: incomingVehicleType,
                     vehicleBrand: pickNonEmpty(vehicleBrand, ""),
                     vehicleModel: pickNonEmpty(vehicleModel, ""),
                     vehicleYear: pickNonEmpty(vehicleYear, ""),
@@ -1640,20 +1746,24 @@ module.exports = {
                     vehicleDocument: normDoc,
                     drivingLicence: normLicence,
                     insurance: normInsurance,
-                    passengerCount: pickNonEmpty(passengerCount, "4"),
+                    passengerCount: createPassengerCount,
                 });
 
                 await db.users.update(
-                    { vehicle: "1", isProfileComplete: "1", documentVerify: "0" },
+                    { vehicle: "1", isProfileComplete: "1", documentVerify: "0", approve: "0" },
                     { where: { id: driverId } }
                 );
             } else {
-                const docsChanged =
-                    (normDoc && normDoc !== (existingVehicle.vehicleDocument || "")) ||
-                    (normLicence && normLicence !== (existingVehicle.drivingLicence || "")) ||
-                    (normInsurance && normInsurance !== (existingVehicle.insurance || ""));
+                const nextVehicleType = incomingVehicleType || existingVehicle.vehicleType || "";
+                const updatePassengerCount =
+                    passengerCount !== undefined && passengerCount !== null && String(passengerCount).trim() !== ""
+                        ? parseInt(passengerCount, 10) || defaultPassengerCountForType(nextVehicleType, existingVehicle.passengerCount)
+                        : (incomingVehicleType
+                            ? defaultPassengerCountForType(incomingVehicleType, existingVehicle.passengerCount)
+                            : (parseInt(existingVehicle.passengerCount, 10) || 4));
 
                 await db.vehicleDetails.update({
+                    vehicleType: nextVehicleType,
                     vehicleBrand: pickNonEmpty(vehicleBrand, existingVehicle.vehicleBrand),
                     vehicleModel: pickNonEmpty(vehicleModel, existingVehicle.vehicleModel),
                     vehicleYear: pickNonEmpty(vehicleYear, existingVehicle.vehicleYear),
@@ -1662,30 +1772,30 @@ module.exports = {
                     vehicleDocument: normDoc || existingVehicle.vehicleDocument || "",
                     drivingLicence: normLicence || existingVehicle.drivingLicence || "",
                     insurance: normInsurance || existingVehicle.insurance || "",
-                    passengerCount: pickNonEmpty(passengerCount, existingVehicle.passengerCount || "4"),
+                    passengerCount: updatePassengerCount,
                     updatedAt: new Date()
                 }, {
                     where: { id: existingVehicle.id, driverId }
                 });
 
-                const userUpdate = { vehicle: "1", isProfileComplete: "1" };
-                if (driver.documentVerify === "2" && (docsChanged || normDoc || normLicence || normInsurance)) {
-                    userUpdate.documentVerify = "0";
-                }
-                await db.users.update(userUpdate, { where: { id: driverId } });
+                await db.users.update(
+                    { vehicle: "1", isProfileComplete: "1", documentVerify: "0", approve: "0" },
+                    { where: { id: driverId } }
+                );
 
                 updatedVehicle = await db.vehicleDetails.findOne({ where: { id: existingVehicle.id } });
             }
 
             const refreshedDriver = await db.users.findOne({
                 where: { id: driverId },
-                attributes: ['vehicle', 'documentVerify'],
+                attributes: ['vehicle', 'documentVerify', 'approve'],
                 raw: true,
             });
 
             const responseData = {
                 id: updatedVehicle.id,
                 vehicleId: updatedVehicle.id,
+                vehicleType: updatedVehicle.vehicleType || "",
                 vehicleBrand: updatedVehicle.vehicleBrand,
                 vehicleModel: updatedVehicle.vehicleModel,
                 vehicleYear: updatedVehicle.vehicleYear,
@@ -1696,7 +1806,8 @@ module.exports = {
                 insurance: updatedVehicle.insurance,
                 passengerCount: updatedVehicle.passengerCount,
                 userVehicleStatus: refreshedDriver ? refreshedDriver.vehicle : "1",
-                documentVerify: refreshedDriver ? refreshedDriver.documentVerify : driver.documentVerify,
+                documentVerify: refreshedDriver ? refreshedDriver.documentVerify : "0",
+                approve: refreshedDriver ? refreshedDriver.approve : "0",
                 updatedAt: updatedVehicle.updatedAt
             };
 
@@ -1721,6 +1832,9 @@ module.exports = {
         try {
             const languageType = Number(req.headers.languagetype); // 1=Arabic, 2=French, default English
             const driverId = req.user.id;
+            if (typeof db.ensureVehicleTypeColumn === "function") {
+                await db.ensureVehicleTypeColumn();
+            }
 
             const driver = await db.users.findOne({
                 where: { id: driverId, role: "2", deletedAt: null }

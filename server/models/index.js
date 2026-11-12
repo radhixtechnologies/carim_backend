@@ -88,14 +88,42 @@ Object.keys(db).forEach(modelName => {
   }
 });
 
+let _vehicleTypeColReady = false;
+let _vehicleTypeColPromise = null;
+
+async function ensureVehicleTypeColumn() {
+  if (_vehicleTypeColReady) return;
+  if (_vehicleTypeColPromise) return _vehicleTypeColPromise;
+  _vehicleTypeColPromise = (async () => {
+    try {
+      const [cols] = await sequelize.query(
+        "SHOW COLUMNS FROM `vehicleDetails` LIKE 'vehicleType'"
+      );
+      if (!Array.isArray(cols) || cols.length === 0) {
+        await sequelize.query(
+          "ALTER TABLE `vehicleDetails` ADD COLUMN `vehicleType` VARCHAR(50) NOT NULL DEFAULT ''"
+        );
+        console.log('Added vehicleType column to vehicleDetails');
+      }
+      _vehicleTypeColReady = true;
+    } catch (colErr) {
+      console.error('Error ensuring vehicleDetails.vehicleType column:', colErr);
+      _vehicleTypeColPromise = null;
+    }
+  })();
+  return _vehicleTypeColPromise;
+}
+
 sequelize.sync({ alter: false })
-  .then(() => {
+  .then(async () => {
+    await ensureVehicleTypeColumn();
     console.log('Database synced successfully');
   })
   .catch((err) => {
     console.error('Error syncing the database:', err);
   });
 
+db.ensureVehicleTypeColumn = ensureVehicleTypeColumn;
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
