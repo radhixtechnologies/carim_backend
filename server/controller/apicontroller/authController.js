@@ -131,6 +131,11 @@ async function buildProfileUpdateData(req) {
                 if (normalizedImg) {
                     updatedProfileData.image = normalizedImg;
                 }
+            } else if (key === 'isProfileComplete') {
+                updatedProfileData.isProfileComplete =
+                    String(req.body.isProfileComplete).trim() === '0' ? '0' : '1';
+            } else if (typeof req.body[key] === 'string') {
+                updatedProfileData[key] = req.body[key].trim();
             } else {
                 updatedProfileData[key] = req.body[key];
             }
@@ -1069,7 +1074,10 @@ module.exports = {
             const updatedProfileData = await buildProfileUpdateData(req);
             updatedProfileData.rideOtp = Math.floor(1000 + Math.random() * 9000).toString();
             if (updatedProfileData.isProfileComplete === undefined) {
-                updatedProfileData.isProfileComplete = 1;
+                updatedProfileData.isProfileComplete = "1";
+            } else {
+                updatedProfileData.isProfileComplete =
+                    String(updatedProfileData.isProfileComplete).trim() === "0" ? "0" : "1";
             }
 
             await db.users.update(updatedProfileData, {
