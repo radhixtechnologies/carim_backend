@@ -412,6 +412,14 @@ module.exports = {
             }
             const { count, rows } = await db.users.findAndCountAll({
                 where: whereCondition,
+                include: [
+                    {
+                        model: db.vehicleDetails,
+                        as: 'vehicleDetail',
+                        required: false,
+                    }
+                ],
+                distinct: true,
                 limit: limit,
                 offset: offset,
                 order: [["id", "DESC"]],
@@ -762,10 +770,21 @@ module.exports = {
             dateFilter = dateFilter || "all";
 
             const Op = db.Sequelize.Op;
-            const whereCondition = { role: "2", vehicle: "1" };
+            const andConditions = [
+                { role: "2" },
+                {
+                    [Op.or]: [
+                        { vehicle: "1" },
+                        db.Sequelize.where(
+                            db.Sequelize.col('vehicleDetail.id'),
+                            { [Op.ne]: null }
+                        )
+                    ]
+                }
+            ];
 
             if (driverId && driverId.trim() !== "") {
-                whereCondition.id = driverId;
+                andConditions.push({ id: driverId });
             }
 
             // Prepare include for vehicleDetail
@@ -778,15 +797,18 @@ module.exports = {
             ];
 
             if (search && search.trim() !== "") {
-                whereCondition[Op.or] = [
-                    { firstName: { [Op.like]: `%${search}%` } },
-                    { lastName: { [Op.like]: `%${search}%` } },
-                    { email: { [Op.like]: `%${search}%` } },
-                    db.Sequelize.where(
-                        db.Sequelize.col('vehicleDetail.vehicleNumber'),
-                        { [Op.like]: `%${search}%` }
-                    )
-                ];
+                andConditions.push({
+                    [Op.or]: [
+                        { firstName: { [Op.like]: `%${search}%` } },
+                        { lastName: { [Op.like]: `%${search}%` } },
+                        { email: { [Op.like]: `%${search}%` } },
+                        { phoneNumber: { [Op.like]: `%${search}%` } },
+                        db.Sequelize.where(
+                            db.Sequelize.col('vehicleDetail.vehicleNumber'),
+                            { [Op.like]: `%${search}%` }
+                        )
+                    ]
+                });
             }
 
             if (dateFilter !== 'all') {
@@ -794,11 +816,15 @@ module.exports = {
                 if (!isNaN(daysAgo)) {
                     const startDate = new Date();
                     startDate.setDate(startDate.getDate() - daysAgo);
-                    whereCondition.createdAt = {
-                        [Op.gte]: startDate,
-                    };
+                    andConditions.push({
+                        createdAt: {
+                            [Op.gte]: startDate,
+                        }
+                    });
                 }
             }
+
+            const whereCondition = { [Op.and]: andConditions };
 
             const { count, rows } = await db.users.findAndCountAll({
                 where: whereCondition,

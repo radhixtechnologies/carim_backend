@@ -62,6 +62,54 @@ try {
 // Routes
 // ------------------------
 app.use('/admin', express.static(path.join(__dirname, 'public')));
+
+// Serve uploaded media from disk or persistent DB storage before /admin auth middleware
+const serveUploadedMedia = async (req, res) => {
+  try {
+    const fs = require('fs');
+    const safeName = path.basename(req.params.filename || '');
+    if (!safeName || safeName === '.' || safeName === '..') {
+      return res.status(400).json({ success: false, status: 400, message: 'Invalid filename' });
+    }
+
+    const diskPath = path.join(__dirname, 'public', 'images', safeName);
+    if (fs.existsSync(diskPath)) {
+      return res.sendFile(diskPath);
+    }
+
+    const db = require('./models');
+    if (db && db.uploadedFiles) {
+      const storedFile = await db.uploadedFiles.findOne({
+        where: { filename: safeName },
+      });
+      if (storedFile && storedFile.data) {
+        res.setHeader('Content-Type', storedFile.mimeType || 'application/octet-stream');
+        res.setHeader('Content-Disposition', `inline; filename="${safeName}"`);
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+        const payload = Buffer.isBuffer(storedFile.data)
+          ? storedFile.data
+          : Buffer.from(storedFile.data);
+        return res.send(payload);
+      }
+    }
+
+    return res.status(404).json({
+      success: false,
+      status: 404,
+      message: 'File not found',
+    });
+  } catch (err) {
+    console.error('Error serving uploaded media:', err);
+    return res.status(500).json({
+      success: false,
+      status: 500,
+      message: 'Failed to retrieve file',
+    });
+  }
+};
+
+app.get(['/admin/images/:filename', '/images/:filename'], serveUploadedMedia);
+
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/admin', adminRouter);

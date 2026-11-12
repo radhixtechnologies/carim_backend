@@ -11,7 +11,49 @@ const authToken = "dc4bd0a49ee2ba28a852b44c6f16b5b8";
 const verifySid = "VAd957dee8abfbf01d40fc3176604b632e";
 const client = require("twilio")(accountSid, authToken);
 
+function normalizeMediaPath(val) {
+    if (val === undefined || val === null) return "";
+    const trimmed = String(val).trim();
+    if (!trimmed || trimmed.toLowerCase() === "null" || trimmed.toLowerCase() === "undefined") {
+        return "";
+    }
+    const stripped = trimmed.replace(/^https?:\/\/[^/]+(?:\/admin)?(\/images\/.+)$/i, "$1");
+    if (stripped.startsWith("images/")) {
+        return `/${stripped}`;
+    }
+    return stripped;
+}
 
+async function attachVehicleFields(userRecord) {
+    if (!userRecord) return null;
+    const userJson = typeof userRecord.toJSON === "function" ? userRecord.toJSON() : { ...userRecord };
+    const vehicleDetail =
+        String(userJson.role || "") !== "1"
+            ? await db.vehicleDetails.findOne({
+                  where: { driverId: userJson.id },
+                  raw: true,
+              })
+            : null;
+    if (!vehicleDetail) {
+        return {
+            ...userJson,
+            vehicleDetail: null,
+        };
+    }
+    return {
+        ...userJson,
+        vehicleDetail,
+        vehicleId: vehicleDetail.id,
+        vehicleBrand: vehicleDetail.vehicleBrand || "",
+        vehicleModel: vehicleDetail.vehicleModel || "",
+        vehicleYear: vehicleDetail.vehicleYear || "",
+        vehicleNumber: vehicleDetail.vehicleNumber || "",
+        vehicleColor: vehicleDetail.vehicleColor || "",
+        vehicleDocument: vehicleDetail.vehicleDocument || "",
+        drivingLicence: vehicleDetail.drivingLicence || "",
+        insurance: vehicleDetail.insurance || "",
+    };
+}
 
 module.exports = {
 
@@ -427,7 +469,8 @@ module.exports = {
 
                 const token = jwt.sign({ id: user.id, loginTime }, process.env.JWT_SECRET, { expiresIn: "7d" });
                 const finalUser = await db.users.findOne({ where: { id: user.id, deletedAt: null } });
-                const responseData = { ...finalUser.toJSON(), token, otp: "1111" };
+                const enrichedUser = await attachVehicleFields(finalUser);
+                const responseData = { ...enrichedUser, token, otp: "1111" };
 
                 return helper.success(res, msg, responseData);
             }
@@ -452,9 +495,10 @@ module.exports = {
 
             // Get updated user with OTP
             const finalUser = await db.users.findOne({ where: { id: user.id, deletedAt: null } });
+            const enrichedUser = await attachVehicleFields(finalUser);
 
             const token = jwt.sign({ id: user.id, loginTime }, process.env.JWT_SECRET, { expiresIn: "7d" });
-            const responseData = { ...finalUser.toJSON(), token };
+            const responseData = { ...enrichedUser, token };
 
             if (isNewUser) {
                 let msg = "OTP sent to you registered phone number";
@@ -722,6 +766,7 @@ module.exports = {
                     id: user.id
                 }
             });
+            const enrichedUser = await attachVehicleFields(updatedUser);
 
             // 🔹 Generate JWT Token
             const token = jwt.sign(
@@ -740,7 +785,7 @@ module.exports = {
                         : 'OTP verified successfully.';
 
             return helper.success(res, successMsg, {
-                ...updatedUser.toJSON(),
+                ...enrichedUser,
                 token
             });
 
@@ -967,11 +1012,13 @@ module.exports = {
                 return helper.failure(res, msg);
             }
 
+            const enrichedProfile = await attachVehicleFields(get_user_details);
+
             let msg = "Get user Profile Successfully.";
             if (languageType == 1) msg = "تم جلب ملف المستخدم بنجاح.";
             else if (languageType == 2) msg = "Profil utilisateur récupéré avec succès.";
 
-            return helper.success(res, msg, get_user_details);
+            return helper.success(res, msg, enrichedProfile);
 
         } catch (error) {
             console.error('getProfile error:', error);
@@ -991,22 +1038,68 @@ module.exports = {
                 where: { id: req.user.id },
             });
 
-            const updatedProfileData = { ...req.body };
+            if (!profile) {
+                let msg = "User not found.";
+                if (languageType == 1) msg = "المستخدم غير موجود.";
+                else if (languageType == 2) msg = "Utilisateur non trouvé.";
+                return helper.failure(res, msg);
+            }
 
-            await db.users.update(updatedProfileData, {
-                where: { id: req.user.id },
-            });
+            const allowedFields = [
+                'firstName',
+                'lastName',
+                'email',
+                'bio',
+                'gender',
+                'country',
+                'city',
+                'state',
+                'location',
+                'image',
+                'isProfileComplete',
+            ];
+
+            const updatedProfileData = {};
+            for (const key of allowedFields) {
+                if (req.body[key] !== undefined && req.body[key] !== null) {
+                    if (key === 'image') {
+                        const normalizedImg = normalizeMediaPath(req.body.image);
+                        if (normalizedImg) {
+                            updatedProfileData.image = normalizedImg;
+                        }
+                    } else {
+                        updatedProfileData[key] = req.body[key];
+                    }
+                }
+            }
+
+            if (req.files && req.files.image) {
+                const uploadedFile = Array.isArray(req.files.image)
+                    ? req.files.image[0]
+                    : req.files.image;
+                const uploadedPath = await helper.fileUpload(uploadedFile);
+                if (uploadedPath) {
+                    updatedProfileData.image = uploadedPath;
+                }
+            }
+
+            if (Object.keys(updatedProfileData).length > 0) {
+                await db.users.update(updatedProfileData, {
+                    where: { id: req.user.id },
+                });
+            }
 
             profile = await db.users.findOne({
                 where: { id: req.user.id },
                 raw: true,
             });
+            const enrichedProfile = await attachVehicleFields(profile);
 
             let msg = "Profile updated successfully.";
             if (languageType == 1) msg = "تم تحديث الملف الشخصي بنجاح.";
             else if (languageType == 2) msg = "Profil mis à jour avec succès.";
 
-            return helper.success(res, msg, profile);
+            return helper.success(res, msg, enrichedProfile);
 
         } catch (error) {
             console.error('editProfile error:', error);
@@ -1299,6 +1392,10 @@ module.exports = {
                 return helper.failure(res, msg);
             }
 
+            const normalizedVehicleDoc = normalizeMediaPath(vehicleDocument);
+            const normalizedDrivingLicence = normalizeMediaPath(drivingLicence);
+            const normalizedInsurance = normalizeMediaPath(insurance);
+
             const transaction = await db.sequelize.transaction();
 
             try {
@@ -1306,13 +1403,13 @@ module.exports = {
                     driverId,
                     vehicleBrand,
                     vehicleModel,
-                    vehicleYear,
+                    vehicleYear: vehicleYear || "",
                     vehicleNumber,
-                    vehicleColor,
-                    vehicleDocument,
-                    drivingLicence,
-                    insurance,
-                    passengerCount
+                    vehicleColor: vehicleColor || "",
+                    vehicleDocument: normalizedVehicleDoc,
+                    drivingLicence: normalizedDrivingLicence,
+                    insurance: normalizedInsurance || "",
+                    passengerCount: passengerCount || "4"
                 }, { transaction });
 
                 await db.users.update(
@@ -1326,6 +1423,7 @@ module.exports = {
 
                 const responseData = {
                     id: vehicle.id,
+                    vehicleId: vehicle.id,
                     vehicleBrand: vehicle.vehicleBrand,
                     vehicleModel: vehicle.vehicleModel,
                     vehicleYear: vehicle.vehicleYear,
@@ -1335,7 +1433,8 @@ module.exports = {
                     drivingLicence: vehicle.drivingLicence,
                     insurance: vehicle.insurance,
                     passengerCount: vehicle.passengerCount,
-                    userVehicleStatus: updatedUser.vehicle
+                    userVehicleStatus: updatedUser.vehicle,
+                    documentVerify: updatedUser.documentVerify || "0"
                 };
 
                 let msg = 'Vehicle added successfully';
@@ -1490,50 +1589,103 @@ module.exports = {
                 return helper.failure(res, msg);
             }
 
-            const existingVehicle = await db.vehicleDetails.findOne({
-                where: { id: vehicleId, driverId }
-            });
+            const trimmedVehicleNumber =
+                vehicleNumber !== undefined && vehicleNumber !== null
+                    ? String(vehicleNumber).trim()
+                    : "";
 
+            let existingVehicle = vehicleId
+                ? await db.vehicleDetails.findOne({ where: { id: vehicleId, driverId } })
+                : null;
             if (!existingVehicle) {
-                let msg = 'Vehicle not found or not authorized to edit';
-                if (languageType == 1) msg = "المركبة غير موجودة أو غير مخول لتعديلها";
-                else if (languageType == 2) msg = "Véhicule introuvable ou non autorisé à modifier";
-                return helper.failure(res, msg);
+                existingVehicle = await db.vehicleDetails.findOne({ where: { driverId } });
             }
 
-            const existingVehicleNumber = await db.vehicleDetails.findOne({
-                where: {
-                    vehicleNumber,
-                    id: { [db.Sequelize.Op.ne]: vehicleId }
+            if (trimmedVehicleNumber) {
+                const dupWhere = existingVehicle
+                    ? {
+                          vehicleNumber: trimmedVehicleNumber,
+                          id: { [db.Sequelize.Op.ne]: existingVehicle.id }
+                      }
+                    : { vehicleNumber: trimmedVehicleNumber };
+                const existingVehicleNumber = await db.vehicleDetails.findOne({ where: dupWhere });
+
+                if (existingVehicleNumber) {
+                    let msg = 'Vehicle number already registered by another vehicle';
+                    if (languageType == 1) msg = "رقم المركبة مسجل بالفعل بواسطة مركبة أخرى";
+                    else if (languageType == 2) msg = "Numéro de véhicule déjà enregistré par un autre véhicule";
+                    return helper.failure(res, msg);
                 }
-            });
-
-            if (existingVehicleNumber) {
-                let msg = 'Vehicle number already registered by another vehicle';
-                if (languageType == 1) msg = "رقم المركبة مسجل بالفعل بواسطة مركبة أخرى";
-                else if (languageType == 2) msg = "Numéro de véhicule déjà enregistré par un autre véhicule";
-                return helper.failure(res, msg);
             }
 
-            await db.vehicleDetails.update({
-                vehicleBrand,
-                vehicleModel,
-                vehicleYear,
-                vehicleNumber,
-                vehicleColor,
-                vehicleDocument,
-                drivingLicence,
-                insurance,
-                passengerCount,
-                updatedAt: new Date()
-            }, {
-                where: { id: vehicleId, driverId }
-            });
+            const normDoc = normalizeMediaPath(vehicleDocument);
+            const normLicence = normalizeMediaPath(drivingLicence);
+            const normInsurance = normalizeMediaPath(insurance);
 
-            const updatedVehicle = await db.vehicleDetails.findOne({ where: { id: vehicleId } });
+            const pickNonEmpty = (incoming, current) => {
+                if (incoming === undefined || incoming === null) return current || "";
+                const str = String(incoming).trim();
+                return str !== "" ? str : (current || "");
+            };
+
+            let updatedVehicle;
+            if (!existingVehicle) {
+                updatedVehicle = await db.vehicleDetails.create({
+                    driverId,
+                    vehicleBrand: pickNonEmpty(vehicleBrand, ""),
+                    vehicleModel: pickNonEmpty(vehicleModel, ""),
+                    vehicleYear: pickNonEmpty(vehicleYear, ""),
+                    vehicleNumber: trimmedVehicleNumber,
+                    vehicleColor: pickNonEmpty(vehicleColor, ""),
+                    vehicleDocument: normDoc,
+                    drivingLicence: normLicence,
+                    insurance: normInsurance,
+                    passengerCount: pickNonEmpty(passengerCount, "4"),
+                });
+
+                await db.users.update(
+                    { vehicle: "1", isProfileComplete: "1", documentVerify: "0" },
+                    { where: { id: driverId } }
+                );
+            } else {
+                const docsChanged =
+                    (normDoc && normDoc !== (existingVehicle.vehicleDocument || "")) ||
+                    (normLicence && normLicence !== (existingVehicle.drivingLicence || "")) ||
+                    (normInsurance && normInsurance !== (existingVehicle.insurance || ""));
+
+                await db.vehicleDetails.update({
+                    vehicleBrand: pickNonEmpty(vehicleBrand, existingVehicle.vehicleBrand),
+                    vehicleModel: pickNonEmpty(vehicleModel, existingVehicle.vehicleModel),
+                    vehicleYear: pickNonEmpty(vehicleYear, existingVehicle.vehicleYear),
+                    vehicleNumber: trimmedVehicleNumber || existingVehicle.vehicleNumber || "",
+                    vehicleColor: pickNonEmpty(vehicleColor, existingVehicle.vehicleColor),
+                    vehicleDocument: normDoc || existingVehicle.vehicleDocument || "",
+                    drivingLicence: normLicence || existingVehicle.drivingLicence || "",
+                    insurance: normInsurance || existingVehicle.insurance || "",
+                    passengerCount: pickNonEmpty(passengerCount, existingVehicle.passengerCount || "4"),
+                    updatedAt: new Date()
+                }, {
+                    where: { id: existingVehicle.id, driverId }
+                });
+
+                const userUpdate = { vehicle: "1", isProfileComplete: "1" };
+                if (driver.documentVerify === "2" && (docsChanged || normDoc || normLicence || normInsurance)) {
+                    userUpdate.documentVerify = "0";
+                }
+                await db.users.update(userUpdate, { where: { id: driverId } });
+
+                updatedVehicle = await db.vehicleDetails.findOne({ where: { id: existingVehicle.id } });
+            }
+
+            const refreshedDriver = await db.users.findOne({
+                where: { id: driverId },
+                attributes: ['vehicle', 'documentVerify'],
+                raw: true,
+            });
 
             const responseData = {
                 id: updatedVehicle.id,
+                vehicleId: updatedVehicle.id,
                 vehicleBrand: updatedVehicle.vehicleBrand,
                 vehicleModel: updatedVehicle.vehicleModel,
                 vehicleYear: updatedVehicle.vehicleYear,
@@ -1543,6 +1695,8 @@ module.exports = {
                 drivingLicence: updatedVehicle.drivingLicence,
                 insurance: updatedVehicle.insurance,
                 passengerCount: updatedVehicle.passengerCount,
+                userVehicleStatus: refreshedDriver ? refreshedDriver.vehicle : "1",
+                documentVerify: refreshedDriver ? refreshedDriver.documentVerify : driver.documentVerify,
                 updatedAt: updatedVehicle.updatedAt
             };
 

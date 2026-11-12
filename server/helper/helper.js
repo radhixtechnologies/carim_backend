@@ -258,13 +258,46 @@ module.exports = {
         try {
             const extension = path.extname(file.name);
             const filename = uuid() + extension;
-            const uploadDir = path.join(process.cwd(), "public", "images");
+            const uploadDir = path.join(__dirname, "..", "public", "images");
             if (!fs.existsSync(uploadDir)) {
                 fs.mkdirSync(uploadDir, { recursive: true });
             }
             const uploadPath = path.join(uploadDir, filename);
 
             await file.mv(uploadPath);
+
+            const extLower = (extension || "").toLowerCase();
+            const extMimeMap = {
+                ".jpg": "image/jpeg",
+                ".jpeg": "image/jpeg",
+                ".png": "image/png",
+                ".gif": "image/gif",
+                ".webp": "image/webp",
+                ".bmp": "image/bmp",
+                ".svg": "image/svg+xml",
+                ".tiff": "image/tiff",
+                ".tif": "image/tiff",
+                ".pdf": "application/pdf",
+            };
+            const detectedMime =
+                file.mimetype && file.mimetype !== "application/octet-stream"
+                    ? file.mimetype
+                    : extMimeMap[extLower] || "application/octet-stream";
+
+            const fileBuffer =
+                Buffer.isBuffer(file.data) && file.data.length > 0
+                    ? file.data
+                    : fs.readFileSync(uploadPath);
+
+            const db = require("../models");
+            if (db && db.uploadedFiles) {
+                await db.uploadedFiles.upsert({
+                    filename,
+                    mimeType: detectedMime,
+                    data: fileBuffer,
+                    size: fileBuffer.length,
+                });
+            }
 
             return `/images/${filename}`;
         } catch (err) {

@@ -5,7 +5,9 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import "@fancyapps/fancybox/dist/jquery.fancybox.css";
 import "@fancyapps/fancybox";
-import { axiosInstance, BASE_URL } from "../../Config";
+import { axiosInstance } from "../../Config";
+import DocumentPreviewCard from "./DocumentPreviewCard";
+import { getUploadedDocSummary, resolveMediaUrl } from "../../utils/mediaUrl";
 import Pagination from "@mui/material/Pagination";
 import Stack from "@mui/material/Stack";
 
@@ -363,6 +365,7 @@ const DriverDocuments = () => {
                             <th>Last Name</th>
                              <th>Vehicle Number</th> 
                             <th>Location</th>
+                            <th>Documents</th>
                             <th>Verified Status</th>
                             <th>Upload Date</th>
                             <th className="text-end">Action</th>
@@ -398,8 +401,23 @@ const DriverDocuments = () => {
 
                                  <td>{user.vehicleDetail?.vehicleNumber || ""}</td> 
                                 <td>
-                                  {`${user.location || ""}${user.location && user.location ? ", " : ""
-                                    }${user.location || ""}` || ""}
+                                  {user.location || [user.city, user.country].filter(Boolean).join(", ") || ""}
+                                </td>
+                                <td>
+                                  {(() => {
+                                    const summary = getUploadedDocSummary(user.vehicleDetail);
+                                    const badgeClass =
+                                      summary.uploaded === summary.total
+                                        ? "bg-success-subtle text-success"
+                                        : summary.uploaded > 0
+                                        ? "bg-warning-subtle text-warning"
+                                        : "bg-secondary-subtle text-secondary";
+                                    return (
+                                      <span className={`badge ${badgeClass}`}>
+                                        {summary.uploaded}/{summary.total} Docs
+                                      </span>
+                                    );
+                                  })()}
                                 </td>
                                 <td>
                                   <div className="dropdown dropup">
@@ -489,7 +507,7 @@ const DriverDocuments = () => {
                           ) : (
                             <tr>
                               <td
-                                colSpan="8"
+                                colSpan="9"
                                 style={{ textAlign: "center", padding: "20px" }}
                               >
                                 {filteredDriverId
@@ -559,6 +577,30 @@ const DriverDocuments = () => {
         <div className="offcanvas-body">
           {selectedUser ? (
             <>
+              {resolveMediaUrl(selectedUser.image) ? (
+                <div className="text-center mb-3">
+                  <img
+                    src={resolveMediaUrl(selectedUser.image)}
+                    alt="Driver Avatar"
+                    className="rounded-circle border"
+                    style={{
+                      width: "84px",
+                      height: "84px",
+                      objectFit: "cover",
+                      cursor: "pointer",
+                    }}
+                    onClick={() => {
+                      const imgSrc = resolveMediaUrl(selectedUser.image);
+                      if (window.$ && window.$.fancybox) {
+                        window.$.fancybox.open([{ src: imgSrc, type: "image" }]);
+                      } else {
+                        window.open(imgSrc, "_blank", "noopener,noreferrer");
+                      }
+                    }}
+                  />
+                </div>
+              ) : null}
+
               {/* Vehicle Details Section */}
               <div className="card ">
                 <div className="card-body">
@@ -636,145 +678,23 @@ const DriverDocuments = () => {
 
                   {selectedUser.vehicleDetail ? (
                     <div className="row">
-                      <div className="col-12 col-md-6 ">
-                        <div className="card">
-                          <div className="card-body">
-                            <h6 className="card-title mb-2">
-                              Vehicle Document
-                            </h6>
-                            {selectedUser.vehicleDetail.vehicleDocument ? (
-                              <div className="text-center">
-                                {/\.(jpg|jpeg|png|gif|bmp|tiff|webp)$/i.test(
-                                  selectedUser.vehicleDetail.vehicleDocument
-                                ) ? (
-                                  <img
-                                    src={`${BASE_URL}${selectedUser.vehicleDetail.vehicleDocument}`}
-                                    alt="Vehicle Document"
-                                    className="img-fluid rounded"
-                                    style={{
-                                      width: "100%",
-                                      maxHeight: "200px",
-                                      objectFit: "contain",
-                                      cursor: "pointer",
-                                    }}
-                                    onClick={() => {
-                                      if (window.$ && window.$.fancybox) {
-                                        window.$.fancybox.open([
-                                          {
-                                            src: `${BASE_URL}${selectedUser.vehicleDetail.vehicleDocument}`,
-                                            type: "image",
-                                          },
-                                        ]);
-                                      } else {
-                                        window.open(
-                                          `${BASE_URL}${selectedUser.vehicleDetail.vehicleDocument}`,
-                                          "_blank"
-                                        );
-                                      }
-                                    }}
-                                  />
-                                ) : (
-                                  <div
-                                    className="d-flex flex-column align-items-center justify-content-center bg-light rounded"
-                                    style={{
-                                      width: "100%",
-                                      height: "150px",
-                                    }}
-                                  >
-                                    <i className="ri-file-text-line font-size-32 text-muted mb-2"></i>
-                                    <p className="text-muted mb-0 text-center small">
-                                      Unsupported image format
-                                    </p>
-                                    <a
-                                      href="assets/images/carim1.png"
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="btn btn-sm btn-outline-primary mt-2"
-                                    >
-                                      View File
-                                    </a>
-                                  </div>
-                                )}
-                              </div>
-                            ) : (
-                              <div className="text-center py-3">
-                                <i className="ri-file-damage-line font-size-32 text-muted"></i>
-                                <p className="mt-2 text-muted small">
-                                  No vehicle document available
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
+                      <div className="col-12">
+                        <DocumentPreviewCard
+                          title="Vehicle Registration Document"
+                          filePath={selectedUser.vehicleDetail.vehicleDocument}
+                        />
                       </div>
-                      <div className="col-12 col-md-6 ">
-                        <div className="card">
-                          <div className="card-body">
-                            <h6 className="card-title mb-2">Driving License</h6>
-                            {selectedUser.vehicleDetail.drivingLicence ? (
-                              <div className="text-center">
-                                {/\.(jpg|jpeg|png|gif|bmp|tiff|webp)$/i.test(
-                                  selectedUser.vehicleDetail.drivingLicence
-                                ) ? (
-                                  <img
-                                    src={`${BASE_URL}${selectedUser.vehicleDetail.drivingLicence}`}
-                                    alt="Driving License"
-                                    className="img-fluid rounded"
-                                    style={{
-                                      width: "100%",
-                                      maxHeight: "200px",
-                                      objectFit: "contain",
-                                      cursor: "pointer",
-                                    }}
-                                    onClick={() => {
-                                      if (window.$ && window.$.fancybox) {
-                                        window.$.fancybox.open([
-                                          {
-                                            src: `${BASE_URL}${selectedUser.vehicleDetail.drivingLicence}`,
-                                            type: "image",
-                                          },
-                                        ]);
-                                      } else {
-                                        window.open(
-                                          `${BASE_URL}${selectedUser.vehicleDetail.drivingLicence}`,
-                                          "_blank"
-                                        );
-                                      }
-                                    }}
-                                  />
-                                ) : (
-                                  <div
-                                    className="d-flex flex-column align-items-center justify-content-center bg-light rounded"
-                                    style={{
-                                      width: "100%",
-                                      height: "150px",
-                                    }}
-                                  >
-                                    <i className="ri-file-text-line font-size-32 text-muted mb-2"></i>
-                                    <p className="text-muted mb-0 text-center small">
-                                      Unsupported image format
-                                    </p>
-                                    <a
-                                      href="assets/images/carim1.png"
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="btn btn-sm btn-outline-primary mt-2"
-                                    >
-                                      View File
-                                    </a>
-                                  </div>
-                                )}
-                              </div>
-                            ) : (
-                              <div className="text-center py-3">
-                                <i className="ri-file-damage-line font-size-32 text-muted"></i>
-                                <p className="mt-2 text-muted small">
-                                  No driving license available
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
+                      <div className="col-12">
+                        <DocumentPreviewCard
+                          title="Vehicle Insurance Document"
+                          filePath={selectedUser.vehicleDetail.insurance}
+                        />
+                      </div>
+                      <div className="col-12">
+                        <DocumentPreviewCard
+                          title="Driving Licence"
+                          filePath={selectedUser.vehicleDetail.drivingLicence}
+                        />
                       </div>
                     </div>
                   ) : (
@@ -904,12 +824,11 @@ const DriverDocuments = () => {
                   <tr>
                     <td>Location:</td>
                     <td className="text-end text-black fw-medium">
-                      {`${selectedUser.location || ""}${selectedUser.location && selectedUser.location ? ", " : ""
-                        }${selectedUser.location || ""}${(selectedUser.location || selectedUser.location) &&
-                          selectedUser.location
-                          ? ", "
-                          : ""
-                        }${selectedUser.location || ""}` || ""}
+                      {selectedUser.location ||
+                        [selectedUser.city, selectedUser.state, selectedUser.country]
+                          .filter(Boolean)
+                          .join(", ") ||
+                        "N/A"}
                     </td>
                   </tr>
                   <tr>

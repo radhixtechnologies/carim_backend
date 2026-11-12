@@ -14,9 +14,10 @@ import { Link, useNavigate } from "react-router-dom";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import Pagination from "@mui/material/Pagination";
 import Stack from "@mui/material/Stack";
-import { BASE_URL } from "../../Config";
 import "@fancyapps/fancybox/dist/jquery.fancybox.css";
 import "@fancyapps/fancybox";
+import DocumentPreviewCard from "./DocumentPreviewCard";
+import { resolveMediaUrl } from "../../utils/mediaUrl";
 
 const DriverList = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -586,33 +587,29 @@ const DriverList = () => {
         <div className="offcanvas-body">
           {selectedUser ? (
             <>
-              {/* <div className="scroll-room mb-3" id="scrollRoom">
-                {selectedUser.image ? (
-                  <a
-                    href={`${BASE_URL}/${selectedUser.image}`}
-                    data-fancybox="gallery"
-                    className="image-popup-gallery-item"
-                  >
-                    <img
-                      src={`${BASE_URL}/${selectedUser.image}`}
-                      className="img-fluid rounded"
-                      alt="User"
-                      style={{
-                        width: "100%",
-                        maxHeight: "300px",
-                        objectFit: "cover",
-                      }}
-                    />
-                  </a>
-                ) : (
-                  <div
-                    className="bg-light rounded d-flex align-items-center justify-content-center"
-                    style={{ height: "200px" }}
-                  >
-                    <span className="text-muted">No Image Available</span>
-                  </div>
-                )}
-              </div> */}
+              {resolveMediaUrl(selectedUser.image) ? (
+                <div className="scroll-room mb-3 text-center" id="scrollRoom">
+                  <img
+                    src={resolveMediaUrl(selectedUser.image)}
+                    className="img-fluid rounded-circle border"
+                    alt="Driver Avatar"
+                    style={{
+                      width: "96px",
+                      height: "96px",
+                      objectFit: "cover",
+                      cursor: "pointer",
+                    }}
+                    onClick={() => {
+                      const imgSrc = resolveMediaUrl(selectedUser.image);
+                      if (window.$ && window.$.fancybox) {
+                        window.$.fancybox.open([{ src: imgSrc, type: "image" }]);
+                      } else {
+                        window.open(imgSrc, "_blank", "noopener,noreferrer");
+                      }
+                    }}
+                  />
+                </div>
+              ) : null}
               <div>
                 <div className="border-bottom mb-2 pb-1">
                   {/* <h5 className="fw-semibold font-size-17 mb-1">
@@ -841,6 +838,97 @@ const DriverList = () => {
                   ) : (
                     "No bio available"
                   )}
+                </div>
+              </div>
+
+              {/* Vehicle Details & Uploaded Documents */}
+              <div className="card mt-4">
+                <div className="card-body">
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <h6 className="card-title mb-0">
+                      <i className="ri-car-line me-2"></i>
+                      Vehicle &amp; Documents
+                    </h6>
+                    <span
+                      className={`badge ${
+                        selectedUser.documentVerify === "1"
+                          ? "bg-success"
+                          : selectedUser.documentVerify === "2"
+                          ? "bg-danger"
+                          : "bg-warning text-dark"
+                      }`}
+                    >
+                      {selectedUser.documentVerify === "1"
+                        ? "Verified"
+                        : selectedUser.documentVerify === "2"
+                        ? "Rejected"
+                        : "Pending"}
+                    </span>
+                  </div>
+
+                  {selectedUser.vehicleDetail ? (
+                    <>
+                      <table className="table table-sm table-borderless mb-3">
+                        <tbody>
+                          <tr>
+                            <td className="text-muted">Brand / Model:</td>
+                            <td className="text-end fw-medium">
+                              {[
+                                selectedUser.vehicleDetail.vehicleBrand,
+                                selectedUser.vehicleDetail.vehicleModel,
+                              ]
+                                .filter(Boolean)
+                                .join(" ") || "N/A"}
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="text-muted">Vehicle Number:</td>
+                            <td className="text-end fw-medium">
+                              {selectedUser.vehicleDetail.vehicleNumber || "N/A"}
+                            </td>
+                          </tr>
+                          <tr>
+                            <td className="text-muted">Year / Color:</td>
+                            <td className="text-end fw-medium">
+                              {[
+                                selectedUser.vehicleDetail.vehicleYear,
+                                selectedUser.vehicleDetail.vehicleColor,
+                              ]
+                                .filter(Boolean)
+                                .join(" • ") || "N/A"}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+
+                      <DocumentPreviewCard
+                        title="Vehicle Registration Document"
+                        filePath={selectedUser.vehicleDetail.vehicleDocument}
+                      />
+                      <DocumentPreviewCard
+                        title="Vehicle Insurance Document"
+                        filePath={selectedUser.vehicleDetail.insurance}
+                      />
+                      <DocumentPreviewCard
+                        title="Driving Licence"
+                        filePath={selectedUser.vehicleDetail.drivingLicence}
+                      />
+                    </>
+                  ) : (
+                    <div className="text-muted small py-2 mb-2">
+                      Driver has not submitted vehicle details or documents yet.
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    data-bs-dismiss="offcanvas"
+                    className="btn btn-primary btn-sm w-100 mt-2"
+                    onClick={() => handleViewDocuments(selectedUser.id)}
+                  >
+                    <i className="ri-shield-check-line me-1"></i>
+                    Open Document Verification
+                  </button>
                 </div>
               </div>
             </>
