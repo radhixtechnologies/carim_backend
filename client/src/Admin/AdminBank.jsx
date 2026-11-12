@@ -131,9 +131,9 @@ const AdminBank = () => {
 
       case "currency":
         if (trimmedValue.length !== 3)
-          return "Currency must be 3 characters (e.g., USD, EUR)";
+          return "Currency must be 3 characters (e.g., INR, USD)";
         if (!/^[A-Z]{3}$/.test(trimmedValue))
-          return "Currency must be 3 uppercase letters (e.g., USD, EUR)";
+          return "Currency must be 3 uppercase letters (e.g., INR, USD)";
         return "";
 
       case "city":
@@ -326,7 +326,7 @@ const AdminBank = () => {
                               onBlur={handleBlur}
                               onKeyPress={handleKeyPress}
                               maxLength={3}
-                              placeholder="USD, EUR, etc. (3 characters)"
+                              placeholder="INR, USD, etc. (3 characters)"
                               style={{ textTransform: "uppercase" }}
                             />
                             {shouldShowError("currency") && (

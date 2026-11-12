@@ -1116,9 +1116,9 @@ module.exports = function (io) {
             if (user.deviceToken) {
               helper.sendNotification_android(user.deviceToken, {
                 message: getUserMsg(
-                  `Your ride has been completed. Final price: ${roundedFinalPrice} MRU`,
-                  `تم إكمال رحلتك. السعر النهائي: ${roundedFinalPrice} MRU`,
-                  `Votre trajet est terminé. Prix final: ${roundedFinalPrice} MRU`
+                  `Your ride has been completed. Final price: ₹${roundedFinalPrice}`,
+                  `تم إكمال رحلتك. السعر النهائي: ₹${roundedFinalPrice}`,
+                  `Votre trajet est terminé. Prix final: ₹${roundedFinalPrice}`
                 ),
                 type: 9,
                 senderId: driverId,
@@ -1246,9 +1246,9 @@ module.exports = function (io) {
 
           // Send notification to user
            const parkingStopMessage = getUserMsg(
-        `Driver has stopped parking. Total parking time: ${totalParkMinutes} minutes. ${chargeableMinutes > 0 ? `Parking charge: ${chargeableMinutes} × 5 MRU = ${chargeableMinutes * 5} MRU` : "No parking charge (first 5 minutes free)"}.`,
-        `توقف السائق عن ركن السيارة. إجمالي وقت الوقوف: ${totalParkMinutes} دقيقة. ${chargeableMinutes > 0 ? `رسوم الوقوف: ${chargeableMinutes} × 5 أوقية = ${chargeableMinutes * 5} أوقية` : "لا توجد رسوم وقوف (أول 5 دقائق مجانية)"}.`,
-        `Le conducteur a arrêté de se garer. Durée totale de stationnement: ${totalParkMinutes} minutes. ${chargeableMinutes > 0 ? `Frais de stationnement: ${chargeableMinutes} × 5 MRU = ${chargeableMinutes * 5} MRU` : "Pas de frais de stationnement (5 premières minutes gratuites)"}.`
+        `Driver has stopped parking. Total parking time: ${totalParkMinutes} minutes. ${chargeableMinutes > 0 ? `Parking charge: ${chargeableMinutes} × ₹5 = ₹${chargeableMinutes * 5}` : "No parking charge (first 5 minutes free)"}.`,
+        `توقف السائق عن ركن السيارة. إجمالي وقت الوقوف: ${totalParkMinutes} دقيقة. ${chargeableMinutes > 0 ? `رسوم الوقوف: ${chargeableMinutes} × ₹5 = ₹${chargeableMinutes * 5}` : "لا توجد رسوم وقوف (أول 5 دقائق مجانية)"}.`,
+        `Le conducteur a arrêté de se garer. Durée totale de stationnement: ${totalParkMinutes} minutes. ${chargeableMinutes > 0 ? `Frais de stationnement: ${chargeableMinutes} × ₹5 = ₹${chargeableMinutes * 5}` : "Pas de frais de stationnement (5 premières minutes gratuites)"}.`
       );
           // Send via socket
           if (global.onlineUsers && onlineUsers[booking.userId]) {
@@ -1525,6 +1525,7 @@ module.exports = function (io) {
               request: booking.request,
               bookingDate: booking.bookingDate,
               bookingPrice: booking.bookingPrice,
+              vehicleType: booking.vehicleType || "",
               rideOpen: booking.rideOpen,
               callerCountryCode: booking.callerCountryCode || "",
               callerPhone: booking.callerPhone || "",

@@ -263,7 +263,7 @@ const ActiveBookingList = () => {
                             <th>User Phone Number</th>
                             <th>Driver Name</th>
                             <th>Ride Type</th>
-                            <th>Price($)</th>
+                            <th>Price(₹)</th>
                             <th>Status</th>
                             <th className="text-end">Action</th>
                           </tr>
@@ -288,7 +288,7 @@ const ActiveBookingList = () => {
                                   }`}</td>
 
                                   <td>{getRideTypeLabel(match.rideType)}</td>
-                                  <td>${match.bookingPrice || "0"}</td>
+                                  <td>₹{match.bookingPrice || "0"}</td>
                                   <td>
                                     <span className={`badge ${className}`}>
                                       {label}
@@ -423,7 +423,7 @@ const ActiveBookingList = () => {
                   <tr>
                     <td>Price:</td>
                     <td className="text-end text-black fw-medium">
-                      ${selectedMatch.bookingPrice || "0"}
+                      ₹{selectedMatch.bookingPrice || "0"}
                     </td>
                   </tr>
                   <tr>

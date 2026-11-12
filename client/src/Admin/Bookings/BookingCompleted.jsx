@@ -135,8 +135,8 @@ const BookingCompleted = () => {
   };
 
   const formatCurrency = (amount) => {
-    if (amount === null || amount === undefined) return "$0.00";
-    return `$${parseFloat(amount).toFixed(2)}`;
+    if (amount === null || amount === undefined) return "₹0.00";
+    return `₹${parseFloat(amount).toFixed(2)}`;
   };
 
   return (
@@ -214,8 +214,8 @@ const BookingCompleted = () => {
                             <th>Sr no.</th>
                             <th>User Phone Number</th>
                             <th>Driver Name</th>
-                            <th>Price($)</th>
-                            <th>Admin Amount($)</th>
+                            <th>Price(₹)</th>
+                            <th>Admin Amount(₹)</th>
                             <th>Status</th>
                             <th className="text-end">Action</th>
                           </tr>
@@ -233,14 +233,12 @@ const BookingCompleted = () => {
                                     {(currentPage - 1) * limit + index + 1}
                                   </td>
                                   <td>
-                                    ({`${match.userbook?.countryCode || ""}) ${
-                                      match.userbook?.phoneNumber || ""
-                                    }`}
+                                    ({`${match.userbook?.countryCode || ""}) ${match.userbook?.phoneNumber || ""
+                                      }`}
                                   </td>
                                   <td>
-                                    {`${match.driverbook?.firstName || ""} ${
-                                      match.driverbook?.lastName || ""
-                                    }`}
+                                    {`${match.driverbook?.firstName || ""} ${match.driverbook?.lastName || ""
+                                      }`}
                                   </td>
 
                                   <td>{formatCurrency(match.bookingPrice)}</td>
@@ -356,17 +354,15 @@ const BookingCompleted = () => {
                   <tr>
                     <td>User PhoneNumber :</td>
                     <td className="text-end text-black fw-medium">
-                      ({`${selectedMatch.userbook?.countryCode || ""}) ${
-                        selectedMatch.userbook?.phoneNumber || ""
-                      }`}
+                      ({`${selectedMatch.userbook?.countryCode || ""}) ${selectedMatch.userbook?.phoneNumber || ""
+                        }`}
                     </td>
                   </tr>
                   <tr>
                     <td>Driver Name:</td>
                     <td className="text-end text-black fw-medium">
-                      {`${selectedMatch.driverbook?.firstName || ""} ${
-                        selectedMatch.driverbook?.lastName || ""
-                      }`}
+                      {`${selectedMatch.driverbook?.firstName || ""} ${selectedMatch.driverbook?.lastName || ""
+                        }`}
                     </td>
                   </tr>
 
@@ -377,7 +373,7 @@ const BookingCompleted = () => {
                     </td>
                   </tr>
                   <tr>
-                    <td>Admin Amount($):</td>
+                    <td>Admin Amount(₹):</td>
                     <td className="text-end text-black fw-medium">
                       {formatCurrency(selectedMatch.adminAmount)}
                     </td>
@@ -387,8 +383,8 @@ const BookingCompleted = () => {
                     <td className="text-end text-black fw-medium">
                       {selectedMatch.bookingDate
                         ? new Date(
-                            selectedMatch.bookingDate
-                          ).toLocaleDateString()
+                          selectedMatch.bookingDate
+                        ).toLocaleDateString()
                         : ""}
                     </td>
                   </tr>
@@ -417,17 +413,16 @@ const BookingCompleted = () => {
                       {selectedMatch.paymentMethod === "0"
                         ? "Cash"
                         : selectedMatch.paymentMethod === "1"
-                        ? "Online"
-                        : ""}
+                          ? "Online"
+                          : ""}
                     </td>
                   </tr>
                   <tr>
                     <td>Status :</td>
                     <td className="text-end text-black fw-medium">
                       <span
-                        className={`badge ${
-                          getStatusBadge(selectedMatch.status).className
-                        }`}
+                        className={`badge ${getStatusBadge(selectedMatch.status).className
+                          }`}
                       >
                         {getStatusBadge(selectedMatch.status).label}
                       </span>

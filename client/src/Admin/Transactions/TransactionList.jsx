@@ -129,13 +129,13 @@ const TransactionList = () => {
     "Transaction ID": match.id,
     "User Name": match.usertransaction?.name || "N/A",
     "Driver Name": match.drivertransaction?.name || "N/A",
-    "Total Amount($)": match.totalAmount || "0",
+    "Total Amount(₹)": match.totalAmount || "0",
     "Payment Status": match.paymentStatus === "0" ? "Pending" : match.paymentStatus === "1" ? "Success" : match.paymentStatus === "2" ? "Failed" : "N/A",
     "Payment Method": match.paymentMethod === "0" ? "Cash" : match.paymentMethod === "1" ? "Online" : "N/A",
     "Transaction Date": new Date(match.transactionDate).toLocaleString() || "N/A",
     "Transaction ID (Backend)": match.trasactionid || "N/A",
     "Booking ID": match.transactionbooking?.id || "N/A",
-    "Stripe Charge($)": match.stripeCharge || "0",
+    "Stripe Charge(₹)": match.stripeCharge || "0",
     "Payment Gateway": match.paymentGateway || "N/A",
     "Payment Confirmation ID": match.paymentConfirmationId || "N/A",
   }));
@@ -239,7 +239,7 @@ const TransactionList = () => {
                             <th>Sr no.</th>
                             <th>User Name</th>
                             <th>Driver Name</th>
-                            <th>Total Amount($)</th>
+                            <th>Total Amount(₹)</th>
                             <th>Status</th>
                             <th className="text-end">Action</th>
                           </tr>
@@ -252,7 +252,7 @@ const TransactionList = () => {
                                   <td>{(currentPage - 1) * limit + index + 1}</td>
                                   <td>{match.usertransaction?.name || "N/A"}</td>
                                   <td>{match.drivertransaction?.name || "N/A"}</td>
-                                  <td>${match.totalAmount || "0"}</td>
+                                  <td>₹{match.totalAmount || "0"}</td>
                                   <td>
                                     {match.paymentStatus === "0"
                                       ? "Pending"
@@ -380,7 +380,7 @@ const TransactionList = () => {
                   <tr>
                     <td>Total Price:</td>
                     <td className="text-end text-black fw-medium">
-                      ${selectedMatch.totalAmount || "0"}
+                      ₹{selectedMatch.totalAmount || "0"}
                     </td>
                   </tr>
                   <tr>
@@ -398,7 +398,7 @@ const TransactionList = () => {
                   <tr>
                     <td>Stripe Charge</td>
                     <td className="text-end text-black fw-medium">
-                      ${selectedMatch.stripeCharge || "0"}
+                      ₹{selectedMatch.stripeCharge || "0"}
                     </td>
                   </tr>
 

@@ -91,23 +91,34 @@ Object.keys(db).forEach(modelName => {
 let _vehicleTypeColReady = false;
 let _vehicleTypeColPromise = null;
 
+async function ensureColumn(tableName, columnName, ddlSql) {
+  const [cols] = await sequelize.query(
+    `SHOW COLUMNS FROM \`${tableName}\` LIKE '${columnName}'`
+  );
+  if (!Array.isArray(cols) || cols.length === 0) {
+    await sequelize.query(ddlSql);
+    console.log(`Added ${columnName} column to ${tableName}`);
+  }
+}
+
 async function ensureVehicleTypeColumn() {
   if (_vehicleTypeColReady) return;
   if (_vehicleTypeColPromise) return _vehicleTypeColPromise;
   _vehicleTypeColPromise = (async () => {
     try {
-      const [cols] = await sequelize.query(
-        "SHOW COLUMNS FROM `vehicleDetails` LIKE 'vehicleType'"
+      await ensureColumn(
+        'vehicleDetails',
+        'vehicleType',
+        "ALTER TABLE `vehicleDetails` ADD COLUMN `vehicleType` VARCHAR(50) NOT NULL DEFAULT ''"
       );
-      if (!Array.isArray(cols) || cols.length === 0) {
-        await sequelize.query(
-          "ALTER TABLE `vehicleDetails` ADD COLUMN `vehicleType` VARCHAR(50) NOT NULL DEFAULT ''"
-        );
-        console.log('Added vehicleType column to vehicleDetails');
-      }
+      await ensureColumn(
+        'bookings',
+        'vehicleType',
+        "ALTER TABLE `bookings` ADD COLUMN `vehicleType` VARCHAR(50) NOT NULL DEFAULT ''"
+      );
       _vehicleTypeColReady = true;
     } catch (colErr) {
-      console.error('Error ensuring vehicleDetails.vehicleType column:', colErr);
+      console.error('Error ensuring vehicleType columns:', colErr);
       _vehicleTypeColPromise = null;
     }
   })();

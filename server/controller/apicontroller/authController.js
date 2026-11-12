@@ -5,6 +5,7 @@ const { Validator } = require('node-input-validator');
 const jwt = require("jsonwebtoken");
 const { Op } = require("sequelize");
 const { Sequelize } = require('sequelize');
+const { calculateDriverEarnings } = require('../../helper/rideHelpers');
 
 const accountSid = "ACdcc97516d25fd3723d35d1e1df146b5a";
 const authToken = "dc4bd0a49ee2ba28a852b44c6f16b5b8";
@@ -1117,6 +1118,11 @@ module.exports = {
             }
 
             const enrichedProfile = await attachVehicleFields(get_user_details);
+            if (String(get_user_details.role || "") === "2") {
+                const earnings = await calculateDriverEarnings(db, userId);
+                enrichedProfile.earnings = earnings;
+                enrichedProfile.totalEarnings = earnings.totalEarnings;
+            }
 
             let msg = "Get user Profile Successfully.";
             if (languageType == 1) msg = "تم جلب ملف المستخدم بنجاح.";
@@ -2321,11 +2327,14 @@ module.exports = {
             if (languageType == 1) msg = "تم جلب سجل المدفوعات بنجاح";
             else if (languageType == 2) msg = "Historique des paiements récupéré avec succès";
 
+            const earnings = await calculateDriverEarnings(db, driverId);
+
             return res.json({
                 status: true,
                 message: msg,
                 body: {
                     currentBalance: driverStatus.totalAmount || "0.00",
+                    earnings: earnings,
                     history: payments,
                     commissions: bookingCommissions
                 }

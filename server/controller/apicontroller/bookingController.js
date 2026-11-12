@@ -7,6 +7,13 @@ const { Op } = require("sequelize");
 const { Sequelize } = require('sequelize');
 const io = require("../../socket/socket")
 const axios = require("axios")
+const {
+    VEHICLE_TYPES,
+    normalizeVehicleType,
+    getVehiclePricingConfig,
+    calculateFareForVehicle,
+    calculateDriverEarnings
+} = require("../../helper/rideHelpers");
 function calculateDistance(lat1, lon1, lat2, lon2) {
     const R = 6371; // Radius of Earth in km
     const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -47,8 +54,10 @@ module.exports = {
                 dropLatitude,
                 dropLongitude,
                 pickupLocation,
-                dropLocation
+                dropLocation,
+                vehicleType
             } = req.body;
+            const requestedVehicleType = normalizeVehicleType(vehicleType);
 
             if (!pickupLatitude || !pickupLongitude || !dropLatitude || !dropLongitude) {
                 return helper.failure(res, 'Pickup and drop coordinates are required.');
@@ -92,7 +101,34 @@ module.exports = {
                 dropLng
             );
 
-            const bookingPrice = Math.round(rideDistanceKm * 10);
+            const adminData = await db.users.findOne({
+                where: { role: '0' },
+                attributes: ['rideAmount', 'priceRushHour', 'priceStatus', 'status'],
+                raw: true
+            });
+            const adminCarRate = adminData && String(adminData.priceStatus ?? adminData.status) === "1"
+                ? parseFloat(adminData.priceRushHour) || 23
+                : parseFloat(adminData?.rideAmount) || 23;
+
+            const vehicleOptions = VEHICLE_TYPES.map((type) => {
+                const cfg = getVehiclePricingConfig(type, adminCarRate);
+                return {
+                    vehicleType: type,
+                    basePrice: cfg.basePrice,
+                    freeKm: cfg.freeKm,
+                    perKmRate: cfg.perKmRate,
+                    bookingPrice: calculateFareForVehicle(type, rideDistanceKm, adminCarRate),
+                };
+            });
+
+            const activeTier = requestedVehicleType
+                ? vehicleOptions.find(v => v.vehicleType === requestedVehicleType)
+                : null;
+            const bookingPrice = activeTier ? activeTier.bookingPrice : Math.round(rideDistanceKm * 10);
+
+            if (typeof db.ensureVehicleTypeColumn === "function") {
+                await db.ensureVehicleTypeColumn();
+            }
 
             const activeBookings = await db.bookings.findAll({
                 where: {
@@ -155,7 +191,12 @@ module.exports = {
                         vehicleDetails: driver.vehicleDetail
                     };
                 })
-                .filter(Boolean)
+                .filter(driver => {
+                    if (!driver) return false;
+                    if (!requestedVehicleType) return true;
+                    const driverType = normalizeVehicleType(driver.vehicleDetails?.vehicleType || "");
+                    return driverType === requestedVehicleType;
+                })
                 .sort((a, b) => a.distanceFromPickup - b.distanceFromPickup);
 
             if (!driversWithDistance.length) {
@@ -171,6 +212,7 @@ module.exports = {
                 rideDistanceKm: rideDistanceKm.toFixed(2),
                 pickupLocation,
                 dropLocation,
+                vehicleOptions,
                 drivers: driversWithDistance
             });
 
@@ -847,8 +889,13 @@ module.exports = {
                     callerCountryCode,
                     callerName,
                     bookingPrice,
-                    rideDistance
+                    rideDistance,
+                    vehicleType
                 } = req.body;
+                const requestedVehicleType = normalizeVehicleType(vehicleType);
+                if (typeof db.ensureVehicleTypeColumn === "function") {
+                    await db.ensureVehicleTypeColumn();
+                }
 
                 // Fallback default address text if coordinates exist but address string is empty
                 if (!pickupLocation || typeof pickupLocation !== 'string' || pickupLocation.trim() === '') {
@@ -958,9 +1005,10 @@ module.exports = {
                     ADMIN_PRICE_PER_KM = parseFloat(adminData.priceRushHour);
                 }
 
-                const BASE_PRICE = 100;
+                const vehiclePricing = getVehiclePricingConfig(requestedVehicleType || "4 Wheeler", ADMIN_PRICE_PER_KM || 23);
+                const BASE_PRICE = requestedVehicleType ? vehiclePricing.basePrice : 100;
                 const FREE_KM = 3;
-                const pricePerKmOpen = ADMIN_PRICE_PER_KM;
+                const pricePerKmOpen = requestedVehicleType ? vehiclePricing.perKmRate : ADMIN_PRICE_PER_KM;
                 const pricePerMinOpen = 5;
 
                 const roundToNearest5 = (num) => {
@@ -1029,18 +1077,26 @@ module.exports = {
                         approve: '1'
                     },
                     attributes: ['id', 'latitude', 'longitude', 'totalAmount'],
-                    include: [{
-                        model: db.bookings,
-                        as: "driverbook",
-                        required: false,
-                        where: {
-                            status: { [Sequelize.Op.in]: ['0', '1', '2'] },
-                            request: '1'
+                    include: [
+                        {
+                            model: db.bookings,
+                            as: "driverbook",
+                            required: false,
+                            where: {
+                                status: { [Sequelize.Op.in]: ['0', '1', '2'] },
+                                request: '1'
+                            }
+                        },
+                        {
+                            model: db.vehicleDetails,
+                            as: "vehicleDetail",
+                            required: false,
+                            attributes: ['id', 'vehicleType']
                         }
-                    }]
+                    ]
                 });
 
-                const freeDrivers = drivers.filter(d => {
+                const eligibleDrivers = drivers.filter(d => {
                     const hasActiveBooking = d.driverbook && d.driverbook.length > 0;
                     const driverBalance = parseFloat(d.totalAmount) || 0;
                     const isValidBalance = driverBalance >= 0;
@@ -1049,15 +1105,21 @@ module.exports = {
                     return !hasActiveBooking && (hasHighBalance || isLowBalance) && isValidBalance;
                 });
 
-                if (!freeDrivers.length) {
-                    const anyDriver = await db.users.findOne({ where: { role: '2' } });
-                    if (anyDriver) {
-                        await db.users.update({ online: '1', approve: '1', totalAmount: '500' }, { where: { id: anyDriver.id } });
-                        freeDrivers.push(anyDriver);
-                    }
-                }
+                let freeDrivers = eligibleDrivers;
+                if (requestedVehicleType) {
+                    // Strict vehicleType matching: e.g. a "2 Wheeler" booking only goes to "2 Wheeler" drivers
+                    freeDrivers = eligibleDrivers.filter(
+                        d => normalizeVehicleType(d.vehicleDetail?.vehicleType || "") === requestedVehicleType
+                    );
 
-                if (!freeDrivers.length) {
+                    if (!freeDrivers.length) {
+                        return helper.failure(res,
+                            languageType === 1 ? `لا يوجد سائقو ${requestedVehicleType} متاحون حاليًا` :
+                                languageType === 2 ? `Aucun chauffeur ${requestedVehicleType} disponible pour le moment` :
+                                    `No online ${requestedVehicleType} driver available nearby`
+                        );
+                    }
+                } else if (!freeDrivers.length) {
                     return helper.failure(res,
                         languageType === 1 ? "لا يوجد سائقون متاحون" :
                             languageType === 2 ? "Aucun chauffeur disponible" :
@@ -1065,7 +1127,7 @@ module.exports = {
                     );
                 }
 
-                // ---------------- FILTER DRIVERS WITHIN 15KM RADIUS ----------------
+                // ---------------- FILTER DRIVERS WITHIN RADIUS ----------------
                 var MAX_DRIVER_DISTANCE_KM = 1;
                 if (adminData && adminData.setKmRange) {
                     MAX_DRIVER_DISTANCE_KM = parseFloat(adminData.setKmRange);
@@ -1074,14 +1136,22 @@ module.exports = {
                     }
                 }
                 const nearbyDrivers = [];
+                const driversWithDistances = [];
 
                 for (const driver of freeDrivers) {
                     if (!driver.latitude || !driver.longitude) continue;
 
                     const driverLat = parseFloat(driver.latitude);
                     const driverLng = parseFloat(driver.longitude);
+                    if (isNaN(driverLat) || isNaN(driverLng)) continue;
 
                     const distance = calculateHaversineDistance(pickupLat, pickupLng, driverLat, driverLng);
+                    driversWithDistances.push({
+                        id: driver.id,
+                        distance,
+                        latitude: driver.latitude,
+                        longitude: driver.longitude
+                    });
 
                     if (distance <= MAX_DRIVER_DISTANCE_KM) {
                         nearbyDrivers.push({
@@ -1094,14 +1164,19 @@ module.exports = {
                 }
 
                 if (!nearbyDrivers.length && freeDrivers.length > 0) {
-                    // Fallback to closest available driver if outside radius during testing
-                    const fallbackDriver = freeDrivers[0];
-                    nearbyDrivers.push({
-                        id: fallbackDriver.id,
-                        distance: 0.5,
-                        latitude: pickupLat.toString(),
-                        longitude: pickupLng.toString()
-                    });
+                    // Pick closest matching-vehicle driver if outside configured radius
+                    if (driversWithDistances.length > 0) {
+                        driversWithDistances.sort((a, b) => a.distance - b.distance);
+                        nearbyDrivers.push(driversWithDistances[0]);
+                    } else {
+                        const fallbackDriver = freeDrivers[0];
+                        nearbyDrivers.push({
+                            id: fallbackDriver.id,
+                            distance: 0.5,
+                            latitude: pickupLat.toString(),
+                            longitude: pickupLng.toString()
+                        });
+                    }
                 }
 
                 if (!nearbyDrivers.length) {
@@ -1134,6 +1209,7 @@ module.exports = {
                     basePrice: basePrice,
                     request: '0',
                     rideOpen,
+                    vehicleType: requestedVehicleType || "",
                     callerPhone: callerPhone || "",
                     callerCountryCode: callerCountryCode || "",
                     callerName: callerName || "",
@@ -1178,6 +1254,7 @@ module.exports = {
                                 status: '0',
                                 request: '0',
                                 rideOpen,
+                                vehicleType: newBooking.vehicleType || "",
                                 callerCountryCode: callerCountryCode || "",
                                 callerPhone: callerPhone || "",
                                 callerName: callerName || "",
@@ -1665,6 +1742,22 @@ module.exports = {
                         return helper.failure(res, msg);
                     }
 
+                    const bookingReqType = normalizeVehicleType(bookingCheck.vehicleType || "");
+                    if (bookingReqType) {
+                        const driverVehicle = await db.vehicleDetails.findOne({
+                            where: { driverId },
+                            attributes: ['vehicleType'],
+                            raw: true
+                        });
+                        const driverVType = normalizeVehicleType(driverVehicle?.vehicleType || "");
+                        if (driverVType !== bookingReqType) {
+                            return helper.failure(
+                                res,
+                                `This ride is only for ${bookingReqType} drivers.`
+                            );
+                        }
+                    }
+
                     // ===== ADMIN COMMISSION CHECK - NO BALANCE CHECK =====
                     const adminUser = await db.users.findOne({
                         where: { role: '0' },
@@ -2034,6 +2127,18 @@ module.exports = {
                     order: [['id', 'DESC']]
                 });
 
+                const driverVehicle = await db.vehicleDetails.findOne({
+                    where: { driverId },
+                    attributes: ['vehicleType'],
+                    raw: true
+                });
+                const driverVType = normalizeVehicleType(driverVehicle?.vehicleType || "");
+                const filteredRequests = requests.filter(booking => {
+                    const bookingVType = normalizeVehicleType(booking.vehicleType || "");
+                    if (!bookingVType) return true;
+                    return driverVType === bookingVType;
+                });
+
                 // ===== DISTANCE LOGIC (UNCHANGED) =====
                 const toRad = v => v * Math.PI / 180;
                 const calculateDistance = (a, b, c, d) => {
@@ -2053,8 +2158,8 @@ module.exports = {
                 else if (languageType == 2) successMsg = "Demandes de course en attente récupérées avec succès";
 
                 return helper.success(res, successMsg, {
-                    totalRequests: requests.length,
-                    requests: requests.map(booking => {
+                    totalRequests: filteredRequests.length,
+                    requests: filteredRequests.map(booking => {
                         let rideDistanceKm = "";
 
                         if (
@@ -2099,6 +2204,7 @@ module.exports = {
                             bookingPrice: booking.bookingPrice,
                             orderId: booking.orderId,
                             rideOpen: booking.rideOpen,
+                            vehicleType: booking.vehicleType || "",
                             rideDistanceKm
                         };
                     })
@@ -2290,6 +2396,8 @@ module.exports = {
                     status: booking.status,
                     request: booking.request,
                     bookingDate: booking.bookingDate,
+                    bookingPrice: booking.bookingPrice,
+                    vehicleType: booking.vehicleType || "",
                     rideOpen: booking.rideOpen
                 }))
             });
@@ -2439,6 +2547,7 @@ module.exports = {
                 request: booking.request,
                 bookingDate: booking.bookingDate,
                 bookingPrice: booking.bookingPrice,
+                vehicleType: booking.vehicleType || "",
                 rideOpen: booking.rideOpen,
                 callerCountryCode: booking.callerCountryCode || "",
                 callerPhone: booking.callerPhone || "",
@@ -2879,6 +2988,18 @@ module.exports = {
             );
         } catch (error) {
             console.log(error, "error");
+            return helper.failure(res, "Something went wrong");
+        }
+    },
+
+    driverEarnings: async (req, res) => {
+        try {
+            const userId = req.user.id;
+            const tzOffsetMinutes = req.query.tzOffsetMinutes;
+            const summary = await calculateDriverEarnings(db, userId, tzOffsetMinutes);
+            return helper.success(res, "Driver earnings fetched successfully", summary);
+        } catch (error) {
+            console.error("driverEarnings error:", error);
             return helper.failure(res, "Something went wrong");
         }
     }

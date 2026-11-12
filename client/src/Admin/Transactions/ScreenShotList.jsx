@@ -88,7 +88,7 @@ const ScreenShotList = () => {
       "Transaction ID": transaction.id || "",
       "Driver Name": transaction.screenshotdriver?.firstName || "",
       "Driver Email": transaction.screenshotdriver?.email || "",
-      "Driver Balance ($)": transaction.screenshotdriver?.totalAmount || "0",
+      "Driver Balance (₹)": transaction.screenshotdriver?.totalAmount || "0",
       "Verification Status": getApprovalLabel(transaction.status),
       "Screenshot URL": transaction.image
         ? `${BASE_URL}/${transaction.image}`
@@ -308,13 +308,13 @@ const ScreenShotList = () => {
   };
 
   const formatCurrency = (amount) => {
-    if (amount === null || amount === undefined) return "$0.00";
-    return `$${parseFloat(amount).toFixed(2)}`;
+    if (amount === null || amount === undefined) return "₹0.00";
+    return `₹${parseFloat(amount).toFixed(2)}`;
   };
 
   const calculateNewBalance = () => {
     if (!pendingVerification || !pendingVerification.screenshotdriver)
-      return "$0.00";
+      return "₹0.00";
     const currentBalance = parseFloat(
       pendingVerification.screenshotdriver.totalAmount || 0
     );
@@ -419,7 +419,7 @@ const ScreenShotList = () => {
                             {/* <th>Image</th> */}
                             <th>Driver Name</th>
                             {/* <th>Driver Email</th> */}
-                            <th>Driver Wallet Balance($)</th>
+                            <th>Driver Wallet Balance(₹)</th>
                             <th>Status</th>
                             <th className="text-end">Action</th>
                           </tr>

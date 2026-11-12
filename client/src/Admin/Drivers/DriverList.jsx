@@ -821,7 +821,7 @@ const DriverList = () => {
                   <tr>
                     <td>Balance :</td>
                     <td className="text-end text-black fw-medium">
-                      ${selectedUser.totalAmount || 0}
+                      ₹{selectedUser.totalAmount || 0}
                     </td>
                   </tr>
                 </tbody>

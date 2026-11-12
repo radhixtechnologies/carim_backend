@@ -77,6 +77,11 @@ module.exports = function (sequelize, DataTypes) {
       defaultValue: "0",
       comment: "0=>single ride,1=>pool ride"
     },
+    vehicleType: {
+      type: DataTypes.STRING(50),
+      allowNull: false,
+      defaultValue: ""
+    },
     bookingPrice: {
       type: DataTypes.STRING(255),
       allowNull: false,
