@@ -155,11 +155,12 @@ module.exports = {
                     block: "0",
                     suspend: "0"
                 },
-                attributes: ['id', 'firstName', 'lastName', 'latitude', 'longitude', 'vehicleType', 'status', 'online', 'block', 'suspend'],
+                attributes: ['id', 'firstName', 'lastName', 'latitude', 'longitude', 'status', 'online', 'block', 'suspend'],
                 include: [{
                     model: db.vehicleDetails,
                     as: 'vehicleDetail',
-                    required: false
+                    required: false,
+                    attributes: ['id', 'vehicleType']
                 }]
             });
 
@@ -1077,7 +1078,7 @@ module.exports = {
                         online: '1',
                         approve: '1'
                     },
-                    attributes: ['id', 'latitude', 'longitude', 'totalAmount', 'vehicleType'],
+                    attributes: ['id', 'latitude', 'longitude', 'totalAmount'],
                     include: [
                         {
                             model: db.bookings,
