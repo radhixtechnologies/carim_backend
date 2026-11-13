@@ -1130,7 +1130,7 @@ module.exports = function (io) {
           case "4": // CANCELLED
             await stopRealTimePricing(bookingId);
             stopAutoLocationUpdate(bookingId);
-            if (currentStatus !== "2") return;
+            if (currentStatus === "3" || currentStatus === "4" || currentStatus === "5") return;
             await booking.update({ status: "4" });
             await emitToBoth(
               getUserMsg("Ride cancelled successfully", "تم إلغاء الرحلة بنجاح", "Trajet annulé avec succès"),

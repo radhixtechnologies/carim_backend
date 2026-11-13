@@ -155,10 +155,11 @@ module.exports = {
                     block: "0",
                     suspend: "0"
                 },
+                attributes: ['id', 'firstName', 'lastName', 'latitude', 'longitude', 'vehicleType', 'status', 'online', 'block', 'suspend'],
                 include: [{
                     model: db.vehicleDetails,
                     as: 'vehicleDetail',
-                    required: true
+                    required: false
                 }]
             });
 
@@ -194,7 +195,7 @@ module.exports = {
                 .filter(driver => {
                     if (!driver) return false;
                     if (!requestedVehicleType) return true;
-                    const driverType = normalizeVehicleType(driver.vehicleDetails?.vehicleType || "");
+                    const driverType = normalizeVehicleType(driver.vehicleDetails?.vehicleType || driver.vehicleType || "");
                     return driverType === requestedVehicleType;
                 })
                 .sort((a, b) => a.distanceFromPickup - b.distanceFromPickup);
@@ -1076,7 +1077,7 @@ module.exports = {
                         online: '1',
                         approve: '1'
                     },
-                    attributes: ['id', 'latitude', 'longitude', 'totalAmount'],
+                    attributes: ['id', 'latitude', 'longitude', 'totalAmount', 'vehicleType'],
                     include: [
                         {
                             model: db.bookings,
@@ -1096,21 +1097,36 @@ module.exports = {
                     ]
                 });
 
+                console.log(`[bookRide] Found ${drivers.length} online approved drivers. Requested vehicle: "${requestedVehicleType}"`);
+                drivers.forEach(d => {
+                    const vType = normalizeVehicleType(d.vehicleDetail?.vehicleType || d.vehicleType || "");
+                    const activeCount = d.driverbook ? d.driverbook.length : 0;
+                    console.log(`[bookRide] Driver #${d.id} | vType: "${vType}" | balance: ${d.totalAmount} | activeBookings: ${activeCount}`);
+                });
+
+                const twoHoursAgoMs = Date.now() - 2 * 60 * 60 * 1000;
                 const eligibleDrivers = drivers.filter(d => {
-                    const hasActiveBooking = d.driverbook && d.driverbook.length > 0;
-                    const driverBalance = parseFloat(d.totalAmount) || 0;
-                    const isValidBalance = driverBalance >= 0;
-                    const hasHighBalance = driverBalance > commissionAmount;
-                    const isLowBalance = driverBalance >= 0 && driverBalance <= 30;
-                    return !hasActiveBooking && (hasHighBalance || isLowBalance) && isValidBalance;
+                    // Only consider non-stale active bookings (within last 2 hours)
+                    const hasActiveBooking = Array.isArray(d.driverbook) && d.driverbook.some(b => {
+                        if (!b.createdAt && !b.updatedAt) return true;
+                        const bTime = new Date(b.updatedAt || b.createdAt).getTime();
+                        return bTime > twoHoursAgoMs;
+                    });
+
+                    const driverBalance = parseFloat(d.totalAmount);
+                    // Allow drivers to receive rides even with negative balance up to -500 MRU
+                    // so deducting commission on previous ride does not instantly block the driver
+                    const isValidBalance = isNaN(driverBalance) || driverBalance >= -500;
+                    return !hasActiveBooking && isValidBalance;
                 });
 
                 let freeDrivers = eligibleDrivers;
                 if (requestedVehicleType) {
-                    // Strict vehicleType matching: e.g. a "2 Wheeler" booking only goes to "2 Wheeler" drivers
-                    freeDrivers = eligibleDrivers.filter(
-                        d => normalizeVehicleType(d.vehicleDetail?.vehicleType || "") === requestedVehicleType
-                    );
+                    // Match vehicle type from either vehicleDetail table or users table
+                    freeDrivers = eligibleDrivers.filter(d => {
+                        const driverVType = normalizeVehicleType(d.vehicleDetail?.vehicleType || d.vehicleType || "");
+                        return driverVType === requestedVehicleType;
+                    });
 
                     if (!freeDrivers.length) {
                         return helper.failure(res,

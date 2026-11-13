@@ -381,10 +381,10 @@ module.exports = {
 
                 if (existingUser.role === '2' && existingUser.otpVerify === "1") {
                     if (existingUser.isProfileComplete === "1" && existingUser.vehicle === "1") {
-                        if (existingUser.approve !== "1") {
-                            let msg = "Your driver account is not approved yet.";
-                            if (languageType === 1) msg = "حساب السائق الخاص بك لم يتم الموافقة عليه بعد.";
-                            else if (languageType === 2) msg = "Votre compte conducteur n’est pas encore approuvé.";
+                        if (existingUser.approve !== "1" || existingUser.documentVerify !== "1") {
+                            let msg = "Aapke documents aur account abhi Admin verification ke under process hain. Kripya approve hone ka intezar karein.";
+                            if (languageType === 1) msg = "مستنداتك وحسابك قيد المراجعة من قبل المسؤول. يرجى الانتظار للموافقة.";
+                            else if (languageType === 2) msg = "Vos documents et votre compte sont en cours de vérification par l’administrateur.";
                             return helper.failure(res, msg);
                         }
                     }
@@ -870,7 +870,7 @@ module.exports = {
 
             // 🔹 Generate JWT Token
             const token = jwt.sign(
-                { id: user.id },
+                { id: user.id, loginTime: updatedUser?.loginTime },
                 process.env.JWT_SECRET,
                 {
                     expiresIn: "365d"

@@ -74,34 +74,20 @@ module.exports = {
         return helper.error(res, "Invalid token or user not found.");
       }
 
-       const userData1 = await db.users.findOne({
-        attributes: { exclude: ["password"] },
-        where : {
-          id: decoded.id,
-          loginTime : decoded.loginTime
+      if (decoded.loginTime !== undefined && decoded.loginTime !== null) {
+        const userData1 = await db.users.findOne({
+          attributes: { exclude: ["password"] },
+          where: {
+            id: decoded.id,
+            loginTime: decoded.loginTime
+          }
+        });
+        if (!userData1) {
+          return helper.error8(
+            res,
+            "Session expired - logged in on another device"
+          );
         }
-      });
-
-
-      // if (userData.deviceToken && userData.deviceToken !== decoded.deviceToken) {
-      //   await db.users.update(
-      //     {
-      //       deviceToken: decoded.deviceToken,
-      //       loginTime: new Date(),
-      //     },
-      //     {
-      //       where: {
-      //         id: decoded.id,
-      //       },
-      //     }
-      //   );
-      //   return helper.error8(res, "Session expired - logged in on another device",);
-      // }
-      if (!userData1) {
-        return helper.error8(
-          res,
-          "Session expired - logged in on another device"
-        );
       }
       if (userData.status === "0") {
         return helper.error2(res, "Your account has been deactivated by admin.");

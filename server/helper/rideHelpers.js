@@ -2,8 +2,17 @@ const VEHICLE_TYPES = ["2 Wheeler", "3 Wheeler", "4 Wheeler"];
 
 const VEHICLE_PRICING = {
   "2 Wheeler": { basePrice: 30, freeKm: 2, perKmFactor: 0.45, minPerKm: 8 },
+  "Bike": { basePrice: 30, freeKm: 2, perKmFactor: 0.45, minPerKm: 8 },
+  "Bike Lite": { basePrice: 24, freeKm: 2, perKmFactor: 0.38, minPerKm: 6.5 },
+  "Rated by Women": { basePrice: 35, freeKm: 2, perKmFactor: 0.50, minPerKm: 9 },
   "3 Wheeler": { basePrice: 50, freeKm: 2, perKmFactor: 0.7, minPerKm: 12 },
+  "Auto": { basePrice: 50, freeKm: 2, perKmFactor: 0.7, minPerKm: 12 },
+  "Auto Share": { basePrice: 35, freeKm: 2, perKmFactor: 0.52, minPerKm: 9 },
   "4 Wheeler": { basePrice: 100, freeKm: 2, perKmFactor: 1.0, minPerKm: 20 },
+  "Cab Economy": { basePrice: 90, freeKm: 2, perKmFactor: 0.90, minPerKm: 18 },
+  "Cab Premium": { basePrice: 120, freeKm: 2, perKmFactor: 1.15, minPerKm: 22 },
+  "Cab XL / SUV": { basePrice: 170, freeKm: 2, perKmFactor: 1.50, minPerKm: 28 },
+  "Priority Pickup": { basePrice: 140, freeKm: 2, perKmFactor: 1.25, minPerKm: 24 },
 };
 
 function normalizeVehicleType(val) {
@@ -16,6 +25,11 @@ function normalizeVehicleType(val) {
     raw === "2 wheeler" ||
     raw === "two wheeler" ||
     raw === "bike" ||
+    raw === "bike lite" ||
+    raw === "lite" ||
+    raw === "rated by women" ||
+    raw === "women" ||
+    raw === "women captain" ||
     raw === "moto" ||
     raw === "scooter"
   ) {
@@ -27,6 +41,7 @@ function normalizeVehicleType(val) {
     raw === "3 wheeler" ||
     raw === "three wheeler" ||
     raw === "auto" ||
+    raw === "auto share" ||
     raw === "rickshaw" ||
     raw === "e rickshaw"
   ) {
@@ -38,7 +53,17 @@ function normalizeVehicleType(val) {
     raw === "4 wheeler" ||
     raw === "four wheeler" ||
     raw === "car" ||
-    raw === "cab"
+    raw === "cab" ||
+    raw === "cab economy" ||
+    raw === "economy" ||
+    raw === "cab premium" ||
+    raw === "premium" ||
+    raw === "cab xl" ||
+    raw === "cab xl / suv" ||
+    raw === "suv" ||
+    raw === "xl" ||
+    raw === "priority" ||
+    raw === "priority pickup"
   ) {
     return "4 Wheeler";
   }
@@ -54,15 +79,19 @@ function defaultPassengerCountForType(vehicleType, fallback = 4) {
 }
 
 function getVehiclePricingConfig(vehicleType, baseCarPerKm = 23) {
-  const normalized = normalizeVehicleType(vehicleType) || "4 Wheeler";
-  const tier = VEHICLE_PRICING[normalized] || VEHICLE_PRICING["4 Wheeler"];
+  const rawType = String(vehicleType || "").trim();
+  const normalized = normalizeVehicleType(rawType) || "4 Wheeler";
+  const tier =
+    VEHICLE_PRICING[rawType] ||
+    VEHICLE_PRICING[normalized] ||
+    VEHICLE_PRICING["4 Wheeler"];
   const carRate = Number(baseCarPerKm) > 0 ? Number(baseCarPerKm) : 23;
-  const perKmRate =
-    normalized === "4 Wheeler"
-      ? carRate
-      : Math.max(tier.minPerKm, Math.round(carRate * tier.perKmFactor));
+  const perKmRate = Math.max(
+    tier.minPerKm,
+    Math.round(carRate * tier.perKmFactor)
+  );
   return {
-    vehicleType: normalized,
+    vehicleType: rawType || normalized,
     basePrice: tier.basePrice,
     freeKm: tier.freeKm,
     perKmRate,
