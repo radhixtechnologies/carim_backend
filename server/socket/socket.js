@@ -786,6 +786,7 @@ module.exports = function (io) {
                 message: userMsg,
                 bookingId: booking.id,
                 status: statusData,
+                rideOtp: booking.otpbooking || user.rideOtp || "",
                 otpVerified: true
               });
             });

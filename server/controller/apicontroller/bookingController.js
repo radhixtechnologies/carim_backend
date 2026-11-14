@@ -1896,17 +1896,32 @@ module.exports = {
                     }
                 }
 
-                // ================= FETCH BOOKING =================
+                // ================= FETCH BOOKING WITH FULL DETAILS =================
                 const booking = await db.bookings.findOne({
                     where: { id: bookingId },
-                    include: [{
-                        model: db.users,
-                        as: 'userbook',
-                        attributes: ['id', 'socketId', 'deviceToken', 'languagee_type']
-                    }]
+                    include: [
+                        {
+                            model: db.users,
+                            as: 'driverbook',
+                            include: [{
+                                model: db.vehicleDetails,
+                                as: 'vehicleDetail',
+                                required: false
+                            }]
+                        },
+                        {
+                            model: db.users,
+                            as: 'userbook',
+                            attributes: ['id', 'socketId', 'deviceToken', 'languagee_type', 'rideOtp']
+                        }
+                    ]
                 });
 
-                const userLang = Number(booking.userbook.languagee_type) || 0;
+                if (!booking) {
+                    return helper.failure(res, "Booking not found");
+                }
+
+                const userLang = Number(booking.userbook?.languagee_type) || 0;
 
                 // ================= USER PUSH =================
                 let shouldSendPush = false;
@@ -1931,30 +1946,55 @@ module.exports = {
                     );
                 }
 
+                // 1. Send Android Push Notification (safe background execution)
                 if (shouldSendPush && booking.userbook?.deviceToken) {
-
-                    helper.sendNotification_android(
-                        booking.userbook.deviceToken,
-                        {
-                            message: pushMessage,
-                            type: 2,
-                            senderId: driverId,
-                            bookingId: booking.id,
-                            sender_name: driver.firstName + " " + driver.lastName,
-                            sender_image: driver.image
-                        }
-                    );
-
-                    if (booking.userbook?.socketId) {
-                        io.to(booking.userbook.socketId).emit("rideStatusUpdate", {
-                            success: true,
-                            message: pushMessage,
-                            bookingId: booking.id,
-                            driverId,
-                            request,
-                            status: '0'
-                        });
+                    try {
+                        helper.sendNotification_android(
+                            booking.userbook.deviceToken,
+                            {
+                                message: pushMessage,
+                                type: 2,
+                                senderId: driverId,
+                                bookingId: booking.id,
+                                sender_name: driver.firstName + " " + driver.lastName,
+                                sender_image: driver.image,
+                                rideOtp: booking.otpbooking || booking.userbook?.rideOtp || ""
+                            }
+                        );
+                    } catch (pushErr) {
+                        console.error("Failed to send push notification to user:", pushErr);
                     }
+                }
+
+                // 2. Real-time Socket Event Delivery (Independent of push notification)
+                const emitPayload = {
+                    success: true,
+                    message: pushMessage,
+                    bookingId: booking.id,
+                    orderId: booking.orderId,
+                    driverId: driverId,
+                    request: request,
+                    status: booking.status || '0',
+                    rideOtp: booking.otpbooking || booking.userbook?.rideOtp || "",
+                    driverDetails: booking.driverbook,
+                    vehicleDetail: booking.driverbook?.vehicleDetail
+                };
+
+                const targetUserId = booking.userId;
+                console.log(`[driverAccptReject] Emitting rideStatusUpdate to user #${targetUserId} with OTP: ${emitPayload.rideOtp}`);
+
+                // Emit to all live connected sockets of the user
+                if (global.onlineUsers && global.onlineUsers[targetUserId]) {
+                    global.onlineUsers[targetUserId].forEach(sockId => {
+                        io.to(sockId).emit("rideStatusUpdate", emitPayload);
+                        io.to(sockId).emit("bookingDetailUpdate", emitPayload);
+                    });
+                }
+
+                // Fallback to database socketId
+                if (booking.userbook?.socketId) {
+                    io.to(booking.userbook.socketId).emit("rideStatusUpdate", emitPayload);
+                    io.to(booking.userbook.socketId).emit("bookingDetailUpdate", emitPayload);
                 }
 
                 let resMsgAccept = "Booking accepted successfully. Driver on the way.";
