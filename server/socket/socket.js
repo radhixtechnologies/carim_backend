@@ -226,9 +226,10 @@ module.exports = function (io) {
 
 
 
-    socket.on("connectUser", async ({ userId }) => {
+    socket.on("connectUser", async (data) => {
       try {
-        if (!userId) {
+        const userId = data ? (typeof data === 'object' ? data.userId : data) : null;
+        if (!userId || userId === "null" || userId === "undefined") {
           return socket.emit("connectUser", {
             success: false,
             message: "User ID is required",
@@ -1203,12 +1204,24 @@ module.exports = function (io) {
 
                     await db.transactions.create({
                       userId: driverId,
+                      driverId: driverId,
                       bookingId: booking.id,
                       totalAmount: COMPENSATION_AMOUNT,
+                      trasactionid: 'cancellation_compensation',
                       type: 'cancellation_compensation',
                       paymentStatus: '1',
-                      description: `Cancellation compensation fee for Ride #${booking.id} (Arrived within 200m)`,
-                      status: 'completed'
+                      paymentMethod: '1',
+                      description: `Cancellation compensation fee for Ride #${booking.id} (Arrived within 200m)`
+                    }).catch(() => {
+                      return db.transactions.create({
+                        userId: driverId,
+                        driverId: driverId,
+                        bookingId: booking.id,
+                        totalAmount: COMPENSATION_AMOUNT,
+                        trasactionid: 'cancellation_compensation',
+                        paymentStatus: '1',
+                        paymentMethod: '1'
+                      });
                     });
                     console.log(`✅ Credited ₹${COMPENSATION_AMOUNT} cancellation compensation to driver #${driverId}`);
                   }

@@ -58,6 +58,19 @@ try {
   console.error("Socket initialization failed:", error);
 }
 
+// Ensure database columns exist safely
+(async () => {
+  try {
+    const db = require('./models');
+    await db.sequelize.query("ALTER TABLE bookings ADD COLUMN cancelReason VARCHAR(255) DEFAULT ''").catch(() => {});
+    await db.sequelize.query("ALTER TABLE transactions ADD COLUMN type VARCHAR(255) DEFAULT ''").catch(() => {});
+    await db.sequelize.query("ALTER TABLE transactions ADD COLUMN description VARCHAR(255) DEFAULT ''").catch(() => {});
+    console.log("✅ DB schema checks passed");
+  } catch (dbErr) {
+    console.log("DB check info:", dbErr.message);
+  }
+})();
+
 // ------------------------
 // Routes
 // ------------------------

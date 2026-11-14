@@ -48,6 +48,16 @@ module.exports = function(sequelize, DataTypes) {
       allowNull: false,
       defaultValue: "0",
       comment: "1=>online,2=>offline"
+    },
+    type: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      defaultValue: ""
+    },
+    description: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      defaultValue: ""
     }
   }, {
     sequelize,

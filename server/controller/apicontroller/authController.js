@@ -2314,14 +2314,35 @@ module.exports = {
             });
 
             // Cancellation compensation transactions for driver
-            const compTransactions = await db.transactions.findAll({
-                where: {
-                    userId: driverId,
-                    type: 'cancellation_compensation'
-                },
-                order: [["createdAt", "DESC"]],
-                raw: true
-            });
+            let compTransactions = [];
+            try {
+                compTransactions = await db.transactions.findAll({
+                    where: {
+                        userId: driverId,
+                        [Sequelize.Op.or]: [
+                            { trasactionid: 'cancellation_compensation' },
+                            { type: 'cancellation_compensation' }
+                        ]
+                    },
+                    order: [["createdAt", "DESC"]],
+                    raw: true
+                });
+            } catch (txErr) {
+                console.log("compTransactions fallback query by trasactionid:", txErr.message);
+                try {
+                    compTransactions = await db.transactions.findAll({
+                        where: {
+                            userId: driverId,
+                            trasactionid: 'cancellation_compensation'
+                        },
+                        order: [["createdAt", "DESC"]],
+                        raw: true
+                    });
+                } catch (e2) {
+                    console.log("compTransactions error:", e2.message);
+                    compTransactions = [];
+                }
+            }
 
             const combinedHistory = [
                 ...payments.map(p => ({

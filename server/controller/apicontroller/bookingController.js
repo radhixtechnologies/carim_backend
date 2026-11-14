@@ -2686,12 +2686,24 @@ module.exports = {
 
                                 await db.transactions.create({
                                     userId: driverId,
+                                    driverId: driverId,
                                     bookingId: booking.id,
                                     totalAmount: COMPENSATION_AMOUNT,
+                                    trasactionid: 'cancellation_compensation',
                                     type: 'cancellation_compensation',
                                     paymentStatus: '1',
-                                    description: `Cancellation compensation fee for Ride #${booking.id} (Arrived within 200m)`,
-                                    status: 'completed'
+                                    paymentMethod: '1',
+                                    description: `Cancellation compensation fee for Ride #${booking.id} (Arrived within 200m)`
+                                }).catch(() => {
+                                    return db.transactions.create({
+                                        userId: driverId,
+                                        driverId: driverId,
+                                        bookingId: booking.id,
+                                        totalAmount: COMPENSATION_AMOUNT,
+                                        trasactionid: 'cancellation_compensation',
+                                        paymentStatus: '1',
+                                        paymentMethod: '1'
+                                    });
                                 });
                                 console.log(`✅ Credited ₹${COMPENSATION_AMOUNT} cancellation compensation to driver #${driverId}`);
                             }
