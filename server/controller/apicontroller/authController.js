@@ -1130,6 +1130,9 @@ module.exports = {
                 const earnings = await calculateDriverEarnings(db, userId);
                 enrichedProfile.earnings = earnings;
                 enrichedProfile.totalEarnings = earnings.totalEarnings;
+                enrichedProfile.avgRating = earnings.avgRating;
+                enrichedProfile.totalReviews = earnings.totalReviews;
+                enrichedProfile.totalRides = earnings.totalRides;
             }
 
             let msg = "Get user Profile Successfully.";

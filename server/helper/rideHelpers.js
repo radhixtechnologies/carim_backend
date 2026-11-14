@@ -197,6 +197,25 @@ async function calculateDriverEarnings(db, driverId, tzOffsetMinutes = 330) {
 
   const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
 
+  let avgRating = 5.0;
+  let totalReviews = 0;
+  try {
+    const reviews = await db.reviewrating.findAll({
+      where: { ratedTo: driverId },
+      attributes: ["rating"],
+      raw: true,
+    });
+    totalReviews = reviews.length;
+    if (totalReviews > 0) {
+      const sum = reviews.reduce((acc, r) => acc + (parseFloat(r.rating) || 0), 0);
+      avgRating = Math.round((sum / totalReviews) * 10) / 10;
+    } else {
+      avgRating = 5.0;
+    }
+  } catch (err) {
+    console.error("calculateDriverEarnings review query error:", err);
+  }
+
   return {
     totalEarnings: round2(totalEarnings),
     todayEarnings: round2(todayEarnings),
@@ -209,6 +228,8 @@ async function calculateDriverEarnings(db, driverId, tzOffsetMinutes = 330) {
     lastWeekRides,
     lastMonthRides,
     walletBalance: round2(parseFloat(driverUser?.totalAmount || 0) || 0),
+    avgRating,
+    totalReviews,
   };
 }
 
