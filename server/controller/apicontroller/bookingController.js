@@ -12,7 +12,8 @@ const {
     normalizeVehicleType,
     getVehiclePricingConfig,
     calculateFareForVehicle,
-    calculateDriverEarnings
+    calculateDriverEarnings,
+    redispatchBookingToOtherDrivers
 } = require("../../helper/rideHelpers");
 function calculateDistance(lat1, lon1, lat2, lon2) {
     const R = 6371; // Radius of Earth in km
@@ -2753,37 +2754,31 @@ module.exports = {
                     }
                 }
 
-                // ================= UPDATE BOOKING =================
-                await booking.update({
-                    status: newStatus,
-                    cancelReason: cancelReasonText
-                });
-                await db.rideRequest.update(
-                    { status: 6 },
-                    { where: { bookingId: booking.id } }
-                );
-                io.emit("rideStatusUpdate", {
-                    bookingId: booking.id,
-                    status: newStatus,
-                    cancelledBy: loggedInUserRole === "1" || loggedInUserRole === "3" ? "user" : "driver",
-                    cancelReason: cancelReasonText,
-                    compensationAwarded: compensationAwarded,
-                    compensationAmount: compensationAwarded ? COMPENSATION_AMOUNT : 0
-                });
-                // ================= SELF NOTIFICATION =================
-                await db.notifications.create({
-                    userId: loggedInUserId,
-                    bookingId: booking.id,
-                    type: 3,
-                    message:
-                        loggedInUserRole === "1" || loggedInUserRole === "3"
-                            ? "You have cancelled the ride"
-                            : "Ride cancelled by driver",
-                    status: 0
-                });
                 // ================= USER CANCEL ======================
-
                 if (loggedInUserRole === "1" || loggedInUserRole === "3") {
+                    await booking.update({
+                        status: "5",
+                        cancelReason: cancelReasonText
+                    });
+                    await db.rideRequest.update(
+                        { status: 6 },
+                        { where: { bookingId: booking.id } }
+                    );
+
+                    io.emit("rideStatusUpdate", {
+                        bookingId: booking.id,
+                        status: "5",
+                        cancelledBy: "user",
+                        cancelReason: cancelReasonText
+                    });
+
+                    await db.notifications.create({
+                        userId: loggedInUserId,
+                        bookingId: booking.id,
+                        type: 3,
+                        message: "You have cancelled the ride",
+                        status: 0
+                    });
 
                     const acceptedRideRequest = await db.rideRequest.findOne({
                         where: {
@@ -2793,7 +2788,6 @@ module.exports = {
                     });
 
                     if (booking.request === "1" && acceptedRideRequest) {
-
                         const driver = await db.users.findOne({
                             where: { id: acceptedRideRequest.driverId, approve: "1" },
                             attributes: ["deviceToken", "languagee_type"],
@@ -2820,46 +2814,129 @@ module.exports = {
                             });
                         }
                     }
+
+                    return helper.success(res, "Ride cancelled successfully.", {
+                        bookingId: booking.id,
+                        cancelledBy: "user",
+                        status: "5"
+                    });
                 }
 
-
-                // ================= DRIVER CANCEL ====================
-
+                // ================= DRIVER CANCEL (RESET & REDISPATCH) ====================
                 if (loggedInUserRole === "2") {
+                    const cancellingDriverId = loggedInUserId;
 
+                    // 1. Mark cancelling driver's rideRequest as rejected (status: 2) so they don't get it again
+                    await db.rideRequest.update(
+                        { status: 2 },
+                        { where: { bookingId: booking.id, driverId: cancellingDriverId } }
+                    );
+
+                    // 2. Reset booking back to Searching (status: "0", request: "0", driverId: null)
+                    await booking.update({
+                        status: "0",
+                        request: "0",
+                        driverId: null,
+                        cancelReason: `Driver #${cancellingDriverId} cancelled: ${cancelReasonText}`
+                    });
+
+                    // 3. Find list of driver IDs who already rejected/cancelled this booking
+                    const pastRejected = await db.rideRequest.findAll({
+                        where: {
+                            bookingId: booking.id,
+                            status: { [Op.in]: [2, 6] }
+                        },
+                        attributes: ['driverId'],
+                        raw: true
+                    }).catch(() => []);
+                    const excludedDriverIds = Array.from(new Set([
+                        cancellingDriverId,
+                        ...pastRejected.map(r => r.driverId)
+                    ]));
+
+                    // 4. Redispatch booking to other nearby available drivers!
+                    const redispatchedCount = await redispatchBookingToOtherDrivers({
+                        db,
+                        helper,
+                        booking,
+                        excludeDriverIds: excludedDriverIds,
+                        io
+                    });
+                    console.log(`[cancelRide] Driver #${cancellingDriverId} cancelled. Booking #${booking.id} reset to searching and dispatched to ${redispatchedCount} other drivers.`);
+
+                    // 5. Notify the USER in real-time that driver cancelled and we are looking for another driver
+                    const userCancelPayload = {
+                        bookingId: booking.id,
+                        status: "0",
+                        request: "0",
+                        driverId: null,
+                        driverDetails: null,
+                        vehicleDetail: null,
+                        driverCancelled: true,
+                        previousDriverId: cancellingDriverId,
+                        cancelReason: cancelReasonText,
+                        message: "Your Captain cancelled the ride. Looking for another Captain nearby..."
+                    };
+
+                    if (global.onlineUsers && global.onlineUsers[booking.userId]) {
+                        global.onlineUsers[booking.userId].forEach(sockId => {
+                            io.to(sockId).emit("rideStatusUpdate", userCancelPayload);
+                            io.to(sockId).emit("bookingDetailUpdate", userCancelPayload);
+                        });
+                    }
+                    if (booking.userbook?.socketId) {
+                        io.to(booking.userbook.socketId).emit("rideStatusUpdate", userCancelPayload);
+                        io.to(booking.userbook.socketId).emit("bookingDetailUpdate", userCancelPayload);
+                    }
+
+                    // Push notification to user
                     const user = await db.users.findOne({
-                        where: { id: booking.userId, approve: "1" },
+                        where: { id: booking.userId },
                         attributes: ["deviceToken", "languagee_type"],
                         raw: true
                     });
-
                     if (user?.deviceToken) {
                         const pushMsg = getPushMessage(
                             Number(user.languagee_type),
-                            "Ride cancelled by driver",
-                            "تم إلغاء الرحلة بواسطة السائق",
-                            "Course annulée par le conducteur"
+                            "Your driver cancelled. Searching for another Captain nearby...",
+                            "ألغى السائق الرحلة. جاري البحث عن كابتن آخر قريب...",
+                            "Votre chauffeur a annulé. Recherche d'un autre chauffeur..."
                         );
-
                         helper.sendNotification_android(user.deviceToken, {
-                            senderId: loggedInUserId,
+                            senderId: cancellingDriverId,
                             targetRole: 1,
                             notificationId: 0,
                             bookingId: booking.id,
                             sound: "driver_app.caf",
                             type: 4,
-                            titleData: "Notification",
+                            titleData: "Ride Update",
                             message: pushMsg
                         });
                     }
-                }
 
-                // ================= RESPONSE (UNCHANGED) =================
-                return helper.success(res, "Ride cancelled successfully.", {
-                    bookingId: booking.id,
-                    cancelledBy: loggedInUserRole === "1" || loggedInUserRole === "3" ? "user" : "driver",
-                    status: newStatus
-                });
+                    // Notify cancelling driver's socket
+                    if (global.onlineUsers && global.onlineUsers[cancellingDriverId]) {
+                        global.onlineUsers[cancellingDriverId].forEach(sockId => {
+                            io.to(sockId).emit("rideStatusUpdate", {
+                                bookingId: booking.id,
+                                status: "4",
+                                cancelledBy: "driver",
+                                compensationAwarded: compensationAwarded,
+                                compensationAmount: compensationAwarded ? COMPENSATION_AMOUNT : 0,
+                                message: "You cancelled the ride."
+                            });
+                        });
+                    }
+
+                    // 6. Return response to the cancelling driver
+                    return helper.success(res, "Ride cancelled successfully.", {
+                        bookingId: booking.id,
+                        cancelledBy: "driver",
+                        status: "4",
+                        compensationAwarded: compensationAwarded,
+                        compensationAmount: compensationAwarded ? COMPENSATION_AMOUNT : 0
+                    });
+                }
 
             } catch (error) {
                 console.error(error);

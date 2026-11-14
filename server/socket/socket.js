@@ -2,7 +2,8 @@ let db = require("../models");
 const Sequelize = require("sequelize");
 const Op = Sequelize.Op;
 const helper = require('../helper/helper');
-const moment = require("moment")
+const moment = require("moment");
+const { redispatchBookingToOtherDrivers } = require('../helper/rideHelpers');
 
 global.onlineUsers = {};
 
@@ -1232,18 +1233,80 @@ module.exports = function (io) {
               }
             }
 
-            await booking.update({ status: "4", cancelReason: cancelReason });
-            await emitToBoth(
-              getUserMsg("Ride cancelled by driver", "تم إلغاء الرحلة بواسطة السائق", "Course annulée par le conducteur"),
-              getDriverMsg(
-                compensationAwarded
-                  ? `Ride cancelled. ₹${COMPENSATION_AMOUNT} compensation fee credited to your wallet.`
-                  : "Ride cancelled successfully",
-                "تم إلغاء الرحلة بنجاح",
-                "Trajet annulé avec succès"
-              ),
-              "4"
+            // 1. Mark cancelling driver's rideRequest as rejected (status: 2)
+            await db.rideRequest.update(
+              { status: 2 },
+              { where: { bookingId: booking.id, driverId: driverId } }
             );
+
+            // 2. Reset booking back to Searching (status: "0", request: "0", driverId: null)
+            await booking.update({
+              status: "0",
+              request: "0",
+              driverId: null,
+              cancelReason: `Driver #${driverId} cancelled: ${cancelReason}`
+            });
+
+            // 3. Find list of driver IDs who already rejected/cancelled this booking
+            const pastRejected = await db.rideRequest.findAll({
+              where: {
+                bookingId: booking.id,
+                status: { [Op.in]: [2, 6] }
+              },
+              attributes: ['driverId'],
+              raw: true
+            }).catch(() => []);
+            const excludedDriverIds = Array.from(new Set([
+              driverId,
+              ...pastRejected.map(r => r.driverId)
+            ]));
+
+            // 4. Redispatch to other nearby drivers
+            const redispatchedCount = await redispatchBookingToOtherDrivers({
+              db,
+              helper,
+              booking,
+              excludeDriverIds: excludedDriverIds,
+              io
+            });
+            console.log(`[socket case 4] Driver #${driverId} cancelled. Booking #${booking.id} reset and dispatched to ${redispatchedCount} other drivers.`);
+
+            // 5. Notify User: reset search state and clear driver details
+            const userCancelPayload = {
+              bookingId: booking.id,
+              status: "0",
+              request: "0",
+              driverId: null,
+              driverDetails: null,
+              vehicleDetail: null,
+              driverCancelled: true,
+              previousDriverId: driverId,
+              cancelReason: cancelReason,
+              message: "Your Captain cancelled the ride. Looking for another Captain nearby..."
+            };
+
+            if (global.onlineUsers && global.onlineUsers[booking.userId]) {
+              global.onlineUsers[booking.userId].forEach(sockId => {
+                io.to(sockId).emit("rideStatusUpdate", userCancelPayload);
+                io.to(sockId).emit("bookingDetailUpdate", userCancelPayload);
+              });
+            }
+
+            // 6. Notify Driver: cancelled successfully + compensation
+            if (global.onlineUsers && global.onlineUsers[driverId]) {
+              global.onlineUsers[driverId].forEach(sockId => {
+                io.to(sockId).emit("rideStatusUpdate", {
+                  bookingId: booking.id,
+                  status: "4",
+                  cancelledBy: "driver",
+                  compensationAwarded: compensationAwarded,
+                  compensationAmount: compensationAwarded ? COMPENSATION_AMOUNT : 0,
+                  message: compensationAwarded
+                    ? `Ride cancelled. ₹${COMPENSATION_AMOUNT} compensation fee credited to your wallet.`
+                    : "Ride cancelled successfully"
+                });
+              });
+            }
             break;
 
           case "0": // ON THE WAY

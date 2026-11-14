@@ -233,6 +233,184 @@ async function calculateDriverEarnings(db, driverId, tzOffsetMinutes = 330) {
   };
 }
 
+async function redispatchBookingToOtherDrivers({ db, helper, booking, excludeDriverIds = [], io }) {
+  try {
+    const Sequelize = require("sequelize");
+    const pickupLat = parseFloat(booking.pickupLatitude);
+    const pickupLng = parseFloat(booking.pickupLongitude);
+    if (isNaN(pickupLat) || isNaN(pickupLng)) {
+      console.log(`[redispatch] Invalid pickup coordinates for booking #${booking.id}`);
+      return 0;
+    }
+
+    const requestedVehicleType = normalizeVehicleType(booking.vehicleType || "");
+
+    // 1. Get admin search radius
+    const adminData = await db.users.findOne({ where: { role: '0' }, attributes: ['setKmRange'], raw: true }).catch(() => null);
+    let maxKmRange = 10;
+    if (adminData && adminData.setKmRange) {
+      const parsed = parseFloat(adminData.setKmRange);
+      if (!isNaN(parsed) && parsed > 0) maxKmRange = parsed;
+    }
+
+    // 2. Query online approved drivers excluding excludedDriverIds
+    const whereCond = {
+      role: '2',
+      online: '1',
+      approve: '1',
+    };
+    if (excludeDriverIds && excludeDriverIds.length > 0) {
+      whereCond.id = { [Sequelize.Op.notIn]: excludeDriverIds };
+    }
+
+    const drivers = await db.users.findAll({
+      where: whereCond,
+      attributes: ['id', 'latitude', 'longitude', 'totalAmount', 'vehicleType', 'deviceToken', 'languagee_type'],
+      include: [
+        {
+          model: db.bookings,
+          as: "driverbook",
+          required: false,
+          where: {
+            status: { [Sequelize.Op.in]: ['0', '1', '2'] },
+            request: '1',
+          },
+        },
+        {
+          model: db.vehicleDetails,
+          as: "vehicleDetail",
+          required: false,
+          attributes: ['id', 'vehicleType'],
+        },
+      ],
+    });
+
+    const twoHoursAgoMs = Date.now() - 2 * 60 * 60 * 1000;
+    const eligibleDrivers = drivers.filter(d => {
+      const hasActiveBooking = Array.isArray(d.driverbook) && d.driverbook.some(b => {
+        if (!b.createdAt && !b.updatedAt) return true;
+        const bTime = new Date(b.updatedAt || b.createdAt).getTime();
+        return bTime > twoHoursAgoMs;
+      });
+      const driverBalance = parseFloat(d.totalAmount);
+      const isValidBalance = isNaN(driverBalance) || driverBalance >= -500;
+      return !hasActiveBooking && isValidBalance;
+    });
+
+    let matchingDrivers = eligibleDrivers;
+    if (requestedVehicleType) {
+      matchingDrivers = eligibleDrivers.filter(d => {
+        const driverVType = normalizeVehicleType(d.vehicleDetail?.vehicleType || d.vehicleType || "");
+        return driverVType === requestedVehicleType;
+      });
+    }
+
+    const toRad = v => v * Math.PI / 180;
+    const calcDist = (a, b, c, d) => {
+      const R = 6371;
+      const dLat = toRad(c - a);
+      const dLon = toRad(d - b);
+      const x =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(toRad(a)) *
+        Math.cos(toRad(c)) *
+        Math.sin(dLon / 2) ** 2;
+      return R * (2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x)));
+    };
+
+    const nearbyDrivers = [];
+    const driversWithDistances = [];
+    for (const d of matchingDrivers) {
+      if (!d.latitude || !d.longitude) continue;
+      const dLat = parseFloat(d.latitude);
+      const dLng = parseFloat(d.longitude);
+      if (isNaN(dLat) || isNaN(dLng)) continue;
+
+      const dist = calcDist(pickupLat, pickupLng, dLat, dLng);
+      driversWithDistances.push({ driver: d, distance: dist });
+      if (dist <= maxKmRange) {
+        nearbyDrivers.push({ driver: d, distance: dist });
+      }
+    }
+
+    if (nearbyDrivers.length === 0 && driversWithDistances.length > 0) {
+      driversWithDistances.sort((a, b) => a.distance - b.distance);
+      nearbyDrivers.push(driversWithDistances[0]);
+    }
+
+    nearbyDrivers.sort((a, b) => a.distance - b.distance);
+    console.log(`[redispatch] Found ${nearbyDrivers.length} other nearby drivers for booking #${booking.id}`);
+
+    for (const item of nearbyDrivers) {
+      const otherDriver = item.driver;
+      const dist = item.distance.toFixed(2);
+
+      await db.rideRequest.destroy({
+        where: { bookingId: booking.id, driverId: otherDriver.id },
+      }).catch(() => {});
+
+      await db.rideRequest.create({
+        bookingId: booking.id,
+        userId: booking.userId,
+        driverId: otherDriver.id,
+        status: 0,
+        driverDistance: dist,
+      }).catch(e => console.error("Error creating rideRequest in redispatch:", e));
+
+      if (global.onlineUsers && global.onlineUsers[otherDriver.id]) {
+        global.onlineUsers[otherDriver.id].forEach(sockId => {
+          io.to(sockId).emit("newRideRequest", {
+            bookingId: booking.id,
+            orderId: booking.orderId,
+            pickupLocation: booking.pickupLocation,
+            dropLocation: booking.dropLocation,
+            pickupLatitude: booking.pickupLatitude,
+            pickupLongitude: booking.pickupLongitude,
+            dropLatitude: booking.dropLatitude,
+            dropLongitude: booking.dropLongitude,
+            status: '0',
+            request: '0',
+            rideOpen: booking.rideOpen,
+            vehicleType: booking.vehicleType || "",
+            callerCountryCode: booking.callerCountryCode || "",
+            callerPhone: booking.callerPhone || "",
+            callerName: booking.callerName || "",
+            bookingPrice: booking.bookingPrice,
+            basePrice: booking.basePrice,
+            rideDistance: booking.rideDistance || "",
+            driverDistance: dist,
+            message: `Distance from pickup: ${dist} km`,
+            timestamp: new Date().toISOString(),
+          });
+
+          io.to(sockId).emit("notification_count", {
+            type: "ride_request",
+            message: `New ride request available (${dist} km away)`,
+            bookingId: booking.id,
+            timestamp: new Date().toISOString(),
+          });
+        });
+      }
+
+      if (otherDriver.deviceToken && otherDriver.deviceToken.length > 10) {
+        helper.sendNotification_android(otherDriver.deviceToken, {
+          message: `New ride request available (${dist} km away)`,
+          type: 1,
+          senderId: booking.userId.toString(),
+          bookingId: booking.id,
+          distance: dist,
+          targetRole: '2',
+        }).catch(() => {});
+      }
+    }
+
+    return nearbyDrivers.length;
+  } catch (err) {
+    console.error("[redispatch] Error in redispatchBookingToOtherDrivers:", err);
+    return 0;
+  }
+}
+
 module.exports = {
   VEHICLE_TYPES,
   normalizeVehicleType,
@@ -240,4 +418,5 @@ module.exports = {
   getVehiclePricingConfig,
   calculateFareForVehicle,
   calculateDriverEarnings,
+  redispatchBookingToOtherDrivers,
 };
