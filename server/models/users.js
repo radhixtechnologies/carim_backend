@@ -63,6 +63,11 @@ module.exports = function (sequelize, DataTypes) {
       allowNull: false,
       defaultValue: ""
     },
+    vehicleType: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      defaultValue: ""
+    },
     otpVerify: {
       type: DataTypes.ENUM('0', '1'),
       allowNull: false,

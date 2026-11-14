@@ -1472,9 +1472,9 @@ module.exports = {
             } catch (error) {
                 console.error('Booking error:', error);
                 return helper.failure(res,
-                    languageType === 1 ? "حدث خطأ أثناء حجز الرحلة." :
-                        languageType === 2 ? "Une erreur est survenue lors de la réservation." :
-                            "Something went wrong while booking the ride."
+                    (languageType === 1 ? "حدث خطأ أثناء حجز الرحلة: " :
+                        languageType === 2 ? "Une erreur est survenue lors de la réservation: " :
+                            "Something went wrong while booking the ride: ") + (error.message || "")
                 );
             }
         };
