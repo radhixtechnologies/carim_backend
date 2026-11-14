@@ -954,6 +954,22 @@ module.exports = function (io) {
             break;
 
           case "2": // START RIDE
+            // ---------------- OTP VALIDATION ----------------
+            const submittedOtp = (data.otp || "").toString().trim();
+            const validOtp = (booking.otpbooking || (booking.userbook && booking.userbook.rideOtp) || "").toString().trim();
+
+            console.log(`🔐 Socket Start Ride - Booking ${bookingId}: Submitted OTP='${submittedOtp}', Valid OTP='${validOtp}'`);
+
+            if (validOtp && validOtp.length > 0) {
+              if (!submittedOtp || submittedOtp !== validOtp) {
+                console.log(`❌ Invalid OTP submitted for booking ${bookingId}`);
+                return socket.emit("rideStatusUpdate", {
+                  success: false,
+                  message: "Invalid OTP! Please enter correct 4-digit ride OTP from customer."
+                });
+              }
+            }
+
             rideStartTime = moment().format("YYYY-MM-DD HH:mm");
             await booking.update({
               status: "2",
@@ -1131,10 +1147,87 @@ module.exports = function (io) {
             await stopRealTimePricing(bookingId);
             stopAutoLocationUpdate(bookingId);
             if (currentStatus === "3" || currentStatus === "4" || currentStatus === "5") return;
-            await booking.update({ status: "4" });
+
+            const cancelReason = (data.reason || "Driver cancelled").toString();
+            let compensationAwarded = false;
+            const COMPENSATION_AMOUNT = 25.00;
+
+            if (driverId && driverId > 0) {
+              const toRad = v => v * Math.PI / 180;
+              const calculateDist = (a, b, c, d) => {
+                const R = 6371;
+                const dLat = toRad(c - a);
+                const dLon = toRad(d - b);
+                const x =
+                  Math.sin(dLat / 2) ** 2 +
+                  Math.cos(toRad(a)) *
+                  Math.cos(toRad(c)) *
+                  Math.sin(dLon / 2) ** 2;
+                return R * (2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x)));
+              };
+
+              let isWithin200m = false;
+              if (booking.status === "1") {
+                isWithin200m = true;
+              } else if (booking.pickupLatitude && booking.pickupLongitude) {
+                const pickLat = parseFloat(booking.pickupLatitude);
+                const pickLng = parseFloat(booking.pickupLongitude);
+                let dLat = data.latitude ? parseFloat(data.latitude) : null;
+                let dLng = data.longitude ? parseFloat(data.longitude) : null;
+                if (!dLat || !dLng) {
+                  const dUser = await db.users.findOne({ where: { id: driverId }, attributes: ['latitude', 'longitude'], raw: true });
+                  if (dUser && dUser.latitude && dUser.longitude) {
+                    dLat = parseFloat(dUser.latitude);
+                    dLng = parseFloat(dUser.longitude);
+                  }
+                }
+                if (dLat && dLng && !isNaN(dLat) && !isNaN(dLng) && !isNaN(pickLat) && !isNaN(pickLng)) {
+                  const distKm = calculateDist(dLat, dLng, pickLat, pickLng);
+                  if (distKm <= 0.20) {
+                    isWithin200m = true;
+                  }
+                }
+              }
+
+              if (isWithin200m) {
+                compensationAwarded = true;
+                try {
+                  const driverUser = await db.users.findOne({ where: { id: driverId } });
+                  if (driverUser) {
+                    const currBal = parseFloat(driverUser.totalAmount || 0);
+                    const newBal = currBal + COMPENSATION_AMOUNT;
+                    await db.users.update(
+                      { totalAmount: newBal.toFixed(2).toString() },
+                      { where: { id: driverId } }
+                    );
+
+                    await db.transactions.create({
+                      userId: driverId,
+                      bookingId: booking.id,
+                      totalAmount: COMPENSATION_AMOUNT,
+                      type: 'cancellation_compensation',
+                      paymentStatus: '1',
+                      description: `Cancellation compensation fee for Ride #${booking.id} (Arrived within 200m)`,
+                      status: 'completed'
+                    });
+                    console.log(`✅ Credited ₹${COMPENSATION_AMOUNT} cancellation compensation to driver #${driverId}`);
+                  }
+                } catch (compErr) {
+                  console.error("Error crediting compensation:", compErr);
+                }
+              }
+            }
+
+            await booking.update({ status: "4", cancelReason: cancelReason });
             await emitToBoth(
-              getUserMsg("Ride cancelled successfully", "تم إلغاء الرحلة بنجاح", "Trajet annulé avec succès"),
-              getDriverMsg("Ride cancelled successfully", "تم إلغاء الرحلة بنجاح", "Trajet annulé avec succès"),
+              getUserMsg("Ride cancelled by driver", "تم إلغاء الرحلة بواسطة السائق", "Course annulée par le conducteur"),
+              getDriverMsg(
+                compensationAwarded
+                  ? `Ride cancelled. ₹${COMPENSATION_AMOUNT} compensation fee credited to your wallet.`
+                  : "Ride cancelled successfully",
+                "تم إلغاء الرحلة بنجاح",
+                "Trajet annulé avec succès"
+              ),
               "4"
             );
             break;

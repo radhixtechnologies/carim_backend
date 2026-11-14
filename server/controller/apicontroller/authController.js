@@ -2019,6 +2019,7 @@ module.exports = {
                 ride: {
                     id: activeRide.id,
                     orderId: activeRide.orderId,
+                    rideOtp: activeRide.otpbooking || userStatus.rideOtp || "",
                     status: activeRide.status,
                     request: activeRide.request,
                     pickupLocation: activeRide.pickupLocation,
@@ -2132,6 +2133,7 @@ module.exports = {
                 ride: {
                     id: activeRide.id,
                     orderId: activeRide.orderId,
+                    rideOtp: activeRide.otpbooking || userStatus.rideOtp || "",
                     status: activeRide.status,
                     request: activeRide.request,
                     pickupLocation: activeRide.pickupLocation,
@@ -2311,6 +2313,35 @@ module.exports = {
                 raw: true
             });
 
+            // Cancellation compensation transactions for driver
+            const compTransactions = await db.transactions.findAll({
+                where: {
+                    userId: driverId,
+                    type: 'cancellation_compensation'
+                },
+                order: [["createdAt", "DESC"]],
+                raw: true
+            });
+
+            const combinedHistory = [
+                ...payments.map(p => ({
+                    id: p.id,
+                    amount: p.amount,
+                    status: p.status,
+                    type: 'topup',
+                    title: 'Top Up Balance',
+                    createdAt: p.createdAt
+                })),
+                ...compTransactions.map(c => ({
+                    id: c.id,
+                    amount: c.totalAmount || c.amount || 25,
+                    status: 'success',
+                    type: 'cancellation_compensation',
+                    title: `Cancellation Compensation (Ride #${c.bookingId})`,
+                    createdAt: c.createdAt
+                }))
+            ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
             // Completed rides from bookings
             const bookings = await db.bookings.findAll({
                 where: {
@@ -2323,8 +2354,6 @@ module.exports = {
             });
 
             const bookingCommissions = bookings.map(booking => {
-                const matchingPayment = payments.find(p => p.id_sedad == booking.id);
-
                 return {
                     id: booking.id,
                     bookingId: booking.id,
@@ -2346,7 +2375,7 @@ module.exports = {
                 body: {
                     currentBalance: driverStatus.totalAmount || "0.00",
                     earnings: earnings,
-                    history: payments,
+                    history: combinedHistory,
                     commissions: bookingCommissions
                 }
             });

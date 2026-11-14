@@ -1078,7 +1078,7 @@ module.exports = {
                         online: '1',
                         approve: '1'
                     },
-                    attributes: ['id', 'latitude', 'longitude', 'totalAmount'],
+                    attributes: ['id', 'latitude', 'longitude', 'totalAmount', 'vehicleType'],
                     include: [
                         {
                             model: db.bookings,
@@ -1208,6 +1208,7 @@ module.exports = {
 
                 // ---------------- CREATE BOOKING ----------------
                 const orderId = Math.floor(100000 + Math.random() * 900000).toString();
+                const rideOtp = Math.floor(1000 + Math.random() * 9000).toString();
 
                 const pricePerKmToStore = ADMIN_PRICE_PER_KM;
                 const pricePerMinToStore = rideOpen == 1 ? pricePerMinOpen : 0;
@@ -1216,6 +1217,7 @@ module.exports = {
                     userId,
                     orderId,
                     status: '0',
+                    otpbooking: rideOtp,
                     pickupLocation,
                     dropLocation: dropLocation || "",
                     pickupLatitude,
@@ -1238,6 +1240,9 @@ module.exports = {
                     lastPriceUpdate: new Date().toISOString(),
                     freeKm: FREE_KM.toString()
                 });
+
+                // Update user rideOtp as well
+                await db.users.update({ rideOtp: rideOtp }, { where: { id: userId } });
 
                 // ---------------- CREATE RIDE REQUEST (bulkCreate) ----------------
                 const rideRequestData = nearbyDrivers.map(driver => ({
@@ -2564,6 +2569,7 @@ module.exports = {
                 request: booking.request,
                 bookingDate: booking.bookingDate,
                 bookingPrice: booking.bookingPrice,
+                rideOtp: booking.otpbooking || booking.userbook?.rideOtp || "",
                 vehicleType: booking.vehicleType || "",
                 rideOpen: booking.rideOpen,
                 callerCountryCode: booking.callerCountryCode || "",
@@ -2596,7 +2602,7 @@ module.exports = {
                 const languageType = Number(req.headers.languagetype) || 0;
                 const loggedInUserId = req.user.id;
                 const loggedInUserRole = req.user.role; // "1"=user, "2"=driver, "3"=user-like
-                const { bookingId } = req.body;
+                const { bookingId, reason, latitude, longitude } = req.body;
 
                 // ================= VALIDATION =================
                 if (!bookingId) {
@@ -2621,10 +2627,84 @@ module.exports = {
                 }
 
                 const newStatus = loggedInUserRole === "1" || loggedInUserRole === "3" ? "5" : "4";
+                const cancelReasonText = reason ? reason.toString() : (loggedInUserRole === "2" ? "Driver cancelled" : "User cancelled");
+
+                // ================= 200M PROXIMITY COMPENSATION CHECK =================
+                const driverId = booking.driverId;
+                let compensationAwarded = false;
+                const COMPENSATION_AMOUNT = 25.00;
+
+                if (driverId && driverId > 0) {
+                    const toRad = v => v * Math.PI / 180;
+                    const calculateDist = (a, b, c, d) => {
+                        const R = 6371;
+                        const dLat = toRad(c - a);
+                        const dLon = toRad(d - b);
+                        const x =
+                            Math.sin(dLat / 2) ** 2 +
+                            Math.cos(toRad(a)) *
+                            Math.cos(toRad(c)) *
+                            Math.sin(dLon / 2) ** 2;
+                        return R * (2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x)));
+                    };
+
+                    let isWithin200m = false;
+                    if (booking.status === "1") {
+                        // Driver was already marked as arrived
+                        isWithin200m = true;
+                    } else if (booking.pickupLatitude && booking.pickupLongitude) {
+                        const pickLat = parseFloat(booking.pickupLatitude);
+                        const pickLng = parseFloat(booking.pickupLongitude);
+                        let dLat = latitude ? parseFloat(latitude) : null;
+                        let dLng = longitude ? parseFloat(longitude) : null;
+                        if (!dLat || !dLng) {
+                            const dUser = await db.users.findOne({ where: { id: driverId }, attributes: ['latitude', 'longitude'], raw: true });
+                            if (dUser && dUser.latitude && dUser.longitude) {
+                                dLat = parseFloat(dUser.latitude);
+                                dLng = parseFloat(dUser.longitude);
+                            }
+                        }
+                        if (dLat && dLng && !isNaN(dLat) && !isNaN(dLng) && !isNaN(pickLat) && !isNaN(pickLng)) {
+                            const distKm = calculateDist(dLat, dLng, pickLat, pickLng);
+                            if (distKm <= 0.20) { // 200m threshold
+                                isWithin200m = true;
+                            }
+                        }
+                    }
+
+                    if (isWithin200m) {
+                        compensationAwarded = true;
+                        try {
+                            const driverUser = await db.users.findOne({ where: { id: driverId } });
+                            if (driverUser) {
+                                const currBal = parseFloat(driverUser.totalAmount || 0);
+                                const newBal = currBal + COMPENSATION_AMOUNT;
+                                await db.users.update(
+                                    { totalAmount: newBal.toFixed(2).toString() },
+                                    { where: { id: driverId } }
+                                );
+
+                                await db.transactions.create({
+                                    userId: driverId,
+                                    bookingId: booking.id,
+                                    totalAmount: COMPENSATION_AMOUNT,
+                                    type: 'cancellation_compensation',
+                                    paymentStatus: '1',
+                                    description: `Cancellation compensation fee for Ride #${booking.id} (Arrived within 200m)`,
+                                    status: 'completed'
+                                });
+                                console.log(`✅ Credited ₹${COMPENSATION_AMOUNT} cancellation compensation to driver #${driverId}`);
+                            }
+                        } catch (compErr) {
+                            console.error("Error crediting compensation:", compErr);
+                        }
+                    }
+                }
 
                 // ================= UPDATE BOOKING =================
                 await booking.update({
                     status: newStatus,
+                    cancelReason: cancelReasonText
                 });
                 await db.rideRequest.update(
                     { status: 6 },
@@ -2633,7 +2713,10 @@ module.exports = {
                 io.emit("rideStatusUpdate", {
                     bookingId: booking.id,
                     status: newStatus,
-                    cancelledBy: loggedInUserRole === "1" || loggedInUserRole === "3" ? "user" : "driver"
+                    cancelledBy: loggedInUserRole === "1" || loggedInUserRole === "3" ? "user" : "driver",
+                    cancelReason: cancelReasonText,
+                    compensationAwarded: compensationAwarded,
+                    compensationAmount: compensationAwarded ? COMPENSATION_AMOUNT : 0
                 });
                 // ================= SELF NOTIFICATION =================
                 await db.notifications.create({
